@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Filter, X, SlidersHorizontal, Grid3x3, List, Heart, Eye, Package } from "lucide-react"
+import { SlidersHorizontal, Grid3x3, List, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Image from "@/components/ui/image-shim"
@@ -149,10 +149,11 @@ export default function Catalog() {
 
     return (
         <div className="min-h-screen bg-background">
-            {/* Header */}
-            <div className="bg-muted/30 py-16 px-6">
-                <div className="container mx-auto">
-                    <h1 className="font-serif text-5xl md:text-6xl font-medium mb-4">Product Catalog</h1>
+            {/* Header with Gradient */}
+            <div className="section-gradient-accent py-16 px-6 relative overflow-hidden">
+                <div className="absolute inset-0 gradient-mesh opacity-40" />
+                <div className="container mx-auto relative z-10">
+                    <h1 className="font-serif text-5xl md:text-6xl font-medium mb-4 text-gradient">Product Catalog</h1>
                     <p className="text-lg text-muted-foreground max-w-2xl">
                         Explore our curated collection of handcrafted ceramics and home essentials
                     </p>
@@ -318,27 +319,27 @@ function ProductCard({
 }) {
     if (viewMode === "list") {
         return (
-            <div className="flex gap-6 bg-card border border-border rounded-lg p-4 hover:shadow-lg transition-shadow">
+            <div className="flex gap-6 bg-card border border-border rounded-lg p-4 hover:shadow-lg transition-shadow card-gradient-hover">
                 <div className="relative w-48 h-48 flex-shrink-0 rounded-lg overflow-hidden">
                     <Image src={product.image} alt={product.name} fill className="object-cover" />
                 </div>
                 <div className="flex-1 flex flex-col justify-between">
                     <div>
-                        <h3 className="font-serif text-2xl font-semibold mb-2">{product.name}</h3>
+                        <h3 className="font-serif text-2xl font-semibold mb-2 text-gradient">{product.name}</h3>
                         <p className="text-muted-foreground mb-4">{product.description}</p>
                         <div className="flex items-center gap-4 mb-4">
-                            <Badge variant="outline">{product.category}</Badge>
+                            <Badge variant="outline" className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/30">{product.category}</Badge>
                             <span className="text-sm text-muted-foreground">MOQ: {product.moq} units</span>
                         </div>
                     </div>
                     <div className="flex items-center justify-between">
-                        <span className="text-2xl font-bold">${product.price}</span>
+                        <span className="text-2xl font-bold text-gradient-warm">${product.price}</span>
                         <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={onToggleWishlist}>
+                            <Button variant="outline" size="sm" onClick={onToggleWishlist} className="hover-gradient">
                                 <Heart className={cn("w-4 h-4", isWishlisted && "fill-current text-primary")} />
                             </Button>
                             <Link href={`/product/${product.id}`}>
-                                <Button size="sm">View Details</Button>
+                                <Button size="sm" className="btn-gradient">View Details</Button>
                             </Link>
                         </div>
                     </div>
@@ -349,7 +350,7 @@ function ProductCard({
 
     return (
         <Link href={`/product/${product.id}`}>
-            <div className="group relative bg-card border border-border rounded-lg overflow-hidden hover:shadow-xl transition-shadow">
+            <div className="group relative bg-card border border-border rounded-lg overflow-hidden hover:shadow-xl transition-shadow card-gradient-hover">
                 <div className="relative aspect-[3/4] overflow-hidden">
                     <Image
                         src={product.image}
@@ -358,7 +359,7 @@ function ProductCard({
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     {product.badge && (
-                        <Badge className="absolute top-3 left-3 z-10">
+                        <Badge className="absolute top-3 left-3 z-10 bg-gradient-to-r from-primary to-accent text-primary-foreground">
                             {product.badge}
                         </Badge>
                     )}
@@ -370,7 +371,7 @@ function ProductCard({
                         className={cn(
                             "absolute top-3 right-3 z-10 p-2 rounded-full backdrop-blur-md transition-all",
                             isWishlisted
-                                ? "bg-primary text-primary-foreground"
+                                ? "bg-gradient-to-r from-primary to-accent text-primary-foreground"
                                 : "bg-white/80 hover:bg-white"
                         )}
                     >
@@ -378,10 +379,10 @@ function ProductCard({
                     </button>
                 </div>
                 <div className="p-4">
-                    <h3 className="font-serif text-xl font-semibold mb-1">{product.name}</h3>
+                    <h3 className="font-serif text-xl font-semibold mb-1 text-gradient">{product.name}</h3>
                     <p className="text-sm text-muted-foreground mb-3">{product.category}</p>
                     <div className="flex items-center justify-between">
-                        <span className="text-lg font-bold">${product.price}</span>
+                        <span className="text-lg font-bold text-gradient-warm">${product.price}</span>
                         <span className="text-xs text-muted-foreground">MOQ: {product.moq}</span>
                     </div>
                 </div>

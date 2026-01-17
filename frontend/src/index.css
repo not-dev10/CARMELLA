@@ -175,4 +175,187 @@
   .animate-shimmer {
     animation: shimmer 2s infinite linear;
   }
+
+  /* ============================================================================
+     GRADIENT UTILITIES
+     ============================================================================ */
+
+  /* Primary Gradients */
+  .gradient-primary {
+    @apply bg-gradient-to-r from-primary via-accent to-secondary;
+  }
+
+  .gradient-primary-vertical {
+    @apply bg-gradient-to-b from-primary via-accent to-secondary;
+  }
+
+  .gradient-primary-diagonal {
+    @apply bg-gradient-to-br from-primary via-accent to-secondary;
+  }
+
+  /* Soft Gradients */
+  .gradient-soft {
+    @apply bg-gradient-to-r from-primary/20 via-accent/20 to-secondary/20;
+  }
+
+  .gradient-soft-vertical {
+    @apply bg-gradient-to-b from-primary/20 via-accent/20 to-secondary/20;
+  }
+
+  /* Warm Gradients */
+  .gradient-warm {
+    @apply bg-gradient-to-r from-secondary via-accent to-primary;
+  }
+
+  .gradient-warm-vertical {
+    @apply bg-gradient-to-b from-secondary via-accent to-primary;
+  }
+
+  /* Cool Gradients */
+  .gradient-cool {
+    @apply bg-gradient-to-r from-primary to-accent;
+  }
+
+  /* Accent Gradients */
+  .gradient-accent {
+    @apply bg-gradient-to-r from-accent via-secondary to-primary;
+  }
+
+  /* Subtle Gradients */
+  .gradient-subtle {
+    @apply bg-gradient-to-r from-muted via-background to-muted;
+  }
+
+  .gradient-subtle-vertical {
+    @apply bg-gradient-to-b from-muted via-background to-muted;
+  }
+
+  /* Text Gradients */
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary via-accent to-secondary bg-clip-text text-transparent;
+  }
+
+  .text-gradient-warm {
+    @apply bg-gradient-to-r from-secondary via-accent to-primary bg-clip-text text-transparent;
+  }
+
+  /* Border Gradients */
+  .border-gradient {
+    @apply relative;
+    background: linear-gradient(to right, var(--primary), var(--accent), var(--secondary)) border-box;
+    border: 2px solid transparent;
+  }
+
+  /* Overlay Gradients */
+  .overlay-gradient-dark {
+    @apply bg-gradient-to-t from-black/80 via-black/40 to-transparent;
+  }
+
+  .overlay-gradient-light {
+    @apply bg-gradient-to-t from-white/80 via-white/40 to-transparent;
+  }
+
+  .overlay-gradient-primary {
+    @apply bg-gradient-to-t from-primary/80 via-primary/40 to-transparent;
+  }
+
+  /* Radial Gradients */
+  .gradient-radial {
+    background: radial-gradient(circle at center, var(--primary), var(--secondary));
+  }
+
+  .gradient-radial-soft {
+    background: radial-gradient(circle at center, var(--primary)/20, transparent);
+  }
+
+  /* Animated Gradients */
+  @keyframes gradient-shift {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  .gradient-animated {
+    background-size: 200% 200%;
+    animation: gradient-shift 6s ease infinite;
+  }
+
+  .gradient-animated-primary {
+    background-image: linear-gradient(135deg, var(--primary), var(--accent), var(--secondary), var(--primary));
+    background-size: 200% 200%;
+    animation: gradient-shift 6s ease infinite;
+  }
+
+  /* Hover Gradients */
+  .hover-gradient {
+    transition: all 0.3s duration-300;
+  }
+
+  .hover-gradient:hover {
+    background: linear-gradient(to right, var(--primary), var(--accent), var(--secondary));
+  }
+
+  /* Card Gradients */
+  .card-gradient {
+    background: linear-gradient(to bottom right, var(--card), var(--card), var(--muted) / 0.3);
+  }
+
+  .card-gradient-hover {
+    background: linear-gradient(to bottom right, var(--card), var(--card), var(--muted) / 0.3);
+    transition: all 0.3s duration-300;
+  }
+
+  .card-gradient-hover:hover {
+    background: linear-gradient(to bottom right, var(--primary) / 0.05, var(--accent) / 0.05, var(--secondary) / 0.05);
+  }
+
+  /* Button Gradients */
+  .btn-gradient {
+    background: linear-gradient(to right, var(--primary), var(--accent));
+    color: var(--primary-foreground);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s duration-300;
+  }
+
+  .btn-gradient:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+
+  .btn-gradient-warm {
+    background: linear-gradient(to right, var(--secondary), var(--accent));
+    color: var(--secondary-foreground);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s duration-300;
+  }
+
+  .btn-gradient-warm:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Section Gradients */
+  .section-gradient-bg {
+    background: linear-gradient(to bottom, var(--background), var(--muted) / 0.3, var(--background));
+  }
+
+  .section-gradient-accent {
+    background: linear-gradient(to bottom, var(--primary) / 0.05, var(--accent) / 0.05, var(--secondary) / 0.05);
+  }
+
+  /* Mesh Gradients */
+  .gradient-mesh {
+    background: linear-gradient(135deg, var(--primary)/10 0%, var(--accent)/10 25%, var(--secondary)/10 50%, var(--primary)/10 75%, var(--accent)/10 100%);
+    background-size: 400% 400%;
+  }
+
+  .gradient-mesh-animated {
+    background: linear-gradient(135deg, var(--primary)/10 0%, var(--accent)/10 25%, var(--secondary)/10 50%, var(--primary)/10 75%, var(--accent)/10 100%);
+    background-size: 400% 400%;
+    animation: gradient-shift 6s ease infinite;
+  }
 }

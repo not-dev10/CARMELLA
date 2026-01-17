@@ -1,12 +1,10 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { FadeIn } from '@/components/animations/fade-in'
 import Link from '@/components/ui/link-shim'
 
 export default function Signup() {
-  const navigate = useNavigate()
   const { signInWithGoogle, loading: authLoading } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)

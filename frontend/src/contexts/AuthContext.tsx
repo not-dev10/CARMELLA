@@ -1,10 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 
 interface AuthContextType {
-  user: User | null
-  session: Session | null
+  user: any
+  session: any
   loading: boolean
   signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>
@@ -13,33 +12,30 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<any>(null)
+  const [session, setSession] = useState<any>(null)
 
   useEffect(() => {
     if (!supabase) {
-      setLoading(false)
       return
     }
 
-    // Check current session
     supabase.auth.getSession().then(({ data: { session } }: any) => {
       setSession(session)
       setUser(session?.user ?? null)
-      setLoading(false)
+    }).catch(() => {
+      // Silently fail
     })
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-
-    return () => subscription?.unsubscribe()
+    try {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+        setSession(session)
+        setUser(session?.user ?? null)
+      })
+      return () => subscription?.unsubscribe()
+    } catch {
+      // Silently fail
+    }
   }, [])
 
   const signInWithGoogle = async () => {
@@ -76,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading: false, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   )

@@ -137,7 +137,7 @@ export function ProductShowcase() {
 
                                             {/* Product Badge */}
                                             {badgeConfig && (
-                                                <Badge className={`absolute top-3 left-3 z-20 ${badgeConfig.color} flex items-center gap-1 px-2 py-1`}>
+                                                <Badge className={`absolute top-3 left-3 z-20 ${badgeConfig.color} flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-primary to-accent`}>
                                                     <badgeConfig.icon className="w-3 h-3" />
                                                     <span className="text-xs font-semibold">{badgeConfig.label}</span>
                                                 </Badge>
@@ -159,7 +159,7 @@ export function ProductShowcase() {
                                             {/* Quick View Button */}
                                             <Button
                                                 size="sm"
-                                                className="absolute bottom-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 z-20 rounded-full gap-2"
+                                                className="absolute bottom-4 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 z-20 rounded-full gap-2 btn-gradient"
                                                 onClick={(e) => {
                                                     e.preventDefault()
                                                     e.stopPropagation()

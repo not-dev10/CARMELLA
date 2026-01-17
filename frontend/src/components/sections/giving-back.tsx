@@ -5,7 +5,7 @@ import { ParallaxImage } from "@/components/animations/parallax"
 export function GivingBack() {
     return (
         <section className="flex flex-col md:flex-row min-h-[600px]">
-            <div className="w-full md:w-1/2 bg-gradient-to-br from-secondary via-secondary to-secondary/95 text-secondary-foreground p-16 md:p-24 flex flex-col justify-center">
+            <div className="w-full md:w-1/2 bg-gradient-to-br from-secondary via-accent to-primary text-secondary-foreground p-16 md:p-24 flex flex-col justify-center">
                 <FadeIn>
                     <span className="text-xs font-bold tracking-widest uppercase opacity-80 mb-4 block">Community Impact</span>
                     <h2 className="font-serif text-4xl md:text-5xl mb-8 font-medium tracking-tight">Giving Back to the Community</h2>
@@ -14,7 +14,7 @@ export function GivingBack() {
                     </p>
                     <Button 
                         variant="outline" 
-                        className="border-secondary-foreground text-secondary-foreground hover:bg-secondary-foreground hover:text-secondary self-start rounded-full px-8 h-12 font-medium transition-all duration-300 hover:shadow-lg"
+                        className="border-secondary-foreground text-secondary-foreground hover:bg-gradient-to-r hover:from-secondary-foreground hover:to-secondary-foreground/80 hover:text-secondary self-start rounded-full px-8 h-12 font-medium transition-all duration-300 hover:shadow-lg"
                     >
                         Our Giving Program
                     </Button>

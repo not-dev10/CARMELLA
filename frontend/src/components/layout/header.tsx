@@ -18,6 +18,8 @@ import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
 import Image from "@/components/ui/image-shim"
+import { useAuth } from "@/contexts/AuthContext"
+
 
 const CATALOG_CATEGORIES = [
     {
@@ -47,6 +49,7 @@ export function Header() {
     const [searchFocused, setSearchFocused] = useState(false)
     const [scrollProgress, setScrollProgress] = useState(0)
     const [showMegaMenu, setShowMegaMenu] = useState(false)
+    const { user, signOut } = useAuth()
 
     useEffect(() => {
         const handleScroll = () => {
@@ -115,7 +118,7 @@ export function Header() {
                     </div>
 
                     {/* Logo */}
-                    <Link href="/" className="font-serif text-3xl font-medium tracking-tight text-foreground md:mr-0 mr-auto ml-4 md:ml-0 hover:text-primary transition-colors">
+                    <Link href="/" className="font-serif text-3xl font-medium tracking-tight text-gradient md:mr-0 mr-auto ml-4 md:ml-0 hover:text-primary transition-colors">
                         Carmella
                     </Link>
 
@@ -208,7 +211,7 @@ export function Header() {
                         {/* Request Catalog CTA */}
                         <Button
                             size="sm"
-                            className="hidden lg:flex bg-secondary text-secondary-foreground hover:bg-secondary/90 rounded-full gap-2"
+                            className="hidden lg:flex btn-gradient-warm rounded-full gap-2"
                         >
                             <FileText className="w-4 h-4" />
                             Request Catalog
@@ -216,35 +219,54 @@ export function Header() {
 
                         <ModeToggle />
 
-                        {/* Account Dropdown */}
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="hover:text-primary hidden sm:flex">
-                                    <User className="h-5 w-5" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56">
-                                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>
-                                    <Package className="mr-2 h-4 w-4" />
-                                    <span>Orders</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                    <Heart className="mr-2 h-4 w-4" />
-                                    <span>Wishlist</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                    <Settings className="mr-2 h-4 w-4" />
-                                    <span>Settings</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-destructive">
-                                    <LogOut className="mr-2 h-4 w-4" />
-                                    <span>Logout</span>
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                        {/* Account Dropdown - Only show if logged in */}
+                        {user ? (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="hover:text-primary hidden sm:flex">
+                                        <User className="h-5 w-5" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56">
+                                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                                    <div className="text-xs text-muted-foreground px-2 py-1">{user.email}</div>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem>
+                                        <Package className="mr-2 h-4 w-4" />
+                                        <span>Orders</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem>
+                                        <Heart className="mr-2 h-4 w-4" />
+                                        <span>Wishlist</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem>
+                                        <Settings className="mr-2 h-4 w-4" />
+                                        <span>Settings</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem 
+                                        className="text-destructive cursor-pointer"
+                                        onClick={signOut}
+                                    >
+                                        <LogOut className="mr-2 h-4 w-4" />
+                                        <span>Logout</span>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        ) : (
+                            <div className="flex items-center gap-2 hidden sm:flex">
+                                <Link href="/login">
+                                    <Button variant="outline" size="sm">
+                                        Sign In
+                                    </Button>
+                                </Link>
+                                <Link href="/signup">
+                                    <Button size="sm" className="btn-gradient">
+                                        Sign Up
+                                    </Button>
+                                </Link>
+                            </div>
+                        )}
 
                         <Button variant="ghost" size="icon" className="relative hover:text-primary">
                             <ShoppingBag className="h-5 w-5" />

@@ -103,7 +103,7 @@ export function HeroSection() {
                         Elevate your inventory with our curated B2B collections.
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 min-w-[160px] h-14 text-base rounded-full border-0 shadow-lg hover:shadow-xl transition-all">
+                        <Button size="lg" className="btn-gradient min-w-[160px] h-14 text-base rounded-full border-0 shadow-lg hover:shadow-xl transition-all">
                             Shop Wholesale
                         </Button>
                         <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-black min-w-[160px] h-14 text-base rounded-full bg-transparent backdrop-blur-sm">

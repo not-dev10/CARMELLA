@@ -28,7 +28,7 @@ export function Newsletter() {
                             placeholder="Enter your email"
                             className="bg-primary-foreground/15 border-primary-foreground/30 text-primary-foreground placeholder:text-primary-foreground/60 h-14 rounded-full px-6 backdrop-blur-sm transition-all duration-300 focus:bg-primary-foreground/25 focus:border-primary-foreground/50 focus:outline-none"
                         />
-                        <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90 h-14 px-8 rounded-full font-medium transition-all duration-300 hover:shadow-lg hover:scale-105">
+                        <Button className="btn-gradient-warm h-14 px-8 rounded-full font-medium transition-all duration-300 hover:shadow-lg hover:scale-105">
                             Subscribe
                         </Button>
                     </div>

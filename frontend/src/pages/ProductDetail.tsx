@@ -1,9 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useParams } from "react-router-dom"
-import { motion } from "framer-motion"
-import { Heart, ShoppingCart, Package, TrendingUp, Shield, Truck, ChevronLeft, ChevronRight, Star } from "lucide-react"
+import { Heart, ShoppingCart, Package, Shield, Truck, ChevronLeft, ChevronRight, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Image from "@/components/ui/image-shim"
@@ -44,7 +42,6 @@ const PRODUCT = {
 }
 
 export default function ProductDetail() {
-    const { id } = useParams()
     const [currentImage, setCurrentImage] = useState(0)
     const [quantity, setQuantity] = useState(PRODUCT.moq)
     const [isWishlisted, setIsWishlisted] = useState(false)

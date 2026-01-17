@@ -1,6 +1,5 @@
 "use client"
 
-import { motion } from "framer-motion"
 import { Award, Users, Heart, Leaf, Globe, TrendingUp } from "lucide-react"
 import Image from "@/components/ui/image-shim"
 import { FadeIn } from "@/components/animations/fade-in"

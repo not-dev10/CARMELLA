@@ -5,7 +5,6 @@ import { motion } from "framer-motion"
 import { Mail, Phone, MapPin, Send, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FadeIn } from "@/components/animations/fade-in"
-import { cn } from "@/lib/utils"
 
 const CONTACT_INFO = [
     {

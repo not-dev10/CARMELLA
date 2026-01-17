@@ -122,7 +122,7 @@ function ReviewCard({ review, index }: { review: any; index: number }) {
         >
             {/* Top accent line with glow */}
             <div className={cn(
-                "absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-secondary to-accent opacity-60 group-hover:opacity-100 transition-all duration-300 rounded-t-xl",
+                "absolute top-0 left-0 right-0 h-1 gradient-primary opacity-60 group-hover:opacity-100 transition-all duration-300 rounded-t-xl",
                 isDark && "group-hover:shadow-[0_0_12px_rgba(139,115,85,0.6)]"
             )} />
 
@@ -315,7 +315,7 @@ export function Testimonials() {
 
                     <div className="flex flex-col items-center gap-4">
                         <div className={cn(
-                            "h-1.5 w-24 bg-gradient-to-r from-primary via-secondary to-accent rounded-full blur-sm",
+                            "h-1.5 w-24 gradient-primary rounded-full blur-sm",
                             isDark ? "shadow-[0_0_12px_rgba(139,115,85,0.4)]" : "shadow-[0_0_12px_rgba(139,115,85,0.5)]"
                         )} />
                         <p className={cn(

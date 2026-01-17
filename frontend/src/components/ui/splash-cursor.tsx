@@ -2,32 +2,40 @@
 import { useEffect, useRef } from 'react';
 
 export function SplashCursor() {
-  const canvasRef = useRef(null);
-  const animationFrameId = useRef(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationFrameId = useRef<number | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     let isActive = true;
-    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-    if (!gl) return;
+    const glContext = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    if (!glContext) return;
 
-    gl.clearColor(0, 0, 0, 0);
+    glContext.clearColor(0, 0, 0, 0);
 
     function resizeCanvas() {
+      if (!canvas || !glContext) return;
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      gl.viewport(0, 0, canvas.width, canvas.height);
+      glContext.viewport(0, 0, canvas.width, canvas.height);
     }
 
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
     let mouseX = 0, mouseY = 0;
-    const particles = [];
+    const particles: Array<{
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      life: number;
+      size: number;
+    }> = [];
 
-    function createParticle(x, y) {
+    function createParticle(x: number, y: number) {
       particles.push({
         x, y,
         vx: (Math.random() - 0.5) * 8,
@@ -37,7 +45,7 @@ export function SplashCursor() {
       });
     }
 
-    function handleMouseMove(e) {
+    function handleMouseMove(e: MouseEvent) {
       mouseX = e.clientX;
       mouseY = e.clientY;
       for (let i = 0; i < 3; i++) {
@@ -48,9 +56,9 @@ export function SplashCursor() {
     window.addEventListener('mousemove', handleMouseMove);
 
     function animate() {
-      if (!isActive) return;
+      if (!isActive || !glContext) return;
 
-      gl.clear(gl.COLOR_BUFFER_BIT);
+      glContext.clear(glContext.COLOR_BUFFER_BIT);
 
       particles.forEach((p, i) => {
         p.x += p.vx;

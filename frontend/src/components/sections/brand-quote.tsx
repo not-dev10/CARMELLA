@@ -8,7 +8,7 @@ export function BrandQuote() {
         <section className="relative bg-gradient-to-b from-background via-background to-primary/5 py-40 px-6 overflow-hidden">
             <div className="container mx-auto max-w-4xl text-center relative z-10">
                 <FadeIn direction="up">
-                    <blockquote className="font-serif text-4xl md:text-6xl lg:text-7xl leading-tight text-foreground mb-12 font-medium tracking-tight">
+                    <blockquote className="font-serif text-4xl md:text-6xl lg:text-7xl leading-tight text-gradient mb-12 font-medium tracking-tight">
                         "We believe that every object in your home should tell a story.
                         Our mission is to bring intention and beauty back into everyday rituals."
                     </blockquote>
