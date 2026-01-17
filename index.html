@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Carmella Particle Logo</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: linear-gradient(135deg, #0a1428 0%, #1a2a4e 50%, #0f1f3f 100%);
+      font-family: 'Arial', sans-serif;
+    }
+
+    #info {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: #ffffff;
+      font-size: 14px;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+      z-index: 10;
+      animation: fadeIn 1s ease-in;
+    }
+
+    #stats {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      color: #ffffff;
+      font-size: 12px;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+      z-index: 10;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 10px 15px;
+      border-radius: 5px;
+      border: 1px solid #ffffff;
+      backdrop-filter: blur(10px);
+    }
+
+    #clickHint {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      color: #ffffff;
+      font-size: 12px;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+      z-index: 10;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div id="info">
+    <p>✨ Move your cursor to interact • Click to explode</p>
+  </div>
+  <div id="clickHint">
+    💥 Click anywhere for explosion effect
+  </div>
+  <div id="stats">
+    <p>Particles: <span id="particleCount">0</span></p>
+    <p>FPS: <span id="fps">0</span></p>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
