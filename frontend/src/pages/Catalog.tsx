@@ -1,107 +1,39 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { SlidersHorizontal, Grid3x3, List, Heart } from "lucide-react"
+import { SlidersHorizontal, Grid3x3, List, Heart, Lock, Package } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Image from "@/components/ui/image-shim"
 import Link from "@/components/ui/link-shim"
 import { cn } from "@/lib/utils"
+import { productsAPI, categoriesAPI } from "@/lib/api"
 
-// Mock product data
-const PRODUCTS = [
-    {
-        id: 1,
-        name: "Terra Ceramic Vase",
-        category: "Decor",
-        price: 45,
-        image: "https://images.unsplash.com/photo-1581783342308-f792ca11df53?w=600&h=800&fit=crop",
-        badge: "new",
-        stock: "in-stock",
-        moq: 12,
-        description: "Handcrafted ceramic vase with organic texture"
-    },
-    {
-        id: 2,
-        name: "Minimalist Planter",
-        category: "Accessories",
-        price: 32,
-        image: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=600&h=800&fit=crop",
-        badge: null,
-        stock: "in-stock",
-        moq: 36,
-        description: "Modern minimalist planter for indoor plants"
-    },
-    {
-        id: 3,
-        name: "Stoneware Mug Set",
-        category: "Tableware",
-        price: 28,
-        image: "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=600&h=800&fit=crop",
-        badge: "bestseller",
-        stock: "in-stock",
-        moq: 24,
-        description: "Set of 4 handcrafted stoneware mugs"
-    },
-    {
-        id: 4,
-        name: "Artisan Bowl Collection",
-        category: "Tableware",
-        price: 52,
-        image: "https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=600&h=800&fit=crop",
-        badge: "eco",
-        stock: "low-stock",
-        moq: 18,
-        description: "Set of 6 artisan ceramic bowls"
-    },
-    {
-        id: 5,
-        name: "Linen Table Runner",
-        category: "Textiles",
-        price: 38,
-        image: "https://images.unsplash.com/photo-1595306669968-3d5272a445bd?w=600&h=800&fit=crop",
-        badge: "eco",
-        stock: "in-stock",
-        moq: 50,
-        description: "100% organic linen table runner"
-    },
-    {
-        id: 6,
-        name: "Ceramic Dinner Plates",
-        category: "Tableware",
-        price: 65,
-        image: "https://images.unsplash.com/photo-1578500494198-246f612d3b3d?w=600&h=800&fit=crop",
-        badge: "bestseller",
-        stock: "in-stock",
-        moq: 24,
-        description: "Set of 8 handmade dinner plates"
-    },
-    {
-        id: 7,
-        name: "Decorative Candle Holders",
-        category: "Decor",
-        price: 42,
-        image: "https://images.unsplash.com/photo-1602874801006-94c0f0c1f1cc?w=600&h=800&fit=crop",
-        badge: "new",
-        stock: "in-stock",
-        moq: 30,
-        description: "Set of 3 ceramic candle holders"
-    },
-    {
-        id: 8,
-        name: "Handwoven Placemats",
-        category: "Textiles",
-        price: 29,
-        image: "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=600&h=800&fit=crop",
-        badge: "eco",
-        stock: "in-stock",
-        moq: 48,
-        description: "Set of 4 handwoven placemats"
-    },
-]
+interface Product {
+    id: string
+    name: string
+    slug: string
+    category_id: string
+    base_price: number | null
+    sale_price?: number | null
+    sale_percentage?: number | null
+    b2b_price?: number | null
+    moq?: number | null
+    image_url: string
+    badge?: string
+    stock_quantity: number
+    description: string
+    is_featured: boolean
+    pricingLocked?: boolean
+}
 
-const CATEGORIES = ["All", "Tableware", "Decor", "Textiles", "Accessories"]
+interface Category {
+    id: string
+    name: string
+    slug: string
+}
+
 const SORT_OPTIONS = [
     { value: "featured", label: "Featured" },
     { value: "price-low", label: "Price: Low to High" },
@@ -110,40 +42,80 @@ const SORT_OPTIONS = [
 ]
 
 export default function Catalog() {
+    const [products, setProducts] = useState<Product[]>([])
+    const [categories, setCategories] = useState<Category[]>([])
     const [selectedCategory, setSelectedCategory] = useState("All")
     const [sortBy, setSortBy] = useState("featured")
     const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
     const [showFilters, setShowFilters] = useState(false)
-    const [wishlist, setWishlist] = useState<number[]>([])
+    const [wishlist, setWishlist] = useState<string[]>([])
+    const [loading, setLoading] = useState(true)
+
+    // Fetch products and categories
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [productsData, categoriesData] = await Promise.all([
+                    productsAPI.getAll(),
+                    categoriesAPI.getAll()
+                ])
+                setProducts(productsData.products || [])
+                setCategories(categoriesData.categories || [])
+            } catch (error) {
+                console.error("Failed to fetch data:", error)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchData()
+    }, [])
 
     // Filter and sort products
     const filteredProducts = useMemo(() => {
-        let filtered = PRODUCTS
+        let filtered = products
 
         // Filter by category
         if (selectedCategory !== "All") {
-            filtered = filtered.filter(p => p.category === selectedCategory)
+            const categoryId = categories.find(c => c.slug === selectedCategory)?.id
+            if (categoryId) {
+                filtered = filtered.filter(p => p.category_id === categoryId)
+            }
         }
 
         // Sort
         switch (sortBy) {
             case "price-low":
-                filtered = [...filtered].sort((a, b) => a.price - b.price)
+                filtered = [...filtered].sort((a, b) => a.base_price - b.base_price)
                 break
             case "price-high":
-                filtered = [...filtered].sort((a, b) => b.price - a.price)
+                filtered = [...filtered].sort((a, b) => b.base_price - a.base_price)
                 break
             case "name":
                 filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name))
                 break
+            case "featured":
+                filtered = [...filtered].sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0))
+                break
         }
 
         return filtered
-    }, [selectedCategory, sortBy])
+    }, [products, categories, selectedCategory, sortBy])
 
-    const toggleWishlist = (id: number) => {
+    const toggleWishlist = (id: string) => {
         setWishlist(prev =>
             prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        )
+    }
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Loading products...</p>
+                </div>
+            </div>
         )
     }
 
@@ -167,18 +139,29 @@ export default function Catalog() {
                         <div className="sticky top-24">
                             <h3 className="font-serif text-xl font-semibold mb-4">Categories</h3>
                             <div className="space-y-2">
-                                {CATEGORIES.map(category => (
+                                <button
+                                    onClick={() => setSelectedCategory("All")}
+                                    className={cn(
+                                        "w-full text-left px-4 py-2 rounded-lg transition-colors",
+                                        selectedCategory === "All"
+                                            ? "bg-primary text-primary-foreground"
+                                            : "hover:bg-muted"
+                                    )}
+                                >
+                                    All
+                                </button>
+                                {categories.map(category => (
                                     <button
-                                        key={category}
-                                        onClick={() => setSelectedCategory(category)}
+                                        key={category.id}
+                                        onClick={() => setSelectedCategory(category.slug)}
                                         className={cn(
                                             "w-full text-left px-4 py-2 rounded-lg transition-colors",
-                                            selectedCategory === category
+                                            selectedCategory === category.slug
                                                 ? "bg-primary text-primary-foreground"
                                                 : "hover:bg-muted"
                                         )}
                                     >
-                                        {category}
+                                        {category.name}
                                     </button>
                                 ))}
                             </div>
@@ -256,14 +239,21 @@ export default function Catalog() {
                                     <div className="bg-muted/30 p-4 rounded-lg">
                                         <h3 className="font-semibold mb-3">Categories</h3>
                                         <div className="flex flex-wrap gap-2">
-                                            {CATEGORIES.map(category => (
+                                            <Badge
+                                                variant={selectedCategory === "All" ? "default" : "outline"}
+                                                className="cursor-pointer"
+                                                onClick={() => setSelectedCategory("All")}
+                                            >
+                                                All
+                                            </Badge>
+                                            {categories.map(category => (
                                                 <Badge
-                                                    key={category}
-                                                    variant={selectedCategory === category ? "default" : "outline"}
+                                                    key={category.id}
+                                                    variant={selectedCategory === category.slug ? "default" : "outline"}
                                                     className="cursor-pointer"
-                                                    onClick={() => setSelectedCategory(category)}
+                                                    onClick={() => setSelectedCategory(category.slug)}
                                                 >
-                                                    {category}
+                                                    {category.name}
                                                 </Badge>
                                             ))}
                                         </div>
@@ -312,34 +302,102 @@ function ProductCard({
     isWishlisted,
     onToggleWishlist
 }: {
-    product: typeof PRODUCTS[0]
+    product: Product
     viewMode: "grid" | "list"
     isWishlisted: boolean
     onToggleWishlist: () => void
 }) {
+    const displayPrice = product.sale_price || product.base_price
+
     if (viewMode === "list") {
         return (
             <div className="flex gap-6 bg-card border border-border rounded-lg p-4 hover:shadow-lg transition-shadow card-gradient-hover">
                 <div className="relative w-48 h-48 flex-shrink-0 rounded-lg overflow-hidden">
-                    <Image src={product.image} alt={product.name} fill className="object-cover" />
+                    <Image src={product.image_url} alt={product.name} fill className="object-cover" />
                 </div>
                 <div className="flex-1 flex flex-col justify-between">
                     <div>
                         <h3 className="font-serif text-2xl font-semibold mb-2 text-gradient">{product.name}</h3>
                         <p className="text-muted-foreground mb-4">{product.description}</p>
                         <div className="flex items-center gap-4 mb-4">
-                            <Badge variant="outline" className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/30">{product.category}</Badge>
-                            <span className="text-sm text-muted-foreground">MOQ: {product.moq} units</span>
+                            <Badge variant="outline" className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/30">
+                                {product.stock_quantity > 0 ? "In Stock" : "Out of Stock"}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">Stock: {product.stock_quantity}</span>
                         </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                        <span className="text-2xl font-bold text-gradient-warm">${product.price}</span>
-                        <div className="flex gap-2">
+                    <div className="space-y-3">
+                        {/* Pricing Tier Section */}
+                        {product.pricingLocked ? (
+                            // GUEST TIER: Pricing Locked
+                            <div className="p-3 rounded-lg bg-gradient-to-r from-primary/20 to-accent/20 border-2 border-primary/30">
+                                <div className="flex items-center gap-2">
+                                    <Lock className="w-5 h-5 text-primary" />
+                                    <div>
+                                        <p className="text-xs font-bold uppercase tracking-wider text-primary">Pricing Locked</p>
+                                        <p className="text-sm text-foreground">Sign in to see prices</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                {/* LOGGED-IN TIER: Regular Pricing */}
+                                <div className="p-3 rounded-lg bg-gradient-to-r from-primary/10 to-transparent border border-primary/30">
+                                    <div className="flex items-baseline justify-between gap-2">
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="text-2xl font-bold text-primary">
+                                                {product.sale_price !== null && product.sale_price !== undefined
+                                                    ? `$${product.sale_price.toFixed(2)}`
+                                                    : product.base_price !== null && product.base_price !== undefined
+                                                        ? `$${product.base_price.toFixed(2)}`
+                                                        : "Contact for price"}
+                                            </span>
+                                            {product.sale_price && product.base_price && (
+                                                <span className="text-sm text-muted-foreground line-through">
+                                                    ${product.base_price.toFixed(2)}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {product.sale_percentage && product.sale_percentage > 0 && (
+                                            <span className="px-2 py-1 bg-destructive text-destructive-foreground text-xs font-bold rounded">
+                                                {product.sale_percentage.toFixed(0)}% OFF
+                                            </span>
+                                        )}
+                                    </div>
+                                    {product.moq && product.moq > 0 && (
+                                        <p className="text-xs text-muted-foreground mt-2">
+                                            Minimum Order: <span className="font-semibold text-foreground">{product.moq} units</span>
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* B2B TIER: Bulk Pricing Message */}
+                                <div className="p-3 rounded-lg bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/40">
+                                    <div className="flex items-start gap-3">
+                                        <Package className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                                        <div>
+                                            <p className="text-xs font-bold uppercase tracking-wider text-amber-700">B2B Pricing</p>
+                                            {product.b2b_price && product.b2b_price > 0 ? (
+                                                <p className="text-sm text-amber-900 font-semibold">
+                                                    Bulk: ${product.b2b_price.toFixed(2)} (50+ units)
+                                                </p>
+                                            ) : (
+                                                <Link href="/b2b-request" className="text-sm text-amber-700 font-semibold hover:text-amber-900">
+                                                    📊 Request Bulk Pricing →
+                                                </Link>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                        {/* Action Buttons */}
+                        <div className="flex gap-2 pt-2">
                             <Button variant="outline" size="sm" onClick={onToggleWishlist} className="hover-gradient">
                                 <Heart className={cn("w-4 h-4", isWishlisted && "fill-current text-primary")} />
                             </Button>
-                            <Link href={`/product/${product.id}`}>
-                                <Button size="sm" className="btn-gradient">View Details</Button>
+                            <Link href={`/product/${product.id}`} className="flex-1">
+                                <Button size="sm" className="btn-gradient w-full">View Details</Button>
                             </Link>
                         </div>
                     </div>
@@ -350,10 +408,10 @@ function ProductCard({
 
     return (
         <Link href={`/product/${product.id}`}>
-            <div className="group relative bg-card border border-border rounded-lg overflow-hidden hover:shadow-xl transition-shadow card-gradient-hover">
+            <div className="group relative bg-card border border-border rounded-lg overflow-hidden hover:shadow-xl transition-shadow card-gradient-hover flex flex-col h-full">
                 <div className="relative aspect-[3/4] overflow-hidden">
                     <Image
-                        src={product.image}
+                        src={product.image_url}
                         alt={product.name}
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -378,12 +436,67 @@ function ProductCard({
                         <Heart className={cn("w-4 h-4", isWishlisted && "fill-current")} />
                     </button>
                 </div>
-                <div className="p-4">
-                    <h3 className="font-serif text-xl font-semibold mb-1 text-gradient">{product.name}</h3>
-                    <p className="text-sm text-muted-foreground mb-3">{product.category}</p>
-                    <div className="flex items-center justify-between">
-                        <span className="text-lg font-bold text-gradient-warm">${product.price}</span>
-                        <span className="text-xs text-muted-foreground">MOQ: {product.moq}</span>
+                <div className="p-4 flex-1 flex flex-col">
+                    <h3 className="font-serif text-lg font-semibold mb-1 text-gradient line-clamp-2">{product.name}</h3>
+                    <p className="text-xs text-muted-foreground mb-3">
+                        {product.stock_quantity > 0 ? "In Stock" : "Out of Stock"}
+                    </p>
+                    <div className="space-y-2 flex-1">
+                        {/* Pricing Tier Section */}
+                        {product.pricingLocked ? (
+                            // GUEST TIER: Pricing Locked
+                            <div className="p-2 rounded-lg bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30">
+                                <div className="flex items-center gap-2">
+                                    <Lock className="w-4 h-4 text-primary flex-shrink-0" />
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-bold uppercase tracking-wider text-primary leading-tight">Locked</p>
+                                        <p className="text-xs text-foreground leading-tight">Sign in</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                {/* LOGGED-IN TIER: Regular Pricing */}
+                                <div className="p-2 rounded-lg bg-gradient-to-r from-primary/10 to-transparent border border-primary/30">
+                                    <div className="flex items-baseline justify-between gap-1">
+                                        <span className="text-xl font-bold text-primary truncate">
+                                            {product.sale_price !== null && product.sale_price !== undefined
+                                                ? `$${product.sale_price.toFixed(2)}`
+                                                : product.base_price !== null && product.base_price !== undefined
+                                                    ? `$${product.base_price.toFixed(2)}`
+                                                    : "Contact"}
+                                        </span>
+                                        {product.sale_percentage && product.sale_percentage > 0 && (
+                                            <span className="px-1.5 py-0.5 bg-destructive text-destructive-foreground text-xs font-bold rounded whitespace-nowrap">
+                                                {product.sale_percentage.toFixed(0)}% OFF
+                                            </span>
+                                        )}
+                                    </div>
+                                    {product.sale_price && product.base_price && (
+                                        <span className="text-xs text-muted-foreground line-through">
+                                            ${product.base_price.toFixed(2)}
+                                        </span>
+                                    )}
+                                </div>
+
+                                {/* B2B TIER: Bulk Pricing Message */}
+                                <div className="p-2 rounded-lg bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/40">
+                                    <div className="flex items-start gap-2">
+                                        <Package className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
+                                        <div className="min-w-0">
+                                            <p className="text-xs font-bold uppercase tracking-wider text-amber-700 leading-tight">B2B</p>
+                                            {product.b2b_price && product.b2b_price > 0 ? (
+                                                <p className="text-xs text-amber-900 font-semibold leading-tight">
+                                                    ${product.b2b_price.toFixed(2)}
+                                                </p>
+                                            ) : (
+                                                <p className="text-xs text-amber-700 font-semibold leading-tight">Request</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>

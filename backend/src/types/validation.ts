@@ -39,3 +39,32 @@ export const productSchema = z.object({
   moq: z.number().int().positive(),
   stock: z.number().int().nonnegative(),
 });
+
+export const createOrderSchema = z.object({
+  shippingAddress: z.string().min(10),
+});
+
+export const updateOrderStatusSchema = z.object({
+  status: z.enum(["pending", "confirmed", "shipped", "delivered", "cancelled"]),
+});
+
+export const createReviewSchema = z.object({
+  rating: z.number().int().min(1).max(5),
+  title: z.string().min(3).max(100),
+  comment: z.string().min(10).max(1000),
+});
+
+export const updateReviewSchema = z.object({
+  rating: z.number().int().min(1).max(5).optional(),
+  title: z.string().min(3).max(100).optional(),
+  comment: z.string().min(10).max(1000).optional(),
+});
+
+export const addToCartSchema = z.object({
+  productId: z.string().uuid(),
+  quantity: z.number().int().positive(),
+});
+
+export const updateCartItemSchema = z.object({
+  quantity: z.number().int().positive(),
+});

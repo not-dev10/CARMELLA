@@ -8,6 +8,12 @@ import productRoutes from "./routes/products.js";
 import userRoutes from "./routes/users.js";
 import categoryRoutes from "./routes/categories.js";
 import adminRoutes from "./routes/admin.js";
+import cartRoutes from "./routes/cart.js";
+import orderRoutes from "./routes/orders.js";
+import wishlistRoutes from "./routes/wishlist.js";
+import reviewRoutes from "./routes/reviews.js";
+import analyticsRoutes from "./routes/analytics.js";
+import homepageRoutes from "./routes/homepage.js";
 
 const app = express();
 
@@ -27,6 +33,12 @@ app.use("/api/products", productRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/wishlist", wishlistRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/admin/analytics", analyticsRoutes);
+app.use("/api/homepage", homepageRoutes);
 
 // 404
 app.use((req, res) => {

@@ -16,7 +16,7 @@ export async function getCategories(req: Request, res: Response) {
       return res.status(400).json({ error: error.message });
     }
 
-    return res.json(data);
+    return res.json({ categories: data });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }

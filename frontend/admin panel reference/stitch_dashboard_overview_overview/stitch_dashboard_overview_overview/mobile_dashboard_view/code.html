@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Carmella - Mobile Admin Dashboard</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#6b7051",
+                "background-light": "#fdfaf6", // Soft Cream
+                "background-dark": "#1a1b17",
+              },
+              fontFamily: {
+                "display": ["Inter", "sans-serif"],
+                "serif": ["Georgia", "serif"]
+              },
+              borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-[#151613] dark:text-gray-100">
+<!-- Sticky Top Navigation -->
+<header class="sticky top-0 z-50 flex items-center justify-between px-4 py-3 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-[#eeeeec] dark:border-white/10">
+<div class="flex items-center gap-3">
+<button class="p-2 -ml-2 rounded-lg hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-primary">menu</span>
+</button>
+<div class="flex items-center gap-2">
+<div class="size-6 text-primary">
+<svg fill="currentColor" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M44 11.2727C44 14.0109 39.8386 16.3957 33.69 17.6364C39.8386 18.877 44 21.2618 44 24C44 26.7382 39.8386 29.123 33.69 30.3636C39.8386 31.6043 44 33.9891 44 36.7273C44 40.7439 35.0457 44 24 44C12.9543 44 4 40.7439 4 36.7273C4 33.9891 8.16144 31.6043 14.31 30.3636C8.16144 29.123 4 26.7382 4 24C4 21.2618 8.16144 18.877 14.31 17.6364C8.16144 16.3957 4 14.0109 4 11.2727C4 7.25611 12.9543 4 24 4C35.0457 4 44 7.25611 44 11.2727Z"></path>
+</svg>
+</div>
+<h2 class="text-xl font-serif font-bold tracking-tight text-[#151613] dark:text-white">Carmella</h2>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="relative size-10 flex items-center justify-center rounded-lg bg-primary/5 text-primary">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 size-2 bg-red-500 rounded-full border-2 border-white dark:border-background-dark"></span>
+</button>
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-primary/20" data-alt="User profile avatar" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBJQNV59q_ECvpaUJhDJ8Poh256sCnM2GVDRlHmvoPmyr76Ac3Z6mbFtvK7TZV2i4Co2yggb0_TUpX5lkkGNPfXqYFSwONt6OjrSgyVllhSZY8_GKnfi0_tgxiz_wrGj6DQhSyB9vKVDKticyAY6Zv57oeobniu49DZLeCGcsiKg_RdTCsoMYsatkLMRoyLB_CMEGEpg2jQ-4wtz7MTQ8sByj0i7OXN4tdNjYnzI8Hay6B4WMQ_X2af7FcBiI8s2ZaJsCNB9J6QGJOe");'></div>
+</div>
+</header>
+<main class="flex flex-col gap-4 p-4 max-w-md mx-auto">
+<!-- Page Heading -->
+<div class="py-2">
+<h1 class="text-2xl font-bold leading-tight">Dashboard Overview</h1>
+<p class="text-[#777a6c] dark:text-gray-400 text-sm">Wholesale ceramics management</p>
+</div>
+<!-- Stats Grid (Stacked for Mobile) -->
+<div class="flex flex-col gap-3">
+<div class="flex flex-col gap-1 bg-white dark:bg-zinc-900 rounded-xl p-5 border border-[#ddddd9] dark:border-white/5 shadow-sm">
+<div class="flex justify-between items-start">
+<p class="text-[#777a6c] dark:text-gray-400 text-sm font-medium">Total Sales</p>
+<span class="material-symbols-outlined text-primary/40">payments</span>
+</div>
+<p class="text-2xl font-bold tracking-tight">$42,500.00</p>
+<div class="flex items-center gap-1 mt-1">
+<span class="material-symbols-outlined text-green-600 text-sm">trending_up</span>
+<p class="text-green-600 text-sm font-semibold">+15.2%</p>
+<p class="text-xs text-[#777a6c] dark:text-gray-500 ml-1">vs last month</p>
+</div>
+</div>
+<div class="flex flex-col gap-1 bg-white dark:bg-zinc-900 rounded-xl p-5 border border-[#ddddd9] dark:border-white/5 shadow-sm">
+<div class="flex justify-between items-start">
+<p class="text-[#777a6c] dark:text-gray-400 text-sm font-medium">Pending Approvals</p>
+<span class="material-symbols-outlined text-primary/40">person_add</span>
+</div>
+<p class="text-2xl font-bold tracking-tight">12</p>
+<p class="text-xs text-[#777a6c] dark:text-gray-500 mt-1">Requires manual review</p>
+</div>
+<div class="flex flex-col gap-1 bg-white dark:bg-zinc-900 rounded-xl p-5 border border-[#ddddd9] dark:border-white/5 shadow-sm">
+<div class="flex justify-between items-start">
+<p class="text-[#777a6c] dark:text-gray-400 text-sm font-medium">Active Orders</p>
+<span class="material-symbols-outlined text-primary/40">inventory_2</span>
+</div>
+<div class="flex items-end gap-3">
+<p class="text-2xl font-bold tracking-tight">28</p>
+<div class="flex items-center gap-1 mb-1">
+<span class="material-symbols-outlined text-green-600 text-sm">trending_up</span>
+<p class="text-green-600 text-sm font-semibold">+5%</p>
+</div>
+</div>
+<p class="text-xs text-[#777a6c] dark:text-gray-500 mt-1">In processing queue</p>
+</div>
+</div>
+<!-- Revenue Trends Section -->
+<div class="bg-white dark:bg-zinc-900 rounded-xl border border-[#ddddd9] dark:border-white/5 shadow-sm overflow-hidden">
+<div class="px-5 py-4 border-b border-[#eeeeec] dark:border-white/5 flex justify-between items-center">
+<h3 class="font-bold text-lg">Revenue Trends</h3>
+<button class="text-primary text-sm font-medium">View Report</button>
+</div>
+<div class="p-5">
+<div class="flex flex-col gap-1">
+<p class="text-[#777a6c] dark:text-gray-400 text-xs font-medium uppercase tracking-wider">Monthly Sales</p>
+<div class="flex items-center gap-2">
+<p class="text-3xl font-bold tracking-tight">$12,482</p>
+<span class="text-green-600 text-sm font-semibold px-2 py-0.5 bg-green-50 dark:bg-green-900/20 rounded-full">+8.2%</span>
+</div>
+</div>
+<div class="mt-6">
+<!-- Simplified Mobile Chart -->
+<svg fill="none" height="120" preserveaspectratio="none" viewbox="0 0 478 150" width="100%" xmlns="http://www.w3.org/2000/svg">
+<path d="M0 109C18.1538 109 18.1538 21 36.3077 21C54.4615 21 54.4615 41 72.6154 41C90.7692 41 90.7692 93 108.923 93C127.077 93 127.077 33 145.231 33C163.385 33 163.385 101 181.538 101C199.692 101 199.692 61 217.846 61C236 61 236 45 254.154 45C272.308 45 272.308 121 290.462 121C308.615 121 308.615 149 326.769 149C344.923 149 344.923 1 363.077 1C381.231 1 381.231 81 399.385 81C417.538 81 417.538 129 435.692 129C453.846 129 453.846 25 472 25V149H0V109Z" fill="url(#mobile_chart_grad)"></path>
+<path d="M0 109C18.1538 109 18.1538 21 36.3077 21C54.4615 21 54.4615 41 72.6154 41C90.7692 41 90.7692 93 108.923 93C127.077 93 127.077 33 145.231 33C163.385 33 163.385 101 181.538 101C199.692 101 199.692 61 217.846 61C236 61 236 45 254.154 45C272.308 45 272.308 121 290.462 121C308.615 121 308.615 149 326.769 149C344.923 149 344.923 1 363.077 1C381.231 1 381.231 81 399.385 81C417.538 81 417.538 129 435.692 129C453.846 129 453.846 25 472 25" stroke="#6b7051" stroke-linecap="round" stroke-width="4"></path>
+<defs>
+<lineargradient id="mobile_chart_grad" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#6b7051" stop-opacity="0.2"></stop>
+<stop offset="100%" stop-color="#6b7051" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+</svg>
+<div class="flex justify-between mt-2 px-1 text-[10px] font-bold text-[#777a6c] dark:text-gray-500 uppercase">
+<span>Jan</span>
+<span>Feb</span>
+<span>Mar</span>
+<span>Apr</span>
+<span>May</span>
+<span>Jun</span>
+</div>
+</div>
+</div>
+</div>
+<!-- B2B Approval Queue -->
+<div class="bg-white dark:bg-zinc-900 rounded-xl border border-[#ddddd9] dark:border-white/5 shadow-sm">
+<div class="px-5 py-4 border-b border-[#eeeeec] dark:border-white/5">
+<h3 class="font-bold text-lg">B2B Approvals</h3>
+</div>
+<div class="divide-y divide-[#eeeeec] dark:divide-white/5">
+<!-- Approval Item 1 -->
+<div class="p-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold">ST</div>
+<div>
+<p class="font-semibold text-sm">Stone &amp; Texture Ltd.</p>
+<p class="text-xs text-[#777a6c] dark:text-gray-500">Retailer • London, UK</p>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="size-8 flex items-center justify-center rounded-lg bg-green-50 text-green-600 hover:bg-green-100 border border-green-200">
+<span class="material-symbols-outlined text-[20px]">check</span>
+</button>
+<button class="size-8 flex items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border border-red-200">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+</div>
+<!-- Approval Item 2 -->
+<div class="p-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold">GA</div>
+<div>
+<p class="font-semibold text-sm">Graceful Artisans</p>
+<p class="text-xs text-[#777a6c] dark:text-gray-500">Interior Studio • NY, USA</p>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="size-8 flex items-center justify-center rounded-lg bg-green-50 text-green-600 hover:bg-green-100 border border-green-200">
+<span class="material-symbols-outlined text-[20px]">check</span>
+</button>
+<button class="size-8 flex items-center justify-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 border border-red-200">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+</div>
+</div>
+<button class="w-full py-3 text-sm font-semibold text-primary border-t border-[#eeeeec] dark:border-white/5">
+                View All Pending (12)
+            </button>
+</div>
+<!-- Recent Activity Section -->
+<div class="flex flex-col gap-3 py-4">
+<h3 class="font-bold text-lg px-1">Recent Activity</h3>
+<div class="flex flex-col gap-2">
+<div class="bg-white dark:bg-zinc-900 rounded-lg p-3 border border-[#ddddd9] dark:border-white/5 flex gap-3">
+<div class="size-10 shrink-0 rounded bg-primary/20 bg-cover bg-center" data-alt="Miniature of a ceramic vase" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAwG_l8bh8qKeWfBWJ1y4v_itGDURxI_kKAlV4ROttbP2p8WKarSp-fuss4SV1QX5p9IJbIUFnZYVwbLh9IDIEd8_VnVvER84i2Qr02SZpmAFNIe94HtxYZl4mbcGZllTBph2H8Rzd7lMmdmzuX6OALg3gANPz_AFhFEGyKnegM8462oHo9LNcXQ-NoD0Xi6iTQjAI7_Md3ScgpIqFi21d4PQlK1vspoNLCkTco-yQ1Tq-ZpyFCkgQdg76hSkEafsJSU6k-0_rym0gv");'></div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<p class="text-sm font-bold truncate max-w-[150px]">Terra Cotta Batch #402</p>
+<span class="text-[10px] text-gray-500">2m ago</span>
+</div>
+<p class="text-xs text-gray-600 dark:text-gray-400">Order #8429 • $1,200.00 • Shipped</p>
+</div>
+</div>
+<div class="bg-white dark:bg-zinc-900 rounded-lg p-3 border border-[#ddddd9] dark:border-white/5 flex gap-3">
+<div class="size-10 shrink-0 rounded bg-primary/20 bg-cover bg-center" data-alt="Abstract design pattern" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCB5OQn0ly4kK5C6KaPUwSasKVybPqZaWr3igfSF27Vf3_vmpxLAu9TgvO0A9vBsLW8xuLHUY-hMExWUBXs4taJitUOiEbq9sZXQ3cDkYEvZUXvnNWOTrWcinSvTTzrSt5CxKD3Xt8OFNMHl5vJgdAvzfjFJfkyvzbTrt9nVQHE6u1sISL16GhfW-DWMhPmV_iY5WWlt-LWBSan6_4kHgGd2oXYdOg9oF5o9aKCVqimAxFpAnJZVPSeDpeXjwZlfyL3dlMzHDyDVadQ");'></div>
+<div class="flex-1">
+<div class="flex justify-between items-start">
+<p class="text-sm font-bold truncate max-w-[150px]">Glazed Dinner Set (12x)</p>
+<span class="text-[10px] text-gray-500">45m ago</span>
+</div>
+<p class="text-xs text-gray-600 dark:text-gray-400">Order #8428 • $3,450.00 • Pending</p>
+</div>
+</div>
+</div>
+</div>
+<div class="h-16"></div> <!-- Spacer for scrolling -->
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-6 right-6 size-14 bg-primary text-white rounded-xl shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+</body></html>

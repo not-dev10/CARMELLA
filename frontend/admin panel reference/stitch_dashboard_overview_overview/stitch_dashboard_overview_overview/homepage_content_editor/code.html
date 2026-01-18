@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Homepage Content Editor | Carmella Admin</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Playfair+Display:ital,wght@0,700;1,700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#6b7051",
+                        "background-light": "#f7f7f7",
+                        "background-dark": "#1a1b17",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "serif-display": ["Playfair Display", "serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .preview-scale {
+            transform: scale(0.85);
+            transform-origin: top center;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e5e7eb;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-[#151514] dark:text-white antialiased">
+<div class="relative flex h-screen w-full flex-col overflow-hidden">
+<!-- TopNavBar -->
+<header class="flex h-16 items-center justify-between border-b border-solid border-[#e5e5e2] dark:border-[#2d2d2a] bg-white dark:bg-background-dark px-8 shrink-0 z-20">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3">
+<div class="size-8 bg-primary rounded flex items-center justify-center text-white">
+<span class="material-symbols-outlined">grid_view</span>
+</div>
+<h2 class="text-lg font-bold tracking-tight">Carmella Admin</h2>
+</div>
+<nav class="hidden lg:flex items-center gap-6">
+<a class="text-sm font-medium opacity-60 hover:opacity-100" href="#">Dashboard</a>
+<a class="text-sm font-medium opacity-60 hover:opacity-100" href="#">Orders</a>
+<a class="text-sm font-medium opacity-60 hover:opacity-100" href="#">Products</a>
+<a class="text-sm font-medium border-b-2 border-primary py-5" href="#">Storefront</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-2 rounded-lg px-4 py-2 bg-[#f3f3f2] dark:bg-white/10 text-sm font-bold">
+<span class="material-symbols-outlined text-sm">visibility</span>
+<span>View Site</span>
+</button>
+<button class="flex items-center gap-2 rounded-lg px-6 py-2 bg-primary text-white text-sm font-bold shadow-sm">
+<span>Publish Changes</span>
+</button>
+<div class="h-8 w-[1px] bg-gray-200 mx-2"></div>
+<div class="size-10 rounded-full bg-gray-200 bg-cover bg-center" data-alt="User profile avatar" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD2IiWx-DuV8D17byWzoz9RLPQikSBs_EnzYzfyGkR15jTWcbJTdPs4fQmiCN0bFKkHyQSFRDTgq2dPkIHiYhax99dNV8JOLHIRQzqORn1i4i5acX00fJOKeZG5koTmU1WNY74sc73NiGUyINjDuGeq81-y6SWiPUoXJBtROZoAg9ht_WiaN1zzqLmYnbNq_D3RuuJSOHtPK0x75939GhtO5MW7q2Fyw1AV3LCuEZXnrxQ2gTP6OMzGwtUzp4IzWLbkFeNRn2m7ACWF')"></div>
+</div>
+</header>
+<!-- Main Content Area: Split Screen -->
+<main class="flex flex-1 overflow-hidden">
+<!-- Left Panel: Sidebar Nav -->
+<aside class="w-64 border-r border-[#e5e5e2] dark:border-[#2d2d2a] bg-white dark:bg-background-dark flex flex-col p-4 shrink-0 overflow-y-auto custom-scrollbar">
+<div class="mb-6 px-2">
+<p class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-4">Homepage Sections</p>
+<div class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-semibold" href="#">
+<span class="material-symbols-outlined">image</span>
+<span class="text-sm">Hero Section</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-gray-300" href="#">
+<span class="material-symbols-outlined">category</span>
+<span class="text-sm">Categories</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-gray-300" href="#">
+<span class="material-symbols-outlined">featured_play_list</span>
+<span class="text-sm">Featured Collections</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-gray-300" href="#">
+<span class="material-symbols-outlined">dynamic_feed</span>
+<span class="text-sm">Latest News</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-gray-300" href="#">
+<span class="material-symbols-outlined">info</span>
+<span class="text-sm">About Section</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-gray-300" href="#">
+<span class="material-symbols-outlined">border_bottom</span>
+<span class="text-sm">Footer</span>
+</a>
+</div>
+</div>
+<div class="mt-auto px-2 border-t border-gray-100 pt-6">
+<div class="bg-primary/5 rounded-xl p-4">
+<p class="text-xs font-bold text-primary mb-1">PRO TIP</p>
+<p class="text-xs leading-relaxed text-gray-600">Drag items in the category list to reorder them on the frontend.</p>
+</div>
+</div>
+</aside>
+<!-- Middle Panel: Editor Form -->
+<section class="flex-1 bg-white dark:bg-background-dark overflow-y-auto custom-scrollbar border-r border-[#e5e5e2] dark:border-[#2d2d2a]">
+<div class="max-w-2xl mx-auto py-10 px-8">
+<div class="flex items-center gap-2 mb-2 text-sm text-gray-400">
+<span>Editor</span>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span>Homepage</span>
+<span class="material-symbols-outlined text-xs">chevron_right</span>
+<span class="text-gray-800 dark:text-gray-200 font-medium">Hero Section</span>
+</div>
+<h1 class="text-3xl font-bold mb-8">Hero Section Configuration</h1>
+<div class="space-y-10">
+<!-- Hero Text Inputs -->
+<div class="space-y-6">
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-gray-700 dark:text-gray-300">Headline Content (Serif Style)</label>
+<textarea class="w-full rounded-lg border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 focus:ring-primary focus:border-primary text-lg font-serif-display" placeholder="E.g. Timeless Artistry for the Modern Home" rows="2"></textarea>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-gray-700 dark:text-gray-300">Sub-headline</label>
+<input class="w-full rounded-lg border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 focus:ring-primary focus:border-primary" type="text" value="Handcrafted ceramics designed for everyday elegance."/>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-gray-700 dark:text-gray-300">Primary CTA Text</label>
+<input class="w-full rounded-lg border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 focus:ring-primary focus:border-primary" type="text" value="Shop Collection"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-sm font-bold text-gray-700 dark:text-gray-300">CTA Link</label>
+<input class="w-full rounded-lg border-gray-200 dark:border-gray-700 bg-white dark:bg-white/5 focus:ring-primary focus:border-primary" type="text" value="/collections/all"/>
+</div>
+</div>
+</div>
+<!-- Image Upload Area -->
+<div class="space-y-4">
+<label class="text-sm font-bold text-gray-700 dark:text-gray-300">Hero Image</label>
+<div class="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl p-8 text-center flex flex-col items-center justify-center gap-3 hover:border-primary/40 transition-colors cursor-pointer bg-gray-50/50 dark:bg-white/5">
+<span class="material-symbols-outlined text-4xl text-gray-300">cloud_upload</span>
+<div class="text-sm">
+<span class="text-primary font-bold">Click to upload</span> or drag and drop
+                                    <p class="text-xs text-gray-400 mt-1">PNG, JPG or WEBP (Max 2MB, Rec. 2400x1200px)</p>
+</div>
+</div>
+<!-- Upload Preview -->
+<div class="flex items-center gap-4 p-3 rounded-lg border border-gray-100 dark:border-gray-800">
+<div class="size-16 rounded bg-gray-200 bg-cover bg-center shrink-0" data-alt="Minimalist ceramic plate set" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC-eVAr_BhZq23EF279lHc3EON8qWRnp4S6Ki7GoQ3IEg0WABs5yIJyYhPFBJg7D9JnI56ZpMWc_a16jF5Tw6dIaDXwNhwC-xuzaRaMEBPIgaClfyQHxcw5XjEJZkumhqe8NWbvZp56DZYigVHyWVBa1nIemG6gUdn1RbFcMRsRbLUKImcr3gaMWsiS4ARnuqdtW-2ylkH212uKf8n1A7JtxXq2G70IS8a4AMMqLq4XIwccFrqhSm2O-mkeJzlRAGhsD_Dkq7Y3cW3K')"></div>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-medium truncate">hero_spring_collection_2024.jpg</p>
+<p class="text-xs text-gray-400">1.2 MB • Uploaded 2 mins ago</p>
+</div>
+<button class="p-2 text-gray-400 hover:text-red-500">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+</div>
+<hr class="border-gray-100 dark:border-gray-800"/>
+<!-- Reorderable Section: Categories -->
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<h3 class="text-lg font-bold">Category Display Order</h3>
+<button class="text-sm text-primary font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-base">add</span>
+<span>Add Category</span>
+</button>
+</div>
+<div class="space-y-2">
+<div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-transparent hover:border-gray-200 dark:hover:border-gray-700">
+<span class="material-symbols-outlined text-gray-400 cursor-grab">drag_indicator</span>
+<span class="text-sm font-medium">Dinnerware</span>
+<div class="ml-auto flex items-center gap-4">
+<div class="flex items-center gap-2">
+<div class="w-8 h-4 bg-primary rounded-full relative">
+<div class="absolute right-1 top-1 size-2 bg-white rounded-full"></div>
+</div>
+<span class="text-xs text-gray-400">Visible</span>
+</div>
+<span class="material-symbols-outlined text-gray-400 text-sm">edit</span>
+</div>
+</div>
+<div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-transparent hover:border-gray-200 dark:hover:border-gray-700">
+<span class="material-symbols-outlined text-gray-400 cursor-grab">drag_indicator</span>
+<span class="text-sm font-medium">Vases &amp; Decor</span>
+<div class="ml-auto flex items-center gap-4">
+<div class="flex items-center gap-2">
+<div class="w-8 h-4 bg-primary rounded-full relative">
+<div class="absolute right-1 top-1 size-2 bg-white rounded-full"></div>
+</div>
+<span class="text-xs text-gray-400">Visible</span>
+</div>
+<span class="material-symbols-outlined text-gray-400 text-sm">edit</span>
+</div>
+</div>
+<div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-white/5 rounded-lg border border-transparent hover:border-gray-200 dark:hover:border-gray-700">
+<span class="material-symbols-outlined text-gray-400 cursor-grab">drag_indicator</span>
+<span class="text-sm font-medium">Table Linens</span>
+<div class="ml-auto flex items-center gap-4">
+<div class="flex items-center gap-2">
+<div class="w-8 h-4 bg-gray-300 rounded-full relative">
+<div class="absolute left-1 top-1 size-2 bg-white rounded-full"></div>
+</div>
+<span class="text-xs text-gray-400">Hidden</span>
+</div>
+<span class="material-symbols-outlined text-gray-400 text-sm">edit</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex items-center gap-4 pt-4 pb-12">
+<button class="flex-1 bg-primary text-white font-bold py-3 rounded-lg hover:bg-opacity-90 transition-all">Save Changes</button>
+<button class="px-8 border border-gray-200 dark:border-gray-700 py-3 rounded-lg font-bold hover:bg-gray-50 dark:hover:bg-white/5 transition-all">Discard</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Panel: Live Preview -->
+<section class="w-[500px] bg-background-light dark:bg-background-dark/50 flex flex-col shrink-0 overflow-hidden relative">
+<div class="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
+<div class="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-background-dark shadow-sm border border-gray-100 dark:border-gray-800 rounded-full">
+<span class="size-2 rounded-full bg-green-500 animate-pulse"></span>
+<span class="text-[10px] font-bold uppercase tracking-widest text-gray-500">Live Preview</span>
+</div>
+<div class="flex gap-1 p-1 bg-white dark:bg-background-dark shadow-sm border border-gray-100 dark:border-gray-800 rounded-lg">
+<button class="p-1 rounded bg-gray-100 dark:bg-white/10">
+<span class="material-symbols-outlined text-lg">desktop_windows</span>
+</button>
+<button class="p-1 rounded text-gray-400">
+<span class="material-symbols-outlined text-lg">phone_iphone</span>
+</button>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar p-12">
+<div class="preview-scale w-[450px] mx-auto bg-white shadow-2xl rounded overflow-hidden min-h-[800px]">
+<!-- Site Preview Content -->
+<div class="h-10 border-b border-gray-100 flex items-center justify-between px-4">
+<span class="font-bold text-[10px] uppercase tracking-tighter">Carmella</span>
+<div class="flex gap-2">
+<div class="size-2 rounded-full bg-gray-200"></div>
+<div class="size-2 rounded-full bg-gray-200"></div>
+</div>
+</div>
+<!-- Hero Section Preview -->
+<div class="relative h-[300px] bg-gray-100 flex flex-col justify-center items-center text-center px-8 overflow-hidden">
+<div class="absolute inset-0 bg-black/10 z-0"></div>
+<img class="absolute inset-0 w-full h-full object-cover z-[-1]" data-alt="Stunning ceramic dinnerware on a textured table" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCfBz6hAIT27OgE1DynPz93YlxYDHsME2hu5yrVkDJ_kIXvygLP2bc47tXrbsl9Yy32DyPtXXV8Dsg4JY5vwlFobdvVdt_Kkzto3RBtp3rFAVC6yrAeqVb4YL65glr0fKReTDkLz4DKJEId_cdQnhrdn7cw_xnpvXdIs0vKfp4a22t5IUaz-cBfuEY-7pvwzo_JeJpUKPJ_-xLkMbIgDudT-YDNZ9VJGYllWhNhuCynVWXErOImor52wbN1BoPGa2nayavmNWCQ4-v"/>
+<h1 class="font-serif-display text-2xl text-white relative z-10 leading-tight mb-2 drop-shadow-md">Timeless Artistry for the Modern Home</h1>
+<p class="text-[10px] text-white/90 relative z-10 max-w-[200px] mb-4 drop-shadow-sm">Handcrafted ceramics designed for everyday elegance.</p>
+<button class="relative z-10 bg-white text-black px-4 py-1.5 text-[9px] font-bold uppercase tracking-widest">Shop Collection</button>
+</div>
+<!-- Categories Preview -->
+<div class="p-6 space-y-4">
+<h2 class="text-center font-bold text-xs uppercase tracking-widest mb-4">Shop Categories</h2>
+<div class="grid grid-cols-2 gap-3">
+<div class="aspect-square bg-gray-50 flex flex-col items-center justify-center p-4">
+<img class="size-20 object-cover mb-2 rounded-full" data-alt="Ceramic plate close up" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCccbH5uvGPi5WZJ1OacYyPiLLVt-1_ZCCc2S2_CEGzc1SgYxAC1H-0MqnE38A07JK7Pp2VVOVc95vnu4csqK9GdpifFEu53tmeso735QTBW6E8vHVvmkDtR2j-7iSFeOLbEa43OD_s-JavSwDhLqTrLdt3TtvZb3kUSt9fa3ZqJAk-vexfQC3oTtZA6A_AdHIypXZr4q3VGiFJMq9v8ztXMS1HcEKS0Xc1pE_FWshHO7QmfZ6Cr5UTz59y4qe0zToUYyUjg64kCxIF"/>
+<span class="text-[9px] font-bold uppercase tracking-wider">Dinnerware</span>
+</div>
+<div class="aspect-square bg-gray-50 flex flex-col items-center justify-center p-4">
+<img class="size-20 object-cover mb-2 rounded-full" data-alt="Sculptural white vase" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmAfqte9e-H3PogU1znsfnhL0OKjPDGt_p02ZTbB1qdNwwDXXCeOcRTnW7shtxGC14HQHRl5etRDecg4LhAsBIV7zEPW13hKCF2YdA3uOHlgVIjovh8LRlXxSmzpi6gpoP3lP8C6DuAfIwJlGXEWtKkTrXFTJ0HOqW5TmlEvsVmouGa7fYODCC5TSCkDOFzEGEtsOE9rl3f0Wj9UngAJ8_W_PPFdZHnCKYMMLmZk8PfOZ8eBOpOGYgSbnL96yoajKlO5UZZfl4yBOV"/>
+<span class="text-[9px] font-bold uppercase tracking-wider">Vases &amp; Decor</span>
+</div>
+</div>
+</div>
+<!-- Collections Preview -->
+<div class="p-6 pt-0">
+<div class="h-24 w-full bg-[#f4f2f0] flex p-4 items-center">
+<div class="flex-1">
+<p class="text-[8px] uppercase tracking-widest text-gray-500 mb-1">Coming Soon</p>
+<p class="font-serif-display text-sm">Spring 2024 Ceramics</p>
+</div>
+<div class="size-16 bg-white rounded border border-gray-100 flex items-center justify-center">
+<span class="material-symbols-outlined text-gray-300">image</span>
+</div>
+</div>
+</div>
+<div class="h-20 bg-gray-50 border-t border-gray-100 mt-4"></div>
+</div>
+</div>
+<!-- Bottom Floating Help -->
+<div class="absolute bottom-6 right-6">
+<button class="size-12 rounded-full bg-primary text-white shadow-lg flex items-center justify-center hover:scale-105 transition-transform">
+<span class="material-symbols-outlined">help</span>
+</button>
+</div>
+</section>
+</main>
+</div>
+</body></html>

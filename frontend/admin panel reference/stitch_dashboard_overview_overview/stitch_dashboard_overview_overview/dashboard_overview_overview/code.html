@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Carmella - B2B Ceramics Dashboard</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Inter for UI, Playfair Display for Logo/Serif touches -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Playfair+Display:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#6b7051", // Sage Green
+                        "terracotta": "#D4A574",
+                        "clay": "#8B7355",
+                        "cream": "#FAF8F3",
+                        "background-light": "#FAF8F3",
+                        "background-dark": "#1a1b17",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "serif": ["Playfair Display", "serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .font-serif-logo {
+            font-family: 'Playfair Display', serif;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark min-h-screen text-[#333]">
+<div class="flex h-screen overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="w-64 bg-primary text-white flex flex-col h-full shadow-xl">
+<div class="p-8">
+<h1 class="font-serif-logo text-3xl tracking-tight">Carmella</h1>
+<p class="text-white/70 text-xs mt-1 uppercase tracking-widest font-medium">B2B Admin</p>
+</div>
+<nav class="flex-1 px-4 py-4 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg bg-white/10 transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors" href="#">
+<span class="material-symbols-outlined">shopping_bag</span>
+<span class="text-sm font-medium">Orders</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="text-sm font-medium">Products</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors" href="#">
+<span class="material-symbols-outlined">group_add</span>
+<span class="text-sm font-medium">B2B Requests</span>
+<span class="ml-auto bg-terracotta text-white text-[10px] px-2 py-0.5 rounded-full">12</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="text-sm font-medium">Clients</span>
+</a>
+<div class="mt-auto flex flex-col gap-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors" href="#">
+<span class="material-symbols-outlined">help_center</span>
+<span class="text-sm font-medium">Support</span>
+</a>
+</div>
+</nav>
+<div class="p-4 border-t border-white/10">
+<div class="flex items-center gap-3 px-2">
+<div class="size-10 rounded-full bg-cover bg-center border border-white/20" data-alt="Profile picture of Carmella Wholesale Admin" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCHtCK4AREA8__qZBfIGaioCIq1wv_wv2z0gSjPhaX67C4-66RTNhKGdO5CGdqNAmaO0t9X2Q1mYu8RJq0axnUbShrkIzdjht7FJMU9a4A42y33IKX9Xib4JFkAgpHCTv6eNYLgGgr8bEBVhxyhwm7JyON6xq8LXtdlHnuZaekFVHASKbNuKVOtcTZF7tF_yawXDiILzptwbuajRRMEy_c9EVi5ZPE9BeVDRo7xZu2qpHJ5q6f4n8yFrHda9ffzAJefwfjcpOb-ImzC')"></div>
+<div class="overflow-hidden">
+<p class="text-sm font-semibold truncate">Carmella</p>
+<p class="text-[10px] text-white/60 truncate uppercase tracking-tighter">Wholesale Director</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col overflow-y-auto relative">
+<!-- Top Nav Bar -->
+<header class="sticky top-0 z-10 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 px-8 py-4 flex items-center justify-between">
+<div class="flex items-center gap-6">
+<h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Overview</h2>
+<div class="relative w-72">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-gray-800 border-none rounded-lg text-sm focus:ring-2 focus:ring-primary/20" placeholder="Search orders, clients, SKUs..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2.5 w-2 h-2 bg-terracotta rounded-full border-2 border-white"></span>
+</button>
+<button class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
+<span class="material-symbols-outlined">tune</span>
+</button>
+<div class="h-6 w-[1px] bg-gray-200 mx-2"></div>
+<div class="flex items-center gap-2">
+<span class="text-xs font-semibold text-gray-600 uppercase tracking-wide">Jan 24, 2024</span>
+</div>
+</div>
+</header>
+<!-- Dashboard Body -->
+<div class="p-8 flex flex-col gap-8 max-w-[1400px] mx-auto w-full">
+<!-- Stats Section -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<div class="bg-white dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<p class="text-gray-500 text-sm font-medium">Total Orders</p>
+<span class="text-primary material-symbols-outlined bg-primary/10 p-1.5 rounded-lg text-lg">shopping_cart</span>
+</div>
+<p class="text-3xl font-bold text-gray-800 dark:text-gray-100">1,284</p>
+<p class="text-green-600 text-xs font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trending_up</span> +12.5% this month
+                        </p>
+</div>
+<div class="bg-white dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<p class="text-gray-500 text-sm font-medium">Revenue</p>
+<span class="text-primary material-symbols-outlined bg-primary/10 p-1.5 rounded-lg text-lg">payments</span>
+</div>
+<p class="text-3xl font-bold text-gray-800 dark:text-gray-100">$42,500.00</p>
+<p class="text-green-600 text-xs font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trending_up</span> +8.2% this month
+                        </p>
+</div>
+<div class="bg-white dark:bg-gray-900 p-6 rounded-lg border-2 border-terracotta shadow-sm flex flex-col gap-3 relative overflow-hidden group">
+<div class="flex justify-between items-start">
+<p class="text-gray-500 text-sm font-medium">Pending B2B Requests</p>
+<span class="text-terracotta material-symbols-outlined bg-terracotta/10 p-1.5 rounded-lg text-lg">pending_actions</span>
+</div>
+<div class="flex items-end justify-between">
+<p class="text-3xl font-bold text-gray-800 dark:text-gray-100">12</p>
+<!-- Mini Timer Component -->
+<div class="flex gap-1 items-center bg-terracotta/5 border border-terracotta/20 px-2 py-1 rounded text-terracotta">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+<span class="text-[10px] font-bold tracking-tight">23:58:12</span>
+</div>
+</div>
+<p class="text-terracotta text-xs font-medium italic">Approval window closing soon</p>
+</div>
+<div class="bg-white dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col gap-2">
+<div class="flex justify-between items-start">
+<p class="text-gray-500 text-sm font-medium">Active Users</p>
+<span class="text-primary material-symbols-outlined bg-primary/10 p-1.5 rounded-lg text-lg">person</span>
+</div>
+<p class="text-3xl font-bold text-gray-800 dark:text-gray-100">842</p>
+<p class="text-red-500 text-xs font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trending_down</span> -2% today
+                        </p>
+</div>
+</div>
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<div class="lg:col-span-2 bg-white dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
+<div class="flex items-center justify-between mb-8">
+<div>
+<h3 class="text-gray-800 dark:text-gray-100 font-bold text-lg">Sales Performance</h3>
+<p class="text-gray-500 text-sm">Total wholesale value generated this semester</p>
+</div>
+<div class="flex bg-gray-100 p-1 rounded-lg">
+<button class="px-3 py-1 text-xs font-medium bg-white shadow-sm rounded-md">6 Months</button>
+<button class="px-3 py-1 text-xs font-medium text-gray-500">1 Year</button>
+</div>
+</div>
+<div class="flex flex-col gap-6">
+<div class="flex items-baseline gap-3">
+<p class="text-4xl font-bold text-gray-800 dark:text-gray-100 tracking-tighter">$128,430</p>
+<p class="text-green-600 text-sm font-bold">+15.4%</p>
+</div>
+<div class="relative h-[240px] w-full mt-4">
+<svg class="w-full h-full" fill="none" preserveaspectratio="none" viewbox="0 0 500 150">
+<!-- Area Gradient -->
+<defs>
+<lineargradient id="sageGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#6b7051" stop-opacity="0.2"></stop>
+<stop offset="100%" stop-color="#6b7051" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<path d="M0 120 C 50 110, 100 140, 150 100 C 200 60, 250 80, 300 40 C 350 0, 400 30, 450 10 L 500 10 L 500 150 L 0 150 Z" fill="url(#sageGradient)"></path>
+<!-- Clay Line -->
+<path d="M0 130 C 50 125, 100 135, 150 115 C 200 95, 250 105, 300 85 C 350 65, 400 75, 450 55" fill="none" stroke="#8B7355" stroke-dasharray="4 4" stroke-width="2"></path>
+<!-- Sage Line -->
+<path d="M0 120 C 50 110, 100 140, 150 100 C 200 60, 250 80, 300 40 C 350 0, 400 30, 450 10" fill="none" stroke="#6b7051" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<div class="flex justify-between mt-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest px-2">
+<span>Jan</span>
+<span>Feb</span>
+<span>Mar</span>
+<span>Apr</span>
+<span>May</span>
+<span>Jun</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Side component: Quick actions / Summary -->
+<div class="flex flex-col gap-6">
+<div class="bg-primary text-white p-6 rounded-lg shadow-lg relative overflow-hidden h-full flex flex-col">
+<div class="relative z-10 flex-1">
+<h3 class="font-serif-logo text-2xl mb-2">Artisan Spotlight</h3>
+<p class="text-white/80 text-sm leading-relaxed mb-6">Ceramicists from the Nordic workshop have increased production by 24% this week. Review new SKU arrivals.</p>
+<button class="bg-white text-primary px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-gray-100 transition-colors">
+                                    Manage Inventory <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+<!-- Abstract decoration -->
+<div class="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+<div class="absolute -top-10 -left-10 w-24 h-24 bg-terracotta/20 rounded-full blur-xl"></div>
+</div>
+</div>
+</div>
+<!-- Recent Orders Table -->
+<div class="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+<div class="px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+<h3 class="text-gray-800 dark:text-gray-100 font-bold">Recent Orders</h3>
+<button class="text-primary text-sm font-semibold hover:underline">View All Orders</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-gray-50 dark:bg-gray-800/50">
+<tr>
+<th class="px-6 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Order ID</th>
+<th class="px-6 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Client Name</th>
+<th class="px-6 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
+<th class="px-6 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Date</th>
+<th class="px-6 py-3 text-[11px] font-bold text-gray-500 uppercase tracking-wider text-right">Total</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+<tr class="hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors">
+<td class="px-6 py-4 text-sm font-mono text-gray-500">#CR-9821</td>
+<td class="px-6 py-4 text-base font-serif text-gray-800 dark:text-gray-200">The Clay Studio</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                                            Shipped
+                                        </span>
+</td>
+<td class="px-6 py-4 text-sm text-gray-500">Jan 23, 2024</td>
+<td class="px-6 py-4 text-sm font-bold text-gray-800 dark:text-gray-100 text-right">$4,210.00</td>
+</tr>
+<tr class="hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors">
+<td class="px-6 py-4 text-sm font-mono text-gray-500">#CR-9820</td>
+<td class="px-6 py-4 text-base font-serif text-gray-800 dark:text-gray-200">Nordic Living Co.</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-terracotta/10 text-terracotta">
+                                            Pending
+                                        </span>
+</td>
+<td class="px-6 py-4 text-sm text-gray-500">Jan 23, 2024</td>
+<td class="px-6 py-4 text-sm font-bold text-gray-800 dark:text-gray-100 text-right">$1,850.50</td>
+</tr>
+<tr class="hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors">
+<td class="px-6 py-4 text-sm font-mono text-gray-500">#CR-9819</td>
+<td class="px-6 py-4 text-base font-serif text-gray-800 dark:text-gray-200">Earth &amp; Fire Gallery</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                                            Processing
+                                        </span>
+</td>
+<td class="px-6 py-4 text-sm text-gray-500">Jan 22, 2024</td>
+<td class="px-6 py-4 text-sm font-bold text-gray-800 dark:text-gray-100 text-right">$920.00</td>
+</tr>
+<tr class="hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors">
+<td class="px-6 py-4 text-sm font-mono text-gray-500">#CR-9818</td>
+<td class="px-6 py-4 text-base font-serif text-gray-800 dark:text-gray-200">Minimalist Home</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                                            Shipped
+                                        </span>
+</td>
+<td class="px-6 py-4 text-sm text-gray-500">Jan 22, 2024</td>
+<td class="px-6 py-4 text-sm font-bold text-gray-800 dark:text-gray-100 text-right">$12,400.00</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Footer Area -->
+<footer class="p-8 text-center">
+<p class="text-[10px] text-gray-400 uppercase tracking-[0.2em]">© 2024 Carmella B2B Ceramics. All Rights Reserved.</p>
+</footer>
+</main>
+</div>
+</body></html>

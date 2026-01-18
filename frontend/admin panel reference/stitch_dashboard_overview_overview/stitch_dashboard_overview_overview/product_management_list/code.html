@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Product Management List | Carmella</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;family=Playfair+Display:wght@500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#6b7051", // Sage Green
+                        "clay": "#a67c52",    // Clay Brown
+                        "background-light": "#FAF9F6", // Soft Cream
+                        "background-dark": "#1a1b17",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "serif": ["Playfair Display", "serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .status-toggle:checked ~ .toggle-dot {
+            transform: translateX(100%);
+            background-color: white;
+        }
+        .status-toggle:checked ~ .toggle-bg {
+            background-color: #6b7051;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-[#151514] dark:text-white min-h-screen">
+<div class="flex h-screen overflow-hidden">
+<!-- SideNavBar -->
+<aside class="w-64 border-r border-black/5 bg-white dark:bg-background-dark dark:border-white/10 flex flex-col shrink-0">
+<div class="p-6 flex flex-col h-full">
+<div class="flex items-center gap-3 mb-8">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-black/5" data-alt="Portrait of Carmella, the wholesale admin" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCKh-EhFMN4r50cNdLdzxuTb_28y5o9cFtIvb6yuK64gbQjHZBafngEaRuR0cWl0GpNHDReaQX1i-ApcjP6M2MmOiv9zmsH75dTKUjBWCHoxtw2xZRFV_0eY1EbKVW6hzFf1Yo5TSy5_0VRr0NoXNWibFsN0m4TByIwvXWDuhryzy10EpoNzZQFGQjaNO2PKzVtzJ894O4Y7dXVSnGpdsmHki-vilVBnEuZACjwbp4LsvVUTd9eEGSGQ6J5U4-QlZZuuXXMiUzV7c8-");'></div>
+<div class="flex flex-col">
+<h1 class="text-[#151514] dark:text-white text-base font-semibold leading-normal">Carmella</h1>
+<p class="text-[#787972] text-xs font-normal leading-normal">Ceramics Wholesale Admin</p>
+</div>
+</div>
+<nav class="flex flex-col gap-1 grow">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#787972] hover:bg-black/5 dark:hover:bg-white/5 transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#787972] hover:bg-black/5 dark:hover:bg-white/5 transition-colors" href="#">
+<span class="material-symbols-outlined">package_2</span>
+<span class="text-sm font-medium">Orders</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">inventory_2</span>
+<span class="text-sm font-semibold">Products</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#787972] hover:bg-black/5 dark:hover:bg-white/5 transition-colors" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="text-sm font-medium">Customers</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#787972] hover:bg-black/5 dark:hover:bg-white/5 transition-colors" href="#">
+<span class="material-symbols-outlined">verified_user</span>
+<span class="text-sm font-medium">Approvals</span>
+</a>
+</nav>
+<div class="pt-4 border-t border-black/5 dark:border-white/10">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#787972] hover:bg-black/5 transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto">
+<div class="max-w-6xl mx-auto px-8 py-8">
+<!-- Breadcrumbs -->
+<nav class="flex items-center gap-2 mb-4">
+<a class="text-[#787972] text-sm font-medium hover:text-primary transition-colors" href="#">Admin</a>
+<span class="text-[#787972] text-sm">/</span>
+<span class="text-[#151514] dark:text-white text-sm font-semibold">Product Management</span>
+</nav>
+<!-- PageHeading & Actions -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+<div class="flex flex-col gap-2">
+<h2 class="text-[#151514] dark:text-white text-4xl font-black tracking-tight">Product Catalog</h2>
+<p class="text-[#787972] text-base">Manage your ceramic inventory and exclusive B2B pricing tiers.</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-2.5 bg-clay text-white rounded-lg font-semibold text-sm hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[20px]">upload_file</span>
+                            Bulk CSV Upload
+                        </button>
+<button class="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-lg font-semibold text-sm hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[20px]">add</span>
+                            Add Product
+                        </button>
+</div>
+</div>
+<!-- Filters & Search Bar Section -->
+<div class="bg-white dark:bg-background-dark border border-black/5 dark:border-white/10 rounded-xl p-4 mb-6 shadow-sm">
+<div class="flex flex-col lg:flex-row gap-4">
+<div class="flex-1">
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#787972] group-focus-within:text-primary">
+<span class="material-symbols-outlined">search</span>
+</div>
+<input class="w-full bg-[#f3f3f2] dark:bg-white/5 border-none rounded-lg py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20 placeholder:text-[#787972]" placeholder="Search products by name, SKU, or category..." type="text"/>
+</div>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-4 py-2 bg-[#f3f3f2] dark:bg-white/5 rounded-lg text-sm font-medium text-[#151514] dark:text-white border border-transparent hover:border-black/10 transition-all">
+<span>Category: All</span>
+<span class="material-symbols-outlined text-[18px]">expand_more</span>
+</button>
+<button class="flex items-center gap-2 px-4 py-2 bg-[#f3f3f2] dark:bg-white/5 rounded-lg text-sm font-medium text-[#151514] dark:text-white border border-transparent hover:border-black/10 transition-all">
+<span>Stock Status: All</span>
+<span class="material-symbols-outlined text-[18px]">expand_more</span>
+</button>
+<button class="flex items-center justify-center p-2 bg-[#f3f3f2] dark:bg-white/5 rounded-lg text-[#787972] hover:text-primary">
+<span class="material-symbols-outlined">filter_list</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Product Table Card -->
+<div class="bg-white dark:bg-background-dark border border-black/5 dark:border-white/10 rounded-xl overflow-hidden shadow-sm">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-[#f3f3f2]/50 dark:bg-white/5 text-[#787972] text-[13px] uppercase tracking-wider font-semibold">
+<th class="px-6 py-4 w-10">
+<input class="rounded text-primary focus:ring-primary border-black/10" type="checkbox"/>
+</th>
+<th class="px-4 py-4 w-20 text-center">Image</th>
+<th class="px-6 py-4">Product Details</th>
+<th class="px-6 py-4">Stock Level</th>
+<th class="px-6 py-4">B2B Price</th>
+<th class="px-6 py-4">Status</th>
+<th class="px-6 py-4 text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-black/5 dark:divide-white/10">
+<!-- Product 1 -->
+<tr class="hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+<td class="px-6 py-4">
+<input class="rounded text-primary focus:ring-primary border-black/10" type="checkbox"/>
+</td>
+<td class="px-4 py-4">
+<div class="w-12 h-12 rounded-lg bg-cover bg-center border border-black/5 mx-auto" data-alt="Matte charcoal ceramic vase" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCUwJ57fxsaKRsvSX0PzOimNbVZwBs05ZFSqxtpLDV0y18vD82SGyapQqkr1zCeQa45lhhwG_reo1mkuWz5HlTd1F15pTer__XTaCzvM0XaDAdf8ZBhhqgDlePlD1_hoAvWTeb8dQTBkeO7fzrxR1AasiZ1Ul9o8VHx3_4tjRqeBfemeMyBSh4c5luMePfHE8icmGy2Ev-o5_m6SBaUzXmAek0iKcrj6qZgt5jeI9UJNVqzH2x0ukEzgnftBanpKFXjFZc0NP5Bvm6X');"></div>
+</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="font-serif text-lg text-[#151514] dark:text-white leading-tight">Earthbound Charcoal Vase</span>
+<span class="text-xs text-[#787972] mt-0.5">SKU: CR-2024-EBV</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="text-sm font-semibold text-[#151514] dark:text-white">142</span>
+<span class="px-2 py-0.5 text-[11px] font-bold bg-green-100 text-green-700 rounded-full uppercase tracking-tighter">In Stock</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="font-bold text-sm">$42.50</span>
+</td>
+<td class="px-6 py-4">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only status-toggle" type="checkbox"/>
+<div class="w-10 h-5 bg-gray-200 dark:bg-white/10 rounded-full transition-colors toggle-bg"></div>
+<div class="absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform transform toggle-dot shadow-sm"></div>
+</label>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 text-[#787972]">
+<button class="p-1 hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">edit</span></button>
+<button class="p-1 hover:text-red-500 transition-colors"><span class="material-symbols-outlined text-[20px]">delete</span></button>
+</div>
+</td>
+</tr>
+<!-- Product 2 -->
+<tr class="hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+<td class="px-6 py-4">
+<input class="rounded text-primary focus:ring-primary border-black/10" type="checkbox"/>
+</td>
+<td class="px-4 py-4">
+<div class="w-12 h-12 rounded-lg bg-cover bg-center border border-black/5 mx-auto" data-alt="Handcrafted beige ceramic bowl set" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB2ChuKAenmXNlpZqJHlnuWFZpl7u3oSnhXYiBDuVspGh3SyybSmUPjEFZFcX4jMr0O1_gnWp2lN3QfjaEw3SBnPA2a7UHlTx9EEuELLjRw_FEJ6WmL3k-Ct6Qy8ZjiAtN1sFJ5q2HAVyy6zh6Khzj8m11qCS5O70jTicxBL1NBpWAXlVit7x_78ml8D0FVGQMiCqPGKybO51isGCuwNA3XHEIIYjx98ERXvV9UqMrWP4en2V3S2Hegmy8G5wW7tNgY8g_2Q8SXilid');"></div>
+</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="font-serif text-lg text-[#151514] dark:text-white leading-tight">Artisan Nesting Bowls (Set of 3)</span>
+<span class="text-xs text-[#787972] mt-0.5">SKU: CR-2024-NB3</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="text-sm font-semibold text-[#151514] dark:text-white">8</span>
+<span class="px-2 py-0.5 text-[11px] font-bold bg-red-100 text-red-700 rounded-full uppercase tracking-tighter flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]">warning</span> Low Stock
+                                            </span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="font-bold text-sm">$85.00</span>
+</td>
+<td class="px-6 py-4">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only status-toggle" type="checkbox"/>
+<div class="w-10 h-5 bg-gray-200 dark:bg-white/10 rounded-full transition-colors toggle-bg"></div>
+<div class="absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform transform toggle-dot shadow-sm"></div>
+</label>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 text-[#787972]">
+<button class="p-1 hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">edit</span></button>
+<button class="p-1 hover:text-red-500 transition-colors"><span class="material-symbols-outlined text-[20px]">delete</span></button>
+</div>
+</td>
+</tr>
+<!-- Product 3 -->
+<tr class="hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+<td class="px-6 py-4">
+<input class="rounded text-primary focus:ring-primary border-black/10" type="checkbox"/>
+</td>
+<td class="px-4 py-4">
+<div class="w-12 h-12 rounded-lg bg-cover bg-center border border-black/5 mx-auto" data-alt="Rustic speckled clay coffee mug" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBUk82MRD2ev38v2OE7XVrByY-huOYV4vYLsukpf70DOEibHhleMfpQ8I_yG-gjTsj_6SIH484LDxG3ErhPtK5B5kKSK8RdtPAQgTBKjDotnLbZg4Es0wFEz6qtMDER-r_VSgVzRpGBWly4pDi0RoPm7DJIV3o3wOEwZOGPzqXArSNFd_Md-54O-s4pFfR3zxaJ5_4UInabhDefiBhlq8IoVebSisE7Mjhpt6-LS3ql4FFNN3GdIIOS3pPAYEgRvtIHZeR1_I3ba_NQ');"></div>
+</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="font-serif text-lg text-[#151514] dark:text-white leading-tight">Speckled Morning Mug</span>
+<span class="text-xs text-[#787972] mt-0.5">SKU: CR-2024-SMM</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="text-sm font-semibold text-[#151514] dark:text-white">520</span>
+<span class="px-2 py-0.5 text-[11px] font-bold bg-green-100 text-green-700 rounded-full uppercase tracking-tighter">In Stock</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="font-bold text-sm">$12.00</span>
+</td>
+<td class="px-6 py-4">
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only status-toggle" type="checkbox"/>
+<div class="w-10 h-5 bg-gray-200 dark:bg-white/10 rounded-full transition-colors toggle-bg"></div>
+<div class="absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform transform toggle-dot shadow-sm"></div>
+</label>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 text-[#787972]">
+<button class="p-1 hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">edit</span></button>
+<button class="p-1 hover:text-red-500 transition-colors"><span class="material-symbols-outlined text-[20px]">delete</span></button>
+</div>
+</td>
+</tr>
+<!-- Product 4 -->
+<tr class="hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+<td class="px-6 py-4">
+<input class="rounded text-primary focus:ring-primary border-black/10" type="checkbox"/>
+</td>
+<td class="px-4 py-4">
+<div class="w-12 h-12 rounded-lg bg-cover bg-center border border-black/5 mx-auto" data-alt="Minimalist tall white cylinder pitcher" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA4PyWbCqFg___yEjV5cFCacC8QmULxp3KbJ1vPeNFrsusNB0M_v5rrffcZrhkV4IvnJEjR49mXVkGZy--qH5k9auuTHA1MuPrzJ_vyEO1UvavnuBdfjNsuciIZkNoQQ4PkfgDsSpFyzaZE98H3xOj4G9vn0wKnW8rneYHT8dMsGQ9yee7LZ3M7Jr6mARt8DFkvpGyHlfQrm5ASj1yGyO-buLWoYDsXa6XxOWPNoGpd1TEvGillzcuKZrwFVlPaA257JRPowDoHjkLZ');"></div>
+</td>
+<td class="px-6 py-4">
+<div class="flex flex-col">
+<span class="font-serif text-lg text-[#151514] dark:text-white leading-tight">Minimalist Water Pitcher</span>
+<span class="text-xs text-[#787972] mt-0.5">SKU: CR-2024-MWP</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="text-sm font-semibold text-[#151514] dark:text-white">0</span>
+<span class="px-2 py-0.5 text-[11px] font-bold bg-gray-100 text-gray-700 rounded-full uppercase tracking-tighter">Out of Stock</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="font-bold text-sm">$28.90</span>
+</td>
+<td class="px-6 py-4">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only status-toggle" type="checkbox"/>
+<div class="w-10 h-5 bg-gray-200 dark:bg-white/10 rounded-full transition-colors toggle-bg"></div>
+<div class="absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform transform toggle-dot shadow-sm"></div>
+</label>
+</td>
+<td class="px-6 py-4 text-right">
+<div class="flex items-center justify-end gap-2 text-[#787972]">
+<button class="p-1 hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">edit</span></button>
+<button class="p-1 hover:text-red-500 transition-colors"><span class="material-symbols-outlined text-[20px]">delete</span></button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination (Self-Generated) -->
+<div class="px-6 py-4 flex items-center justify-between bg-[#f3f3f2]/30 dark:bg-white/5 border-t border-black/5 dark:border-white/10">
+<span class="text-sm text-[#787972]">Showing 1 to 4 of 128 products</span>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-lg border border-black/10 dark:border-white/10 text-[#787972] hover:bg-white disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="px-3 py-1.5 rounded-lg bg-primary text-white font-medium text-sm">1</button>
+<button class="px-3 py-1.5 rounded-lg text-sm text-[#787972] hover:bg-black/5">2</button>
+<button class="px-3 py-1.5 rounded-lg text-sm text-[#787972] hover:bg-black/5">3</button>
+<span class="text-[#787972]">...</span>
+<button class="px-3 py-1.5 rounded-lg text-sm text-[#787972] hover:bg-black/5">32</button>
+<button class="p-2 rounded-lg border border-black/10 dark:border-white/10 text-[#787972] hover:bg-white">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

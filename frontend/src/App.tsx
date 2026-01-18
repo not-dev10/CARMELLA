@@ -16,6 +16,7 @@ import Contact from "@/pages/Contact"
 import Login from "@/pages/Login"
 import Signup from "@/pages/Signup"
 import AuthCallback from "@/pages/AuthCallback"
+import Admin from "@/pages/Admin"
 
 function App() {
   return (
@@ -23,27 +24,35 @@ function App() {
       <ToastProvider>
         <AuthProvider>
           <Router>
-            <SmoothScroll>
-              <div className="relative flex min-h-screen flex-col bg-background font-sans antialiased text-foreground">
-                <AnnouncementBar />
-                <Header />
-                <main className="flex-1">
-                  <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/catalog" element={<Catalog />} />
-                    <Route path="/product/:id" element={<ProductDetail />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/signup" element={<Signup />} />
-                    <Route path="/auth/callback" element={<AuthCallback />} />
-                  </Routes>
-                </main>
-                <Footer />
-                <BackToTop />
-                <ExitIntentPopup />
-              </div>
-            </SmoothScroll>
+            <Routes>
+              <Route path="/admin" element={<Admin />} />
+              <Route
+                path="*"
+                element={
+                  <SmoothScroll>
+                    <div className="relative flex min-h-screen flex-col bg-background font-sans antialiased text-foreground">
+                      <AnnouncementBar />
+                      <Header />
+                      <main className="flex-1">
+                        <Routes>
+                          <Route path="/" element={<Home />} />
+                          <Route path="/catalog" element={<Catalog />} />
+                          <Route path="/product/:id" element={<ProductDetail />} />
+                          <Route path="/about" element={<About />} />
+                          <Route path="/contact" element={<Contact />} />
+                          <Route path="/login" element={<Login />} />
+                          <Route path="/signup" element={<Signup />} />
+                          <Route path="/auth/callback" element={<AuthCallback />} />
+                        </Routes>
+                      </main>
+                      <Footer />
+                      <BackToTop />
+                      <ExitIntentPopup />
+                    </div>
+                  </SmoothScroll>
+                }
+              />
+            </Routes>
           </Router>
         </AuthProvider>
       </ToastProvider>

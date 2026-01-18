@@ -4,69 +4,30 @@ import { FadeIn } from "@/components/animations/fade-in"
 import { Button } from "@/components/ui/button"
 import { Lock, Heart, Eye, TrendingUp, Leaf, Sparkles, Package } from "lucide-react"
 import Link from "@/components/ui/link-shim"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import { ParallaxImage } from "@/components/animations/parallax"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Badge } from "@/components/ui/badge"
+import { homepageAPI } from "@/lib/api"
 
-const products = [
-    {
-        id: 3,
-        name: "Stoneware Mug Set",
-        category: "Dinnerware",
-        image: "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?auto=format&fit=crop&q=80&w=800",
-        badge: "bestseller",
-        stock: "in-stock",
-        moq: 24,
-        tieredPricing: [
-            { qty: "24-99", discount: "15%" },
-            { qty: "100-499", discount: "25%" },
-            { qty: "500+", discount: "35%" }
-        ]
-    },
-    {
-        id: 1,
-        name: "Terra Ceramic Vase",
-        category: "Decor",
-        image: "https://images.unsplash.com/photo-1581783342308-f792ca11df53?auto=format&fit=crop&q=80&w=800",
-        badge: "new",
-        stock: "in-stock",
-        moq: 12,
-        tieredPricing: [
-            { qty: "12-49", discount: "10%" },
-            { qty: "50-199", discount: "20%" },
-            { qty: "200+", discount: "30%" }
-        ]
-    },
-    {
-        id: 6,
-        name: "Linen Table Runner",
-        category: "Textiles",
-        image: "https://images.unsplash.com/photo-1595306669968-3d5272a445bd?auto=format&fit=crop&q=80&w=800",
-        badge: "eco",
-        stock: "low-stock",
-        moq: 50,
-        tieredPricing: [
-            { qty: "50-199", discount: "12%" },
-            { qty: "200-499", discount: "22%" },
-            { qty: "500+", discount: "32%" }
-        ]
-    },
-    {
-        id: 2,
-        name: "Minimalist Planter",
-        category: "Accessories",
-        image: "https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&q=80&w=800",
-        badge: null,
-        stock: "in-stock",
-        moq: 36,
-        tieredPricing: [
-            { qty: "36-99", discount: "15%" },
-            { qty: "100-299", discount: "25%" },
-            { qty: "300+", discount: "35%" }
-        ]
-    },
-]
+interface Product {
+    id: string
+    name: string
+    slug: string
+    description: string
+    image_url: string
+    gallery_urls?: string[]
+    base_price: number | null
+    sale_price?: number | null
+    sale_percentage?: number | null
+    b2b_price?: number | null
+    moq: number | null
+    badge?: string
+    stock_quantity: number
+    is_featured: boolean
+    category_id: string
+    pricingLocked?: boolean
+}
 
 const BADGE_CONFIG = {
     bestseller: { icon: TrendingUp, label: "Bestseller", color: "bg-secondary text-secondary-foreground" },
@@ -74,21 +35,56 @@ const BADGE_CONFIG = {
     eco: { icon: Leaf, label: "Eco-Friendly", color: "bg-primary text-primary-foreground" }
 }
 
-const STOCK_CONFIG = {
-    "in-stock": { label: "In Stock", color: "text-primary" },
-    "low-stock": { label: "Low Stock", color: "text-destructive" },
-    "pre-order": { label: "Pre-Order", color: "text-accent" }
+const getStockStatus = (quantity: number) => {
+    if (quantity === 0) return { label: "Out of Stock", color: "text-destructive" }
+    if (quantity < 10) return { label: "Low Stock", color: "text-destructive" }
+    return { label: "In Stock", color: "text-primary" }
 }
 
 export function ProductShowcase() {
-    const [wishlist, setWishlist] = useState<number[]>([])
-    const [hoveredProduct, setHoveredProduct] = useState<number | null>(null)
+    const [products, setProducts] = useState<Product[]>([])
+    const [loading, setLoading] = useState(true)
+    const [wishlist, setWishlist] = useState<string[]>([])
+    const [hoveredProduct, setHoveredProduct] = useState<string | null>(null)
 
-    const toggleWishlist = (id: number, e: React.MouseEvent) => {
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const data = await homepageAPI.getFeaturedProducts()
+                setProducts(data.products || [])
+            } catch (error) {
+                console.error("Failed to fetch featured products:", error)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchProducts()
+    }, [])
+
+    const toggleWishlist = (id: string, e: React.MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
         setWishlist(prev =>
             prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        )
+    }
+
+    if (loading) {
+        return (
+            <section className="py-24 px-6 bg-background">
+                <div className="container mx-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        {[...Array(4)].map((_, i) => (
+                            <div key={i} className="animate-pulse">
+                                <div className="aspect-[3/4] bg-muted rounded-lg mb-6" />
+                                <div className="h-4 bg-muted rounded mb-2" />
+                                <div className="h-4 bg-muted rounded w-2/3" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
         )
     }
 
@@ -110,9 +106,9 @@ export function ProductShowcase() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12">
                     {products.map((product, index) => {
                         const badgeConfig = product.badge ? BADGE_CONFIG[product.badge as keyof typeof BADGE_CONFIG] : null
-                        const stockConfig = STOCK_CONFIG[product.stock as keyof typeof STOCK_CONFIG]
+                        const stockConfig = getStockStatus(product.stock_quantity)
                         const isWishlisted = wishlist.includes(product.id)
-                        const isHovered = hoveredProduct === product.id
+                        const _isHovered = hoveredProduct === product.id
 
                         return (
                             <FadeIn key={product.id} delay={index * 0.1}>
@@ -126,7 +122,7 @@ export function ProductShowcase() {
                                     >
                                         <div className="aspect-[3/4] bg-muted rounded-lg mb-6 relative overflow-hidden shadow-md transition-shadow duration-300 group-hover:shadow-xl">
                                             <ParallaxImage
-                                                src={product.image}
+                                                src={product.image_url}
                                                 alt={product.name}
                                                 fill
                                                 className="object-cover transition-transform duration-700 group-hover:scale-105"
@@ -163,7 +159,6 @@ export function ProductShowcase() {
                                                 onClick={(e) => {
                                                     e.preventDefault()
                                                     e.stopPropagation()
-                                                    // Quick view modal would open here
                                                 }}
                                             >
                                                 <Eye className="w-4 h-4" />
@@ -177,7 +172,7 @@ export function ProductShowcase() {
                                                     <h3 className="font-serif text-xl mb-1 transition-colors duration-300 group-hover:text-primary">
                                                         {product.name}
                                                     </h3>
-                                                    <p className="text-sm text-muted-foreground">{product.category}</p>
+                                                    <p className="text-sm text-muted-foreground line-clamp-1">{product.description}</p>
                                                 </div>
 
                                                 {/* Stock Indicator */}
@@ -189,39 +184,74 @@ export function ProductShowcase() {
                                                 </div>
                                             </div>
 
-                                            {/* MOQ */}
-                                            <p className="text-xs text-muted-foreground">
-                                                MOQ: <span className="font-semibold text-foreground">{product.moq} units</span>
-                                            </p>
-
-                                            {/* B2B Pricing */}
-                                            <div className="relative">
-                                                <div className="flex items-center gap-2 text-sm font-medium text-primary/80 bg-primary/5 p-2 rounded-lg transition-all duration-300 group-hover:bg-primary/10 group-hover:text-primary">
-                                                    <Lock className="w-3 h-3" />
-                                                    <span>Login to view wholesale pricing</span>
-                                                </div>
-
-                                                {/* Tiered Pricing Preview on Hover */}
-                                                <AnimatePresence>
-                                                    {isHovered && (
-                                                        <motion.div
-                                                            initial={{ opacity: 0, y: -10 }}
-                                                            animate={{ opacity: 1, y: 0 }}
-                                                            exit={{ opacity: 0, y: -10 }}
-                                                            className="absolute bottom-full left-0 right-0 mb-2 bg-card border border-border rounded-lg shadow-xl p-3 z-30"
-                                                        >
-                                                            <p className="text-xs font-semibold mb-2 text-foreground">Tiered Pricing:</p>
-                                                            <div className="space-y-1">
-                                                                {product.tieredPricing.map((tier, idx) => (
-                                                                    <div key={idx} className="flex justify-between items-center text-xs">
-                                                                        <span className="text-muted-foreground">{tier.qty} units</span>
-                                                                        <span className="font-semibold text-primary">{tier.discount} off</span>
-                                                                    </div>
-                                                                ))}
+                                            {/* Pricing Tier Section */}
+                                            <div className="space-y-3 pt-2">
+                                                {product.pricingLocked ? (
+                                                    // GUEST TIER: Pricing Locked
+                                                    <div className="p-3 rounded-lg bg-gradient-to-r from-primary/20 to-accent/20 border-2 border-primary/30 shadow-sm">
+                                                        <div className="flex items-start gap-3">
+                                                            <Lock className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                                                            <div className="flex-1">
+                                                                <p className="text-xs font-bold uppercase tracking-wider text-primary mb-1">Pricing Locked</p>
+                                                                <p className="text-sm text-foreground font-medium">
+                                                                    Sign in to see prices
+                                                                </p>
                                                             </div>
-                                                        </motion.div>
-                                                    )}
-                                                </AnimatePresence>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        {/* LOGGED-IN TIER: Regular Pricing */}
+                                                        <div className="p-3 rounded-lg bg-gradient-to-r from-primary/10 to-transparent border border-primary/30">
+                                                            <div className="flex items-baseline justify-between gap-2">
+                                                                <div className="flex items-baseline gap-2">
+                                                                    <span className="text-2xl font-bold text-primary">
+                                                                        {product.sale_price !== null && product.sale_price !== undefined
+                                                                            ? `$${product.sale_price.toFixed(2)}`
+                                                                            : product.base_price !== null && product.base_price !== undefined
+                                                                                ? `$${product.base_price.toFixed(2)}`
+                                                                                : "Contact for price"}
+                                                                    </span>
+                                                                    {product.sale_price && product.base_price && (
+                                                                        <span className="text-sm text-muted-foreground line-through">
+                                                                            ${product.base_price.toFixed(2)}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                {product.sale_percentage && product.sale_percentage > 0 && (
+                                                                    <span className="px-2 py-1 bg-destructive text-destructive-foreground text-xs font-bold rounded">
+                                                                        {product.sale_percentage.toFixed(0)}% OFF
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            {product.moq && product.moq > 0 && (
+                                                                <p className="text-xs text-muted-foreground mt-2">
+                                                                    Minimum Order: <span className="font-semibold text-foreground">{product.moq} units</span>
+                                                                </p>
+                                                            )}
+                                                        </div>
+
+                                                        {/* B2B TIER: Bulk Pricing Message */}
+                                                        <div className="p-3 rounded-lg bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/40">
+                                                            <div className="flex items-start gap-3">
+                                                                <Package className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                                                                <div className="flex-1">
+                                                                    <p className="text-xs font-bold uppercase tracking-wider text-amber-700 mb-1">B2B Pricing</p>
+                                                                    {product.b2b_price && product.b2b_price > 0 ? (
+                                                                        <p className="text-sm text-amber-900 font-semibold">
+                                                                            Bulk: ${product.b2b_price.toFixed(2)} (50+ units)
+                                                                        </p>
+                                                                    ) : (
+                                                                        <Link href="/b2b-request" className="text-sm text-amber-700 font-semibold hover:text-amber-900 flex items-center gap-1 group">
+                                                                            📊 Request Bulk Pricing →
+                                                                            <span className="text-xs opacity-0 group-hover:opacity-100 transition-opacity">Get discount</span>
+                                                                        </Link>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                )}
                                             </div>
                                         </div>
                                     </motion.div>

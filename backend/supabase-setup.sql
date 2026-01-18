@@ -34,6 +34,13 @@ CREATE TABLE IF NOT EXISTS public.users (
   postal_code VARCHAR(20),
   country VARCHAR(100),
   
+  -- User Status
+  status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'banned')),
+  
+  -- Computed Fields (updated via triggers)
+  total_orders INT DEFAULT 0,
+  total_spent DECIMAL(12, 2) DEFAULT 0,
+  
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -77,9 +84,7 @@ CREATE TABLE IF NOT EXISTS public.b2b_requests (
   expires_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() + INTERVAL '24 hours',
   approved_at TIMESTAMP WITH TIME ZONE,
   approved_by UUID REFERENCES public.users(id),
-  rejection_reason TEXT,
-  
-  UNIQUE(user_id, status) WHERE status = 'pending'
+  rejection_reason TEXT
 );
 
 -- Enable RLS
@@ -174,6 +179,11 @@ CREATE TABLE IF NOT EXISTS public.products (
   -- B2B Pricing (only visible to approved B2B users)
   b2b_price DECIMAL(10, 2),
   b2b_min_quantity INT DEFAULT 1,
+  moq INT DEFAULT 1,
+  
+  -- Product Details
+  badge VARCHAR(50),
+  features TEXT[] DEFAULT '{}',
   
   -- Stock
   stock_quantity INT NOT NULL DEFAULT 0 CHECK (stock_quantity >= 0),
@@ -216,51 +226,6 @@ CREATE POLICY "products_delete_admin" ON public.products
       SELECT 1 FROM public.users WHERE id = auth.uid() AND user_type = 'admin'
     )
   );
-
--- ============================================================================
--- 5. PRICING VISIBILITY VIEW (for API to use)
--- ============================================================================
--- This view returns products with pricing based on user's B2B approval status
-CREATE OR REPLACE VIEW public.products_with_pricing AS
-SELECT 
-  p.id,
-  p.category_id,
-  p.name,
-  p.slug,
-  p.description,
-  p.long_description,
-  p.image_url,
-  p.gallery_urls,
-  p.base_price,
-  p.sale_price,
-  p.sale_percentage,
-  -- Show B2B pricing only if user is approved B2B user
-  CASE 
-    WHEN (
-      SELECT b2b_approval_status FROM public.users 
-      WHERE id = auth.uid() AND b2b_approval_status = 'approved'
-    ) IS NOT NULL THEN p.b2b_price
-    ELSE NULL
-  END AS b2b_price,
-  CASE 
-    WHEN (
-      SELECT b2b_approval_status FROM public.users 
-      WHERE id = auth.uid() AND b2b_approval_status = 'approved'
-    ) IS NOT NULL THEN p.b2b_min_quantity
-    ELSE NULL
-  END AS b2b_min_quantity,
-  p.stock_quantity,
-  p.is_active,
-  p.is_featured,
-  p.created_at,
-  p.updated_at,
-  -- B2B approval status for frontend
-  COALESCE(
-    (SELECT b2b_approval_status FROM public.users WHERE id = auth.uid()),
-    'none'
-  ) AS current_user_b2b_status
-FROM public.products p
-WHERE p.is_active = TRUE;
 
 -- ============================================================================
 -- 6. CARTS TABLE
@@ -348,6 +313,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
   user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
   status VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'shipped', 'delivered', 'cancelled')),
   total_amount DECIMAL(10, 2) NOT NULL,
+  items_count INT DEFAULT 0,
   shipping_address TEXT,
   billing_address TEXT,
   notes TEXT,
@@ -565,6 +531,7 @@ CREATE INDEX IF NOT EXISTS idx_users_b2b_status ON public.users(b2b_approval_sta
 CREATE INDEX IF NOT EXISTS idx_b2b_requests_user_id ON public.b2b_requests(user_id);
 CREATE INDEX IF NOT EXISTS idx_b2b_requests_status ON public.b2b_requests(status);
 CREATE INDEX IF NOT EXISTS idx_b2b_requests_expires_at ON public.b2b_requests(expires_at);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_b2b_requests_pending_unique ON public.b2b_requests(user_id) WHERE status = 'pending';
 CREATE INDEX IF NOT EXISTS idx_products_category_id ON public.products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_slug ON public.products(slug);
 CREATE INDEX IF NOT EXISTS idx_products_is_active ON public.products(is_active);
@@ -583,5 +550,4 @@ COMMENT ON TABLE public.users IS 'User profiles with B2B approval tracking';
 COMMENT ON COLUMN public.users.b2b_approval_status IS 'none, pending, approved, or rejected';
 COMMENT ON COLUMN public.users.b2b_approval_expires_at IS 'B2B request expires 24 hours after requested_at';
 COMMENT ON TABLE public.b2b_requests IS 'B2B approval requests with 24-hour expiration';
-COMMENT ON TABLE public.products_with_pricing IS 'View that shows pricing based on user B2B approval status';
 COMMENT ON TABLE public.admin_content IS 'Editable homepage sections (hero, quote, collections, newsletter, etc.)';
