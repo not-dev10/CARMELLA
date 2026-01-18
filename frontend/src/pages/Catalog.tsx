@@ -26,6 +26,7 @@ interface Product {
     description: string
     is_featured: boolean
     pricingLocked?: boolean
+    userTier?: 'guest' | 'user' | 'b2b_approved' | 'b2b_pending' | 'b2b_rejected'
 }
 
 interface Category {
@@ -86,10 +87,10 @@ export default function Catalog() {
         // Sort
         switch (sortBy) {
             case "price-low":
-                filtered = [...filtered].sort((a, b) => a.base_price - b.base_price)
+                filtered = [...filtered].sort((a, b) => (a.base_price || 0) - (b.base_price || 0))
                 break
             case "price-high":
-                filtered = [...filtered].sort((a, b) => b.base_price - a.base_price)
+                filtered = [...filtered].sort((a, b) => (b.base_price || 0) - (a.base_price || 0))
                 break
             case "name":
                 filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name))
@@ -329,23 +330,27 @@ function ProductCard({
                     <div className="space-y-3">
                         {/* Pricing Tier Section */}
                         {product.pricingLocked ? (
-                            // GUEST TIER: Pricing Locked
+                            // PRICING LOCKED: Different messages for guest vs logged-in
                             <div className="p-3 rounded-lg bg-gradient-to-r from-primary/20 to-accent/20 border-2 border-primary/30">
                                 <div className="flex items-center gap-2">
                                     <Lock className="w-5 h-5 text-primary" />
                                     <div>
                                         <p className="text-xs font-bold uppercase tracking-wider text-primary">Pricing Locked</p>
-                                        <p className="text-sm text-foreground">Sign in to see prices</p>
+                                        <p className="text-sm text-foreground">
+                                            {product.userTier === 'guest'
+                                                ? 'Login to view pricing'
+                                                : 'Request B2B approval to see prices'}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
                         ) : (
                             <>
                                 {/* LOGGED-IN TIER: Regular Pricing */}
-                                <div className="p-3 rounded-lg bg-gradient-to-r from-primary/10 to-transparent border border-primary/30">
+                                <div className="p-3 rounded-lg bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200">
                                     <div className="flex items-baseline justify-between gap-2">
                                         <div className="flex items-baseline gap-2">
-                                            <span className="text-2xl font-bold text-primary">
+                                            <span className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">
                                                 {product.sale_price !== null && product.sale_price !== undefined
                                                     ? `$${product.sale_price.toFixed(2)}`
                                                     : product.base_price !== null && product.base_price !== undefined
@@ -353,38 +358,45 @@ function ProductCard({
                                                         : "Contact for price"}
                                             </span>
                                             {product.sale_price && product.base_price && (
-                                                <span className="text-sm text-muted-foreground line-through">
+                                                <span className="text-sm text-gray-500 line-through">
                                                     ${product.base_price.toFixed(2)}
                                                 </span>
                                             )}
                                         </div>
                                         {product.sale_percentage && product.sale_percentage > 0 && (
-                                            <span className="px-2 py-1 bg-destructive text-destructive-foreground text-xs font-bold rounded">
+                                            <span className="px-2 py-1 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold rounded">
                                                 {product.sale_percentage.toFixed(0)}% OFF
                                             </span>
                                         )}
                                     </div>
                                     {product.moq && product.moq > 0 && (
-                                        <p className="text-xs text-muted-foreground mt-2">
-                                            Minimum Order: <span className="font-semibold text-foreground">{product.moq} units</span>
+                                        <p className="text-xs text-gray-600 mt-2">
+                                            Minimum Order: <span className="font-semibold text-gray-800">{product.moq} units</span>
                                         </p>
                                     )}
                                 </div>
 
                                 {/* B2B TIER: Bulk Pricing Message */}
-                                <div className="p-3 rounded-lg bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/40">
+                                <div className="p-3 rounded-lg bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200">
                                     <div className="flex items-start gap-3">
-                                        <Package className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                                        <Package className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
                                         <div>
-                                            <p className="text-xs font-bold uppercase tracking-wider text-amber-700">B2B Pricing</p>
+                                            <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">B2B Pricing</p>
                                             {product.b2b_price && product.b2b_price > 0 ? (
-                                                <p className="text-sm text-amber-900 font-semibold">
+                                                <p className="text-sm text-emerald-800 font-semibold">
                                                     Bulk: ${product.b2b_price.toFixed(2)} (50+ units)
                                                 </p>
                                             ) : (
-                                                <Link href="/b2b-request" className="text-sm text-amber-700 font-semibold hover:text-amber-900">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        window.location.href = '/b2b-request';
+                                                    }}
+                                                    className="text-sm text-emerald-700 font-semibold hover:text-emerald-900"
+                                                >
                                                     📊 Request Bulk Pricing →
-                                                </Link>
+                                                </button>
                                             )}
                                         </div>
                                     </div>
@@ -444,22 +456,26 @@ function ProductCard({
                     <div className="space-y-2 flex-1">
                         {/* Pricing Tier Section */}
                         {product.pricingLocked ? (
-                            // GUEST TIER: Pricing Locked
+                            // PRICING LOCKED: Different messages for guest vs logged-in
                             <div className="p-2 rounded-lg bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30">
                                 <div className="flex items-center gap-2">
                                     <Lock className="w-4 h-4 text-primary flex-shrink-0" />
                                     <div className="min-w-0">
                                         <p className="text-xs font-bold uppercase tracking-wider text-primary leading-tight">Locked</p>
-                                        <p className="text-xs text-foreground leading-tight">Sign in</p>
+                                        <p className="text-xs text-foreground leading-tight">
+                                            {product.userTier === 'guest'
+                                                ? 'Login to view pricing'
+                                                : 'Request B2B approval'}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
                         ) : (
                             <>
                                 {/* LOGGED-IN TIER: Regular Pricing */}
-                                <div className="p-2 rounded-lg bg-gradient-to-r from-primary/10 to-transparent border border-primary/30">
+                                <div className="p-2 rounded-lg bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200">
                                     <div className="flex items-baseline justify-between gap-1">
-                                        <span className="text-xl font-bold text-primary truncate">
+                                        <span className="text-xl font-bold bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent truncate">
                                             {product.sale_price !== null && product.sale_price !== undefined
                                                 ? `$${product.sale_price.toFixed(2)}`
                                                 : product.base_price !== null && product.base_price !== undefined
@@ -467,30 +483,30 @@ function ProductCard({
                                                     : "Contact"}
                                         </span>
                                         {product.sale_percentage && product.sale_percentage > 0 && (
-                                            <span className="px-1.5 py-0.5 bg-destructive text-destructive-foreground text-xs font-bold rounded whitespace-nowrap">
+                                            <span className="px-1.5 py-0.5 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold rounded whitespace-nowrap">
                                                 {product.sale_percentage.toFixed(0)}% OFF
                                             </span>
                                         )}
                                     </div>
                                     {product.sale_price && product.base_price && (
-                                        <span className="text-xs text-muted-foreground line-through">
+                                        <span className="text-xs text-gray-500 line-through">
                                             ${product.base_price.toFixed(2)}
                                         </span>
                                     )}
                                 </div>
 
                                 {/* B2B TIER: Bulk Pricing Message */}
-                                <div className="p-2 rounded-lg bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/40">
+                                <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200">
                                     <div className="flex items-start gap-2">
-                                        <Package className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
+                                        <Package className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0 mt-0.5" />
                                         <div className="min-w-0">
-                                            <p className="text-xs font-bold uppercase tracking-wider text-amber-700 leading-tight">B2B</p>
+                                            <p className="text-xs font-bold uppercase tracking-wider text-emerald-700 leading-tight">B2B</p>
                                             {product.b2b_price && product.b2b_price > 0 ? (
-                                                <p className="text-xs text-amber-900 font-semibold leading-tight">
+                                                <p className="text-xs text-emerald-800 font-semibold leading-tight">
                                                     ${product.b2b_price.toFixed(2)}
                                                 </p>
                                             ) : (
-                                                <p className="text-xs text-amber-700 font-semibold leading-tight">Request</p>
+                                                <p className="text-xs text-emerald-700 font-semibold leading-tight">Request</p>
                                             )}
                                         </div>
                                     </div>

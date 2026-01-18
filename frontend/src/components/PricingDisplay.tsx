@@ -10,6 +10,7 @@ interface PricingDisplayProps {
   b2bMinQuantity?: number | null;
   isBulkEligible?: boolean;
   pricingLocked?: boolean;
+  userTier?: 'guest' | 'user' | 'b2b_approved' | 'b2b_pending' | 'b2b_rejected';
   className?: string;
   showSavings?: boolean;
 }
@@ -21,23 +22,36 @@ export function PricingDisplay({
   b2bMinQuantity,
   isBulkEligible,
   pricingLocked = false,
+  userTier = 'guest',
   className = '',
   showSavings = true,
 }: PricingDisplayProps) {
-  
-  // Guest user - pricing is locked
+
+  // Pricing is locked - show different messages based on user tier
   if (pricingLocked || basePrice === null) {
+    const message = userTier === 'guest'
+      ? 'Login to view pricing'
+      : 'Request B2B approval to see prices';
+
+    const linkText = userTier === 'guest'
+      ? 'Sign in →'
+      : 'Request approval →';
+
+    const linkHref = userTier === 'guest'
+      ? '/auth/signin'
+      : '/b2b-request';
+
     return (
       <div className={`flex flex-col gap-3 ${className}`}>
         <div className="flex items-center gap-3 p-4 rounded-lg bg-primary/10 border border-primary/20">
           <Lock className="w-5 h-5 text-primary" />
           <div className="flex-1">
             <p className="text-sm font-semibold text-primary">Pricing Locked</p>
-            <p className="text-xs text-muted-foreground">Login to view prices</p>
+            <p className="text-xs text-muted-foreground">{message}</p>
           </div>
         </div>
-        <Link href="/auth/signin" className="text-xs font-medium text-primary hover:underline">
-          Sign in to unlock pricing →
+        <Link href={linkHref} className="text-xs font-medium text-primary hover:underline">
+          {linkText}
         </Link>
       </div>
     );

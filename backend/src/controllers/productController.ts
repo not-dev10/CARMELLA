@@ -1,50 +1,20 @@
 import { Request, Response } from "express";
 import { supabase } from "../config/supabase.js";
+import { getSupabaseClient } from "../utils/supabaseClient.js";
 
 /**
- * Helper function to apply pricing visibility rules
- * Guest (not logged in): No pricing visible - locked
- * Logged-in user: Base and sale prices visible
- * Approved B2B user: All pricing visible including B2B rates
+ * SECURE PRICING IMPLEMENTATION
+ * ==============================
+ * Uses products_safe VIEW which implements database-level RLS pricing security
+ * 
+ * Role Logic:
+ * - Guest (not logged in):     Can see products ✅ | Can see price ❌ → "Login to view pricing"
+ * - Logged-in (Pending):       Can see products ✅ | Can see price ❌ → "Approval required"
+ * - Approved User:             Can see products ✅ | Can see price ✅ → Full access
+ * 
+ * The VIEW automatically returns NULL for prices based on user's b2b_approval_status
+ * IMPORTANT: Must use getSupabaseClient(req) to pass user's auth context to the view
  */
-async function applyPricingRules(products: any[], userId?: string) {
-  if (!userId) {
-    // Guest user - hide ALL pricing
-    return products.map(p => ({
-      ...p,
-      base_price: null,
-      sale_price: null,
-      sale_percentage: null,
-      b2b_price: null,
-      b2b_min_quantity: null,
-      moq: null,
-      pricingLocked: true,
-    }));
-  }
-
-  // Logged-in user - check B2B approval status
-  const { data: user } = await supabase
-    .from("users")
-    .select("b2b_approval_status")
-    .eq("id", userId)
-    .single();
-
-  if (user?.b2b_approval_status !== "approved") {
-    // Logged-in but not B2B approved - show base/sale price only, hide B2B
-    return products.map(p => ({
-      ...p,
-      b2b_price: null,
-      b2b_min_quantity: null,
-      pricingLocked: false,
-    }));
-  }
-
-  // Approved B2B user - show all pricing
-  return products.map(p => ({
-    ...p,
-    pricingLocked: false,
-  }));
-}
 
 /**
  * Get all products with filtering
@@ -56,9 +26,10 @@ export async function getProducts(req: Request, res: Response) {
     const pageNum = parseInt(page as string) || 1;
     const limitNum = parseInt(limit as string) || 12;
     const offset = (pageNum - 1) * limitNum;
-    const userId = req.userId;
 
-    let query = supabase.from("products").select("*", { count: "exact" });
+    // Use user-specific client to pass auth context to products_safe view
+    const userSupabase = getSupabaseClient(req);
+    let query = userSupabase.from("products_safe").select("*", { count: "exact" });
 
     if (category) {
       query = query.eq("category_id", category);
@@ -70,6 +41,7 @@ export async function getProducts(req: Request, res: Response) {
       );
     }
 
+    // Note: Price filtering only works for approved users (others see NULL)
     if (minPrice) {
       query = query.gte("base_price", parseFloat(minPrice as string));
     }
@@ -86,11 +58,15 @@ export async function getProducts(req: Request, res: Response) {
       return res.status(400).json({ error: error.message });
     }
 
-    // Apply pricing visibility rules
-    const productsWithPricing = await applyPricingRules(data || [], userId);
+    // Transform database fields to camelCase for frontend
+    const products = (data || []).map((p: any) => ({
+      ...p,
+      pricingLocked: p.pricing_locked,
+      userTier: p.user_tier,
+    }));
 
     return res.json({
-      products: productsWithPricing,
+      products,
       pagination: {
         page: pageNum,
         limit: limitNum,
@@ -110,10 +86,9 @@ export async function getProducts(req: Request, res: Response) {
 export async function getProduct(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const userId = req.userId;
 
     const { data, error } = await supabase
-      .from("products")
+      .from("products_safe")
       .select("*")
       .eq("id", id)
       .single();
@@ -122,10 +97,31 @@ export async function getProduct(req: Request, res: Response) {
       return res.status(404).json({ error: "Product not found" });
     }
 
-    // Apply pricing visibility rules
-    const [productWithPricing] = await applyPricingRules([data], userId);
+    return res.json(data);
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+}
 
-    return res.json(productWithPricing);
+/**
+ * Get product by slug
+ * GET /api/products/slug/:slug
+ */
+export async function getProductBySlug(req: Request, res: Response) {
+  try {
+    const { slug } = req.params;
+
+    const { data, error } = await supabase
+      .from("products_safe")
+      .select("*")
+      .eq("slug", slug)
+      .single();
+
+    if (error) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    return res.json(data);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
@@ -134,10 +130,11 @@ export async function getProduct(req: Request, res: Response) {
 /**
  * Create product (admin only)
  * POST /api/products
+ * Note: Admins create in base products table, not the view
  */
 export async function createProduct(req: Request, res: Response) {
   try {
-    const { name, slug, description, long_description, base_price, sale_price, category_id, image_url, stock_quantity, is_featured } =
+    const { name, slug, description, long_description, base_price, sale_price, b2b_price, category_id, image_url, stock_quantity, is_featured, moq, b2b_min_quantity } =
       req.body;
 
     const { data, error } = await supabase.from("products").insert({
@@ -147,18 +144,21 @@ export async function createProduct(req: Request, res: Response) {
       long_description,
       base_price,
       sale_price,
+      b2b_price,
       category_id,
       image_url,
       stock_quantity,
       is_featured,
+      moq: moq || 1,
+      b2b_min_quantity: b2b_min_quantity || 1,
       is_active: true,
-    });
+    }).select();
 
     if (error) {
       return res.status(400).json({ error: error.message });
     }
 
-    return res.status(201).json(data);
+    return res.status(201).json(data[0]);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
@@ -215,19 +215,15 @@ export async function deleteProduct(req: Request, res: Response) {
 /**
  * Get pricing info for a product
  * GET /api/products/:id/pricing
- * Returns pricing based on user tier:
- * - Guest: No pricing (pricingLocked: true)
- * - Logged-in: Base/sale prices
- * - Approved B2B: All prices including B2B rates
+ * Returns pricing based on user tier (handled by products_safe view)
  */
 export async function getProductPricing(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const userId = req.userId;
 
     const { data: product, error } = await supabase
-      .from("products")
-      .select("base_price, sale_price, sale_percentage, b2b_price, b2b_min_quantity, moq")
+      .from("products_safe")
+      .select("base_price, sale_price, sale_percentage, b2b_price, b2b_min_quantity, moq, pricing_locked, user_tier")
       .eq("id", id)
       .single();
 
@@ -235,43 +231,25 @@ export async function getProductPricing(req: Request, res: Response) {
       return res.status(404).json({ error: "Product not found" });
     }
 
-    // Guest user - no pricing access
-    if (!userId) {
-      return res.json({
-        basePrice: null,
-        salePrice: null,
-        salePercentage: null,
-        displayPrice: null,
-        b2bPrice: null,
-        b2bMinQuantity: null,
-        moq: null,
-        isBulkEligible: false,
-        pricingLocked: true,
-        userTier: "guest",
-      });
-    }
+    // Return pricing info with appropriate message based on access level
+    const getMessage = (tier: string, locked: boolean) => {
+      if (tier === "guest") return "Login to view pricing";
+      if (locked) return "B2B approval required to view pricing";
+      return "Full pricing access";
+    };
 
-    // Check user's B2B approval status
-    const { data: user } = await supabase
-      .from("users")
-      .select("b2b_approval_status")
-      .eq("id", userId)
-      .single();
-
-    const b2bApproved = user?.b2b_approval_status === "approved";
-
-    // Logged-in user - show base/sale prices
     return res.json({
       basePrice: product.base_price,
       salePrice: product.sale_price,
       salePercentage: product.sale_percentage,
       displayPrice: product.sale_price || product.base_price,
-      b2bPrice: b2bApproved ? product.b2b_price : null,
-      b2bMinQuantity: b2bApproved ? product.b2b_min_quantity : null,
+      b2bPrice: product.b2b_price,
+      b2bMinQuantity: product.b2b_min_quantity,
       moq: product.moq,
-      isBulkEligible: b2bApproved,
-      pricingLocked: false,
-      userTier: b2bApproved ? "b2b_approved" : "user",
+      isBulkEligible: product.user_tier === "b2b_approved",
+      pricingLocked: product.pricing_locked,
+      userTier: product.user_tier,
+      message: getMessage(product.user_tier, product.pricing_locked),
     });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });

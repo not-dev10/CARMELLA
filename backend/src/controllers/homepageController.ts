@@ -1,50 +1,11 @@
 import { Request, Response } from "express";
 import { supabase } from "../config/supabase.js";
+import { getSupabaseClient } from "../utils/supabaseClient.js";
 
 /**
- * Helper function to apply pricing visibility rules
- * Guest (not logged in): No pricing visible - locked
- * Logged-in user: Base and sale prices visible
- * Approved B2B user: All pricing visible including B2B rates
+ * Homepage Controller
+ * Uses products_safe view for secure pricing
  */
-async function applyPricingRules(products: any[], userId?: string) {
-  if (!userId) {
-    // Guest user - hide ALL pricing
-    return products.map(p => ({
-      ...p,
-      base_price: null,
-      sale_price: null,
-      sale_percentage: null,
-      b2b_price: null,
-      b2b_min_quantity: null,
-      moq: null,
-      pricingLocked: true,
-    }));
-  }
-
-  // Logged-in user - check B2B approval status
-  const { data: user } = await supabase
-    .from("users")
-    .select("b2b_approval_status")
-    .eq("id", userId)
-    .single();
-
-  if (user?.b2b_approval_status !== "approved") {
-    // Logged-in but not B2B approved - show base/sale price only, hide B2B
-    return products.map(p => ({
-      ...p,
-      b2b_price: null,
-      b2b_min_quantity: null,
-      pricingLocked: false,
-    }));
-  }
-
-  // Approved B2B user - show all pricing
-  return products.map(p => ({
-    ...p,
-    pricingLocked: false,
-  }));
-}
 
 // Get all homepage content sections
 export const getHomepageContent = async (req: Request, res: Response) => {
@@ -149,27 +110,29 @@ export const updateSection = async (req: Request, res: Response) => {
 // Get featured products for homepage
 export const getFeaturedProducts = async (req: Request, res: Response) => {
   try {
-    const userId = req.userId;
-
-    const { data: products, error } = await supabase
-      .from("products")
+    // Use user-specific client to pass auth context to products_safe view
+    const userSupabase = getSupabaseClient(req);
+    const { data: products, error } = await userSupabase
+      .from("products_safe")
       .select("*")
       .eq("is_featured", true)
-      .eq("is_active", true)
       .limit(6);
 
     if (error) {
       return res.status(500).json({ error: "Failed to fetch featured products" });
     }
 
-    // Apply pricing visibility rules
-    const productsWithPricing = await applyPricingRules(products || [], userId);
+    // Transform database fields to camelCase for frontend
+    const transformedProducts = (products || []).map((p: any) => ({
+      ...p,
+      pricingLocked: p.pricing_locked,
+      userTier: p.user_tier,
+    }));
 
-    res.json({ 
-      products: productsWithPricing,
+    res.json({
+      products: transformedProducts,
       pricingInfo: {
-        isLoggedIn: !!userId,
-        b2bPricingVisible: userId ? true : false,
+        message: "Pricing visibility based on B2B approval status"
       }
     });
   } catch (error) {

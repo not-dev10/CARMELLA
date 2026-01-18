@@ -1,12 +1,17 @@
 export interface User {
   id: string;
   email: string;
-  user_type: "customer" | "b2b_pending" | "b2b_approved" | "admin";
+  user_type: "user" | "admin";
+  is_b2b_user?: boolean;
+  b2b_approval_status?: "none" | "pending" | "approved" | "rejected";
   first_name?: string;
   last_name?: string;
   phone?: string;
   company_name?: string;
   google_id?: string;
+  google_name?: string;
+  google_email?: string;
+  google_picture?: string;
   created_at: string;
   updated_at: string;
 }

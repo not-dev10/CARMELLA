@@ -2,11 +2,15 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api"
 
 // Get auth token from localStorage
 const getAuthToken = () => {
-  const session = localStorage.getItem("sb-session");
-  if (session) {
+  // Supabase stores session with project-specific key
+  const authKey = Object.keys(localStorage).find(k => k.includes('auth-token'));
+  if (authKey) {
     try {
-      const parsed = JSON.parse(session);
-      return parsed.access_token;
+      const session = localStorage.getItem(authKey);
+      if (session) {
+        const parsed = JSON.parse(session);
+        return parsed.access_token || parsed;
+      }
     } catch {
       return null;
     }

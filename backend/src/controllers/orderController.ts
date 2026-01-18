@@ -10,6 +10,20 @@ export const createOrder = async (req: Request, res: Response) => {
   }
 
   try {
+    // Check if user is approved for B2B (required to see pricing and place orders)
+    const { data: user } = await supabase
+      .from("users")
+      .select("b2b_approval_status")
+      .eq("id", userId)
+      .single();
+
+    if (user?.b2b_approval_status !== "approved") {
+      return res.status(403).json({
+        error: "B2B approval required to place orders",
+        message: "Please request B2B approval to access pricing and place orders"
+      });
+    }
+
     // Get user's cart
     const { data: cart, error: cartError } = await supabase
       .from("carts")
@@ -24,24 +38,51 @@ export const createOrder = async (req: Request, res: Response) => {
     // Get cart items
     const { data: cartItems, error: itemsError } = await supabase
       .from("cart_items")
-      .select("*, products(price, b2b_price)")
+      .select("product_id, quantity")
       .eq("cart_id", cart.id);
 
     if (itemsError || !cartItems || cartItems.length === 0) {
       return res.status(400).json({ error: "Cart is empty" });
     }
 
-    // Calculate total
+    // Fetch products with secure pricing from products_safe view
+    const productIds = cartItems.map(item => item.product_id);
+    const { data: products, error: productsError } = await supabase
+      .from("products_safe")
+      .select("id, base_price, sale_price, b2b_price, moq")
+      .in("id", productIds);
+
+    if (productsError || !products) {
+      return res.status(500).json({ error: "Failed to fetch product pricing" });
+    }
+
+    // Calculate total and prepare order items
     let total = 0;
     const orderItems = cartItems.map((item: any) => {
-      const price = req.userType === "b2b_approved" 
-        ? item.products.b2b_price || item.products.price 
-        : item.products.price;
+      const product = products.find(p => p.id === item.product_id);
+
+      if (!product) {
+        throw new Error(`Product ${item.product_id} not found`);
+      }
+
+      // Use B2B price if available, otherwise sale price, otherwise base price
+      const price = product.b2b_price || product.sale_price || product.base_price;
+
+      if (!price) {
+        throw new Error("Pricing not available. Please ensure B2B approval is active.");
+      }
+
+      // Check MOQ
+      if (product.moq && item.quantity < product.moq) {
+        throw new Error(`Minimum order quantity for product ${product.id} is ${product.moq}`);
+      }
+
       total += price * item.quantity;
+
       return {
         product_id: item.product_id,
         quantity: item.quantity,
-        price,
+        price_at_purchase: price,
       };
     });
 
@@ -51,8 +92,7 @@ export const createOrder = async (req: Request, res: Response) => {
       .insert([
         {
           user_id: userId,
-          items: orderItems,
-          total,
+          total_amount: total,
           status: "pending",
           shipping_address: shippingAddress,
           items_count: cartItems.length,
@@ -65,12 +105,28 @@ export const createOrder = async (req: Request, res: Response) => {
       return res.status(500).json({ error: "Failed to create order" });
     }
 
+    // Insert order items
+    const { error: orderItemsError } = await supabase
+      .from("order_items")
+      .insert(
+        orderItems.map(item => ({
+          order_id: order.id,
+          ...item,
+        }))
+      );
+
+    if (orderItemsError) {
+      // Rollback order if items insert fails
+      await supabase.from("orders").delete().eq("id", order.id);
+      return res.status(500).json({ error: "Failed to create order items" });
+    }
+
     // Clear cart
     await supabase.from("cart_items").delete().eq("cart_id", cart.id);
 
     res.status(201).json({ success: true, order });
-  } catch (error) {
-    res.status(500).json({ error: "Internal server error" });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || "Internal server error" });
   }
 };
 

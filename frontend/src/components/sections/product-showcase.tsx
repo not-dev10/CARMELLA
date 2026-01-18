@@ -27,6 +27,7 @@ interface Product {
     is_featured: boolean
     category_id: string
     pricingLocked?: boolean
+    userTier?: 'guest' | 'user' | 'b2b_approved' | 'b2b_pending' | 'b2b_rejected'
 }
 
 const BADGE_CONFIG = {
@@ -145,8 +146,8 @@ export function ProductShowcase() {
                                                 whileTap={{ scale: 0.9 }}
                                                 onClick={(e) => toggleWishlist(product.id, e)}
                                                 className={`absolute top-3 right-3 z-20 p-2 rounded-full backdrop-blur-md transition-all ${isWishlisted
-                                                        ? 'bg-primary text-primary-foreground'
-                                                        : 'bg-white/80 text-foreground hover:bg-white'
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'bg-white/80 text-foreground hover:bg-white'
                                                     }`}
                                             >
                                                 <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-current' : ''}`} />
@@ -187,14 +188,16 @@ export function ProductShowcase() {
                                             {/* Pricing Tier Section */}
                                             <div className="space-y-3 pt-2">
                                                 {product.pricingLocked ? (
-                                                    // GUEST TIER: Pricing Locked
+                                                    // PRICING LOCKED: Different messages for guest vs logged-in
                                                     <div className="p-3 rounded-lg bg-gradient-to-r from-primary/20 to-accent/20 border-2 border-primary/30 shadow-sm">
                                                         <div className="flex items-start gap-3">
                                                             <Lock className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                                                             <div className="flex-1">
                                                                 <p className="text-xs font-bold uppercase tracking-wider text-primary mb-1">Pricing Locked</p>
                                                                 <p className="text-sm text-foreground font-medium">
-                                                                    Sign in to see prices
+                                                                    {product.userTier === 'guest'
+                                                                        ? 'Login to view pricing'
+                                                                        : 'Request B2B approval'}
                                                                 </p>
                                                             </div>
                                                         </div>
@@ -202,10 +205,10 @@ export function ProductShowcase() {
                                                 ) : (
                                                     <>
                                                         {/* LOGGED-IN TIER: Regular Pricing */}
-                                                        <div className="p-3 rounded-lg bg-gradient-to-r from-primary/10 to-transparent border border-primary/30">
+                                                        <div className="p-3 rounded-lg bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200">
                                                             <div className="flex items-baseline justify-between gap-2">
                                                                 <div className="flex items-baseline gap-2">
-                                                                    <span className="text-2xl font-bold text-primary">
+                                                                    <span className="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">
                                                                         {product.sale_price !== null && product.sale_price !== undefined
                                                                             ? `$${product.sale_price.toFixed(2)}`
                                                                             : product.base_price !== null && product.base_price !== undefined
@@ -213,39 +216,46 @@ export function ProductShowcase() {
                                                                                 : "Contact for price"}
                                                                     </span>
                                                                     {product.sale_price && product.base_price && (
-                                                                        <span className="text-sm text-muted-foreground line-through">
+                                                                        <span className="text-sm text-gray-500 line-through">
                                                                             ${product.base_price.toFixed(2)}
                                                                         </span>
                                                                     )}
                                                                 </div>
                                                                 {product.sale_percentage && product.sale_percentage > 0 && (
-                                                                    <span className="px-2 py-1 bg-destructive text-destructive-foreground text-xs font-bold rounded">
+                                                                    <span className="px-2 py-1 bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold rounded">
                                                                         {product.sale_percentage.toFixed(0)}% OFF
                                                                     </span>
                                                                 )}
                                                             </div>
                                                             {product.moq && product.moq > 0 && (
-                                                                <p className="text-xs text-muted-foreground mt-2">
-                                                                    Minimum Order: <span className="font-semibold text-foreground">{product.moq} units</span>
+                                                                <p className="text-xs text-gray-600 mt-2">
+                                                                    Minimum Order: <span className="font-semibold text-gray-800">{product.moq} units</span>
                                                                 </p>
                                                             )}
                                                         </div>
 
                                                         {/* B2B TIER: Bulk Pricing Message */}
-                                                        <div className="p-3 rounded-lg bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/40">
+                                                        <div className="p-3 rounded-lg bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200">
                                                             <div className="flex items-start gap-3">
-                                                                <Package className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                                                                <Package className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
                                                                 <div className="flex-1">
-                                                                    <p className="text-xs font-bold uppercase tracking-wider text-amber-700 mb-1">B2B Pricing</p>
+                                                                    <p className="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-1">B2B Pricing</p>
                                                                     {product.b2b_price && product.b2b_price > 0 ? (
-                                                                        <p className="text-sm text-amber-900 font-semibold">
+                                                                        <p className="text-sm text-emerald-800 font-semibold">
                                                                             Bulk: ${product.b2b_price.toFixed(2)} (50+ units)
                                                                         </p>
                                                                     ) : (
-                                                                        <Link href="/b2b-request" className="text-sm text-amber-700 font-semibold hover:text-amber-900 flex items-center gap-1 group">
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.preventDefault();
+                                                                                e.stopPropagation();
+                                                                                window.location.href = '/b2b-request';
+                                                                            }}
+                                                                            className="text-sm text-emerald-700 font-semibold hover:text-emerald-900 flex items-center gap-1 group"
+                                                                        >
                                                                             📊 Request Bulk Pricing →
                                                                             <span className="text-xs opacity-0 group-hover:opacity-100 transition-opacity">Get discount</span>
-                                                                        </Link>
+                                                                        </button>
                                                                     )}
                                                                 </div>
                                                             </div>

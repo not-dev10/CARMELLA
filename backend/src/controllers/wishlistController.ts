@@ -5,16 +5,32 @@ export const getWishlist = async (req: Request, res: Response) => {
   const userId = req.userId;
 
   try {
-    const { data: wishlist, error } = await supabase
+    // Fetch wishlist with product details from products_safe (secure pricing)
+    const { data: wishlistIds, error: wishlistError } = await supabase
       .from("wishlists")
-      .select("*, products(*)")
+      .select("product_id")
       .eq("user_id", userId);
 
-    if (error) {
+    if (wishlistError) {
       return res.status(500).json({ error: "Failed to fetch wishlist" });
     }
 
-    res.json({ items: wishlist || [] });
+    if (!wishlistIds || wishlistIds.length === 0) {
+      return res.json({ items: [] });
+    }
+
+    // Fetch products with secure pricing
+    const productIds = wishlistIds.map(w => w.product_id);
+    const { data: products, error: productsError } = await supabase
+      .from("products_safe")
+      .select("*")
+      .in("id", productIds);
+
+    if (productsError) {
+      return res.status(500).json({ error: "Failed to fetch products" });
+    }
+
+    res.json({ items: products || [] });
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
   }

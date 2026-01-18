@@ -30,7 +30,7 @@ export async function signup(req: Request, res: Response) {
       first_name: firstName,
       last_name: lastName,
       phone,
-      user_type: "customer",
+      user_type: "user",
     });
 
     if (profileError) {
@@ -106,7 +106,7 @@ export async function googleAuth(req: Request, res: Response) {
         google_name: data.user!.user_metadata?.name,
         google_email: data.user!.email,
         google_picture: data.user!.user_metadata?.picture,
-        user_type: "customer",
+        user_type: "user",
       });
 
       if (profileError) {
