@@ -87,7 +87,9 @@ export async function getProduct(req: Request, res: Response) {
   try {
     const { id } = req.params;
 
-    const { data, error } = await supabase
+    // Use user-specific client to pass auth context to products_safe view
+    const userSupabase = getSupabaseClient(req);
+    const { data, error } = await userSupabase
       .from("products_safe")
       .select("*")
       .eq("id", id)
@@ -97,7 +99,14 @@ export async function getProduct(req: Request, res: Response) {
       return res.status(404).json({ error: "Product not found" });
     }
 
-    return res.json(data);
+    // Transform database fields to camelCase for frontend
+    const transformedProduct = {
+      ...data,
+      pricingLocked: data.pricing_locked,
+      userTier: data.user_tier,
+    };
+
+    return res.json(transformedProduct);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
@@ -111,7 +120,9 @@ export async function getProductBySlug(req: Request, res: Response) {
   try {
     const { slug } = req.params;
 
-    const { data, error } = await supabase
+    // Use user-specific client to pass auth context to products_safe view
+    const userSupabase = getSupabaseClient(req);
+    const { data, error } = await userSupabase
       .from("products_safe")
       .select("*")
       .eq("slug", slug)
@@ -121,7 +132,14 @@ export async function getProductBySlug(req: Request, res: Response) {
       return res.status(404).json({ error: "Product not found" });
     }
 
-    return res.json(data);
+    // Transform database fields to camelCase for frontend
+    const transformedProduct = {
+      ...data,
+      pricingLocked: data.pricing_locked,
+      userTier: data.user_tier,
+    };
+
+    return res.json(transformedProduct);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
