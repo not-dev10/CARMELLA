@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
+import { useLocation } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import { SlidersHorizontal, Grid3x3, List, Heart, Lock, Package } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -43,6 +44,7 @@ const SORT_OPTIONS = [
 ]
 
 export default function Catalog() {
+    const location = useLocation()
     const [products, setProducts] = useState<Product[]>([])
     const [categories, setCategories] = useState<Category[]>([])
     const [selectedCategory, setSelectedCategory] = useState("All")
@@ -62,6 +64,13 @@ export default function Catalog() {
                 ])
                 setProducts(productsData.products || [])
                 setCategories(categoriesData.categories || [])
+                
+                // Set category from query parameter
+                const params = new URLSearchParams(location.search)
+                const categoryParam = params.get('category')
+                if (categoryParam) {
+                    setSelectedCategory(categoryParam)
+                }
             } catch (error) {
                 console.error("Failed to fetch data:", error)
             } finally {
@@ -69,8 +78,10 @@ export default function Catalog() {
             }
         }
 
+        // Scroll to top
+        window.scrollTo(0, 0)
         fetchData()
-    }, [])
+    }, [location.search])
 
     // Filter and sort products
     const filteredProducts = useMemo(() => {
@@ -308,8 +319,6 @@ function ProductCard({
     isWishlisted: boolean
     onToggleWishlist: () => void
 }) {
-    const displayPrice = product.sale_price || product.base_price
-
     if (viewMode === "list") {
         return (
             <div className="flex gap-6 bg-card border border-border rounded-lg p-4 hover:shadow-lg transition-shadow card-gradient-hover">
@@ -420,7 +429,11 @@ function ProductCard({
 
     return (
         <Link href={`/product/${product.id}`}>
-            <div className="group relative bg-card border border-border rounded-lg overflow-hidden hover:shadow-xl transition-shadow card-gradient-hover flex flex-col h-full">
+            <motion.div
+                whileHover={{ y: -8 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                className="group relative bg-card border border-border rounded-lg overflow-hidden hover:shadow-xl transition-shadow card-gradient-hover flex flex-col h-full"
+            >
                 <div className="relative aspect-[3/4] overflow-hidden">
                     <Image
                         src={product.image_url}
@@ -515,7 +528,7 @@ function ProductCard({
                         )}
                     </div>
                 </div>
-            </div>
+            </motion.div>
         </Link>
     )
 }

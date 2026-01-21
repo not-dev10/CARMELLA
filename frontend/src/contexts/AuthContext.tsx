@@ -14,27 +14,63 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any>(null)
   const [session, setSession] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
+  // Fetch user profile from database when session changes
   useEffect(() => {
+    const fetchUserProfile = async (userId: string) => {
+      try {
+        // Use Supabase to read the user profile
+        const { data, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', userId)
+          .single()
+
+        if (!error && data) {
+          setUser(data)
+        } else {
+          // If profile fetch fails, still show the auth user
+          setUser(null)
+        }
+      } catch (error) {
+        console.error('Failed to fetch user profile:', error)
+        setUser(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+
     if (!supabase) {
+      setLoading(false)
       return
     }
 
     supabase.auth.getSession().then(({ data: { session } }: any) => {
       setSession(session)
-      setUser(session?.user ?? null)
+      if (session?.user?.id) {
+        fetchUserProfile(session.user.id)
+      } else {
+        setUser(null)
+        setLoading(false)
+      }
     }).catch(() => {
-      // Silently fail
+      setLoading(false)
     })
 
     try {
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
         setSession(session)
-        setUser(session?.user ?? null)
+        if (session?.user?.id) {
+          fetchUserProfile(session.user.id)
+        } else {
+          setUser(null)
+          setLoading(false)
+        }
       })
       return () => subscription?.unsubscribe()
     } catch {
-      // Silently fail
+      setLoading(false)
     }
   }, [])
 
@@ -43,6 +79,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error('Supabase not configured')
     }
     try {
+      // Check if user already exists with this email
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -65,6 +104,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error
       setUser(null)
       setSession(null)
+      // Redirect to home page
+      window.location.href = '/'
     } catch (error) {
       console.error('Error signing out:', error)
       throw error
@@ -72,7 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, loading: false, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   )

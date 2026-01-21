@@ -406,3 +406,203 @@
   width: 100%;
   height: 1px;
 }
+/* Mini Cart Styles */
+@layer components {
+  /* Mini Cart Container */
+  .mini-cart {
+    @apply transition-all duration-300;
+  }
+
+  /* Mini Cart Header */
+  .mini-cart-header {
+    @apply border-b border-border/50 px-6 py-4 flex items-center justify-between;
+  }
+
+  .dark .mini-cart-header {
+    @apply border-border/30;
+  }
+
+  /* Mini Cart Items Container */
+  .mini-cart-items {
+    @apply space-y-4 divide-y divide-border/50;
+  }
+
+  .dark .mini-cart-items {
+    @apply divide-border/30;
+  }
+
+  /* Mini Cart Item */
+  .mini-cart-item {
+    @apply flex gap-4 py-4 last:pb-0 first:pt-0 transition-all hover:bg-muted/30 px-6 rounded;
+  }
+
+  .dark .mini-cart-item {
+    @apply hover:bg-muted/20;
+  }
+
+  /* Mini Cart Item Image */
+  .mini-cart-item-image {
+    @apply relative w-20 h-20 rounded overflow-hidden flex-shrink-0 bg-muted border border-border/50;
+  }
+
+  .dark .mini-cart-item-image {
+    @apply border-border/30;
+  }
+
+  /* Mini Cart Price Section */
+  .mini-cart-price {
+    @apply space-y-1 mt-2;
+  }
+
+  .mini-cart-current-price {
+    @apply text-lg font-bold text-primary;
+  }
+
+  .mini-cart-original-price {
+    @apply text-sm text-muted-foreground line-through;
+  }
+
+  .mini-cart-discount-badge {
+    @apply inline-flex items-center px-2 py-1 rounded bg-red-500 text-white text-[10px] font-bold;
+  }
+
+  /* Mini Cart Quantity Controls */
+  .mini-cart-quantity-btn {
+    @apply w-6 h-6 rounded flex items-center justify-center bg-muted hover:bg-muted/80 transition-colors text-foreground/70;
+  }
+
+  .dark .mini-cart-quantity-btn {
+    @apply bg-muted/40 hover:bg-muted/60;
+  }
+
+  /* Mini Cart Pricing Summary */
+  .mini-cart-summary {
+    @apply space-y-2 text-sm border-t border-border/50 pt-3;
+  }
+
+  .dark .mini-cart-summary {
+    @apply border-border/30;
+  }
+
+  .mini-cart-summary-row {
+    @apply flex justify-between text-muted-foreground;
+  }
+
+  .mini-cart-summary-row.total {
+    @apply border-t border-border/50 pt-3 mt-3 text-base font-bold text-foreground;
+  }
+
+  .dark .mini-cart-summary-row.total {
+    @apply border-border/30;
+  }
+
+  .mini-cart-total-amount {
+    @apply text-2xl font-bold text-yellow-500;
+  }
+
+  /* Mini Cart Savings */
+  .mini-cart-savings {
+    @apply text-red-600 dark:text-red-400;
+  }
+
+  /* Mini Cart Info Banner */
+  .mini-cart-b2b-banner {
+    @apply p-3 rounded-lg flex gap-3 border;
+  }
+
+  .mini-cart-b2b-banner.approved {
+    @apply bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900;
+  }
+
+  .mini-cart-b2b-banner.standard {
+    @apply bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900;
+  }
+
+  .mini-cart-b2b-text {
+    @apply text-sm;
+  }
+
+  .mini-cart-b2b-title {
+    @apply font-semibold;
+  }
+
+  .mini-cart-b2b-desc {
+    @apply text-xs mt-0.5;
+  }
+
+  /* Mini Cart Empty State */
+  .mini-cart-empty {
+    @apply flex flex-col items-center justify-center h-full px-6 py-12 text-center;
+  }
+
+  .mini-cart-empty-icon {
+    @apply w-24 h-24 text-primary/20 mb-6;
+  }
+
+  .mini-cart-empty-title {
+    @apply font-serif text-xl font-semibold mb-2;
+  }
+
+  .mini-cart-empty-desc {
+    @apply text-sm text-muted-foreground mb-6;
+  }
+
+  /* Mini Cart Footer */
+  .mini-cart-footer {
+    @apply border-t border-border px-6 py-6 space-y-4 bg-background;
+  }
+
+  .dark .mini-cart-footer {
+    @apply border-border/50;
+  }
+
+  /* Mini Cart Buttons */
+  .mini-cart-checkout-btn {
+    @apply w-full h-12 bg-yellow-500 hover:bg-yellow-600 text-black font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .mini-cart-secondary-btn {
+    @apply w-full rounded-lg transition-colors;
+  }
+
+  /* Mini Cart Progress Bar */
+  .mini-cart-progress {
+    @apply w-full bg-muted rounded-full h-2 overflow-hidden;
+  }
+
+  .dark .mini-cart-progress {
+    @apply bg-muted/40;
+  }
+
+  .mini-cart-progress-fill {
+    @apply bg-gradient-to-r from-yellow-400 to-yellow-500;
+  }
+
+  /* Mini Cart Shipping Info */
+  .mini-cart-shipping-goal {
+    @apply space-y-2;
+  }
+
+  .mini-cart-shipping-text {
+    @apply flex justify-between text-xs;
+  }
+
+  .mini-cart-shipping-goal-amount {
+    @apply text-primary font-semibold;
+  }
+
+  /* Mini Cart Remove Button */
+  .mini-cart-remove-btn {
+    @apply ml-auto p-2 text-muted-foreground hover:text-destructive transition-colors;
+  }
+
+  /* Mini Cart Footer Text */
+  .mini-cart-footer-text {
+    @apply text-[11px] text-muted-foreground text-center;
+  }
+
+  /* Mini Cart Sheet Overlay - Dark Mode Support */
+  .dark [data-state="open"] {
+    @apply bg-black/50;
+  }
+}

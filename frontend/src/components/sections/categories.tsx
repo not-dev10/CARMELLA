@@ -5,7 +5,7 @@ import { CardBody, CardContainer, CardItem } from "@/components/ui/3d-card"
 import { FadeIn } from "@/components/animations/fade-in"
 import Link from "@/components/ui/link-shim"
 import { ArrowRight } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { homepageAPI } from "@/lib/api"
 
 interface Category {
@@ -28,11 +28,34 @@ const ACCENT_COLORS = [
 function Category3DCard({ category, index }: { category: Category; index: number }) {
     const accentColor = ACCENT_COLORS[index % ACCENT_COLORS.length]
     const defaultImage = `https://images.unsplash.com/photo-1578500494198-246f612d03b3?auto=format&fit=crop&q=80&w=600`
+    const [borderColor, setBorderColor] = useState(`rgba(${accentColor}, 0.5)`)
+
+    const GRADIENT_COLORS = [
+        'rgba(255, 107, 107, 1)',
+        'rgba(107, 194, 255, 1)',
+        'rgba(107, 255, 194, 1)',
+        'rgba(255, 194, 107, 1)',
+        'rgba(194, 107, 255, 1)',
+        'rgba(255, 107, 194, 1)',
+        'rgba(107, 255, 107, 1)',
+        'rgba(255, 255, 107, 1)',
+    ]
+
+    const generateRandomColor = () => {
+        return GRADIENT_COLORS[Math.floor(Math.random() * GRADIENT_COLORS.length)]
+    }
+
+    const handleHover = () => {
+        setBorderColor(generateRandomColor())
+    }
 
     return (
         <FadeIn delay={index * 0.05}>
-            <CardContainer className="inter-var">
-                <CardBody className="relative group/card w-full h-auto rounded-2xl p-0 border-0 overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500">
+            <CardContainer className="inter-var w-full h-full" onMouseEnter={handleHover}>
+                <CardBody className="relative group/card w-[550px] h-[550px] rounded-2xl p-0 border-0 overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500" style={{
+                    boxShadow: `inset 0 0 0 3px ${borderColor}, 0 0 30px ${borderColor}, 0 0 60px ${borderColor}cc, 0 10px 30px rgba(0,0,0,0.2)`,
+                    transition: 'box-shadow 0.3s ease'
+                }}>
                     {/* Dramatic shadow with accent color on hover */}
                     <div
                         className="absolute -inset-1 rounded-2xl opacity-0 group-hover/card:opacity-100 blur-xl transition-opacity duration-500 -z-10"
@@ -48,8 +71,8 @@ function Category3DCard({ category, index }: { category: Category; index: number
                             alt={category.name}
                             className="w-full h-full object-cover"
                         />
-                        {/* Matte frosted overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/70 to-black/85 backdrop-blur-[2px] group-hover/card:from-black/40 group-hover/card:via-black/60 group-hover/card:to-black/75 transition-all duration-500" />
+                        {/* Matte frosted overlay - lighter to show image better */}
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/40 to-black/60 group-hover/card:from-black/0 group-hover/card:via-black/0 group-hover/card:to-black/0 transition-all duration-500" />
 
                         {/* Subtle noise texture for matte effect */}
                         <div
@@ -69,11 +92,15 @@ function Category3DCard({ category, index }: { category: Category; index: number
                     </div>
 
                     {/* Content with enhanced matte glassmorphism */}
-                    <div className="relative z-10 p-6 flex flex-col h-full min-h-[380px]">
+                    <div className="relative z-10 p-6 flex flex-col h-full justify-between">
                         {/* Title */}
                         <CardItem
                             translateZ="60"
-                            className="text-2xl font-serif font-bold text-white text-center w-full mb-2 drop-shadow-md"
+                            className="text-3xl font-sans font-extrabold text-white text-center w-full drop-shadow-lg"
+                            style={{
+                                textShadow: '0 2px 8px rgba(0,0,0,0.8), 0 4px 12px rgba(0,0,0,0.6)',
+                                letterSpacing: '0px'
+                            }}
                         >
                             {category.name}
                         </CardItem>
@@ -82,27 +109,28 @@ function Category3DCard({ category, index }: { category: Category; index: number
                         <CardItem
                             as="p"
                             translateZ="70"
-                            className="text-white/90 text-sm w-full text-center mb-6 drop-shadow-sm line-clamp-2"
+                            className="text-white/90 text-sm w-full text-center drop-shadow-md line-clamp-2 font-medium"
+                            style={{
+                                textShadow: '0 1px 6px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.6)',
+                                letterSpacing: '0px'
+                            }}
                         >
                             {category.description || "Explore this collection"}
                         </CardItem>
 
-                        {/* Spacer to push buttons to bottom */}
-                        <div className="flex-1" />
-
                         {/* Glassmorphism card at bottom */}
                         <CardItem translateZ="80" className="w-full">
-                            <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20">
+                            <div className="bg-white/15 backdrop-blur-md rounded-xl p-4 border border-white/30 hover:bg-white/20 transition-colors">
                                 <Link
-                                    href={`/catalog?category=${category.slug}`}
-                                    className="w-full px-4 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2"
+                                    href={`/category/${category.slug}`}
+                                    className="w-full px-4 py-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 text-white"
                                     style={{
-                                        background: `rgba(${accentColor}, 0.9)`,
-                                        color: '#FDFCF6',
-                                        boxShadow: `0 4px 12px rgba(${accentColor}, 0.3)`
+                                        background: `rgba(${accentColor}, 0.85)`,
+                                        boxShadow: `0 4px 12px rgba(${accentColor}, 0.4)`,
+                                        letterSpacing: '0px'
                                     }}
                                 >
-                                    Shop Now
+                                    SHOP NOW
                                     <ArrowRight className="w-4 h-4" />
                                 </Link>
                             </div>
@@ -125,6 +153,7 @@ function Category3DCard({ category, index }: { category: Category; index: number
 export function CategoriesSection() {
     const [categories, setCategories] = useState<Category[]>([])
     const [loading, setLoading] = useState(true)
+    const hasFetched = useRef(false)
 
     useEffect(() => {
         const fetchCategories = async () => {
@@ -138,7 +167,11 @@ export function CategoriesSection() {
             }
         }
 
-        fetchCategories()
+        // Only fetch once
+        if (!hasFetched.current) {
+            hasFetched.current = true
+            fetchCategories()
+        }
     }, [])
 
     if (loading) {
@@ -256,6 +289,18 @@ export function CategoriesSection() {
                 .scrollbar-hide {
                     -ms-overflow-style: none;
                     scrollbar-width: none;
+                }
+
+                @keyframes gradientShift {
+                    0% {
+                        background-position: 0% 50%;
+                    }
+                    50% {
+                        background-position: 100% 50%;
+                    }
+                    100% {
+                        background-position: 0% 50%;
+                    }
                 }
             `}</style>
         </section>

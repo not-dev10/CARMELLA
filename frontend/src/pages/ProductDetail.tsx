@@ -1,14 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { Heart, ShoppingCart, Package, Shield, Truck, ChevronLeft, ChevronRight, Star } from "lucide-react"
+import { Heart, ShoppingCart, Package, Shield, Truck, ChevronLeft, ChevronRight, Star, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Image from "@/components/ui/image-shim"
 import Link from "@/components/ui/link-shim"
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/contexts/AuthContext"
+import { useCart } from "@/contexts/CartContext"
 
-// Mock product data (in real app, fetch by ID)
 const PRODUCT = {
     id: 1,
     name: "Terra Ceramic Vase",
@@ -23,7 +24,7 @@ const PRODUCT = {
     badge: "new",
     stock: "in-stock",
     moq: 12,
-    description: "Handcrafted ceramic vase with organic texture and earthy glaze. Each piece is unique, showcasing the artisan's skill and attention to detail. Perfect for modern interiors and botanical displays.",
+    description: "Handcrafted ceramic vase with organic texture and earthy glaze.",
     features: [
         "100% handcrafted ceramic",
         "Food-safe glaze finish",
@@ -45,6 +46,14 @@ export default function ProductDetail() {
     const [currentImage, setCurrentImage] = useState(0)
     const [quantity, setQuantity] = useState(PRODUCT.moq)
     const [isWishlisted, setIsWishlisted] = useState(false)
+    const [addedToCart, setAddedToCart] = useState(false)
+    const { addItem } = useCart()
+    const { user } = useAuth()
+
+    // Get approval status from user object (from AuthContext)
+    const approvalStatus = (user as any)?.b2b_approval_status || 'none'
+    const isApproved = approvalStatus === 'approved'
+    const needsApproval = approvalStatus === 'none' && user // Logged in but no approval status
 
     const currentPrice = PRODUCT.tieredPricing.find(tier => {
         const [min, max] = tier.qty.split('-').map(n => parseInt(n.replace('+', '')))
@@ -62,9 +71,73 @@ export default function ProductDetail() {
         setCurrentImage((prev) => (prev - 1 + PRODUCT.images.length) % PRODUCT.images.length)
     }
 
+    const handleAddToCart = () => {
+        addItem(PRODUCT.id.toString(), quantity, {
+            id: `${PRODUCT.id}-${Date.now()}`,
+            productId: PRODUCT.id.toString(),
+            name: PRODUCT.name,
+            sku: `SKU-${PRODUCT.id}`,
+            image: PRODUCT.images[0],
+            price: PRODUCT.price,
+            quantity: quantity,
+            discountPrice: currentPrice !== PRODUCT.price ? currentPrice : undefined,
+            discountPercentage: currentPrice !== PRODUCT.price 
+                ? Math.round(((PRODUCT.price - currentPrice) / PRODUCT.price) * 100)
+                : undefined,
+        })
+        setAddedToCart(true)
+        setTimeout(() => setAddedToCart(false), 2000)
+    }
+
     return (
         <div className="min-h-screen bg-background">
-            {/* Breadcrumb */}
+            {/* Show approval pending message if user is not approved */}
+            {user && approvalStatus === 'pending' && (
+                <div className="bg-yellow-50 dark:bg-yellow-950/30 border-b border-yellow-200 dark:border-yellow-900/50">
+                    <div className="container mx-auto px-6 py-4 flex items-center gap-3">
+                        <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-500 flex-shrink-0" />
+                        <div className="flex-1">
+                            <h3 className="font-semibold text-yellow-900 dark:text-yellow-100">Account Pending Approval</h3>
+                            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                                Your account is under review. Once approved, you'll have full access to our catalog and pricing.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {user && approvalStatus === 'rejected' && (
+                <div className="bg-red-50 dark:bg-red-950/30 border-b border-red-200 dark:border-red-900/50">
+                    <div className="container mx-auto px-6 py-4 flex items-center gap-3">
+                        <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-500 flex-shrink-0" />
+                        <div className="flex-1">
+                            <h3 className="font-semibold text-red-900 dark:text-red-100">Account Access Restricted</h3>
+                            <p className="text-sm text-red-800 dark:text-red-200">
+                                Your account access has been restricted. Please contact our support team for more information.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {needsApproval && (
+                <div className="bg-blue-50 dark:bg-blue-950/30 border-b border-blue-200 dark:border-blue-900/50">
+                    <div className="container mx-auto px-6 py-4 flex items-center gap-3">
+                        <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-500 flex-shrink-0" />
+                        <div className="flex-1">
+                            <h3 className="font-semibold text-blue-900 dark:text-blue-100">B2B Approval Required</h3>
+                            <p className="text-sm text-blue-800 dark:text-blue-200">
+                                Request B2B approval to view pricing and place bulk orders.
+                            </p>
+                        </div>
+                        <Link href="/b2b-request" className="ml-auto">
+                            <Button variant="outline" size="sm" className="border-blue-200 hover:bg-blue-100">
+                                Request Approval
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
+            )}
             <div className="border-b border-border">
                 <div className="container mx-auto px-6 py-4">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -172,81 +245,138 @@ export default function ProductDetail() {
                         </div>
 
                         {/* Pricing */}
-                        <div className="bg-muted/30 rounded-xl p-6">
-                            <div className="flex items-baseline gap-3 mb-4">
-                                <span className="text-4xl font-bold">${currentPrice}</span>
-                                <span className="text-muted-foreground">per unit</span>
-                            </div>
-
-                            {/* Tiered Pricing Table */}
-                            <div className="space-y-2">
-                                <p className="text-sm font-semibold mb-2">Volume Discounts:</p>
-                                {PRODUCT.tieredPricing.map((tier, idx) => (
-                                    <div
-                                        key={idx}
-                                        className={cn(
-                                            "flex justify-between items-center p-2 rounded-lg text-sm",
-                                            tier.price === currentPrice ? "bg-primary/10 border border-primary/20" : "bg-background"
-                                        )}
-                                    >
-                                        <span className="font-medium">{tier.qty} units</span>
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-primary font-semibold">{tier.discount} off</span>
-                                            <span className="font-bold">${tier.price}/unit</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Quantity Selector */}
-                        <div>
-                            <label className="block text-sm font-semibold mb-2">
-                                Quantity (MOQ: {PRODUCT.moq} units)
-                            </label>
-                            <div className="flex items-center gap-4">
-                                <div className="flex items-center border border-border rounded-lg">
-                                    <button
-                                        onClick={() => setQuantity(Math.max(PRODUCT.moq, quantity - PRODUCT.moq))}
-                                        className="px-4 py-3 hover:bg-muted transition-colors"
-                                    >
-                                        -
-                                    </button>
-                                    <input
-                                        type="number"
-                                        value={quantity}
-                                        onChange={(e) => setQuantity(Math.max(PRODUCT.moq, parseInt(e.target.value) || PRODUCT.moq))}
-                                        className="w-24 text-center bg-transparent border-x border-border py-3"
-                                        min={PRODUCT.moq}
-                                        step={PRODUCT.moq}
-                                    />
-                                    <button
-                                        onClick={() => setQuantity(quantity + PRODUCT.moq)}
-                                        className="px-4 py-3 hover:bg-muted transition-colors"
-                                    >
-                                        +
-                                    </button>
+                        {isApproved ? (
+                            <div className="bg-muted/30 rounded-xl p-6">
+                                <div className="flex items-baseline gap-3 mb-4">
+                                    <span className="text-4xl font-bold">${currentPrice}</span>
+                                    <span className="text-muted-foreground">per unit</span>
                                 </div>
-                                <span className="text-sm text-muted-foreground">
-                                    Total: ${(currentPrice * quantity).toFixed(2)}
-                                </span>
+
+                                {/* Tiered Pricing Table */}
+                                <div className="space-y-2">
+                                    <p className="text-sm font-semibold mb-2">Volume Discounts:</p>
+                                    {PRODUCT.tieredPricing.map((tier, idx) => (
+                                        <div
+                                            key={idx}
+                                            className={cn(
+                                                "flex justify-between items-center p-2 rounded-lg text-sm",
+                                                tier.price === currentPrice ? "bg-primary/10 border border-primary/20" : "bg-background"
+                                            )}
+                                        >
+                                            <span className="font-medium">{tier.qty} units</span>
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-primary font-semibold">{tier.discount} off</span>
+                                                <span className="font-bold">${tier.price}/unit</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        ) : needsApproval ? (
+                            <div className="bg-blue-50 dark:bg-blue-950/20 rounded-xl p-8 border border-blue-200 dark:border-blue-900/50">
+                                <div className="text-center space-y-4">
+                                    <div>
+                                        <h3 className="text-xl font-serif font-semibold mb-2">B2B Approval Required</h3>
+                                        <p className="text-muted-foreground">
+                                            Request B2B approval to view pricing and place bulk orders.
+                                        </p>
+                                    </div>
+                                    <Link href="/b2b-request">
+                                        <Button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+                                            Request B2B Approval
+                                        </Button>
+                                    </Link>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-950/30 dark:to-orange-950/30 rounded-xl p-8 border border-yellow-200 dark:border-yellow-900/50">
+                                <div className="text-center space-y-4">
+                                    <div>
+                                        <h3 className="text-xl font-serif font-semibold mb-2">Pricing Available for Registered Buyers</h3>
+                                        <p className="text-muted-foreground">
+                                            Sign in or create an account to view pricing and place orders.
+                                        </p>
+                                    </div>
+                                    <div className="flex gap-3 justify-center">
+                                        <Link href="/login">
+                                            <Button variant="outline">Sign In</Button>
+                                        </Link>
+                                        <Link href="/signup">
+                                            <Button className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
+                                                Create Account
+                                            </Button>
+                                        </Link>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground pt-4">
+                                        Need wholesale pricing? <Link href="/contact" className="text-primary hover:underline">Contact our sales team</Link>
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Quantity Selector - Only for approved users */}
+                        {isApproved && (
+                            <div>
+                                <label className="block text-sm font-semibold mb-2">
+                                    Quantity (MOQ: {PRODUCT.moq} units)
+                                </label>
+                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center border border-border rounded-lg">
+                                        <button
+                                            onClick={() => setQuantity(Math.max(PRODUCT.moq, quantity - PRODUCT.moq))}
+                                            className="px-4 py-3 hover:bg-muted transition-colors"
+                                        >
+                                            -
+                                        </button>
+                                        <input
+                                            type="number"
+                                            value={quantity}
+                                            onChange={(e) => setQuantity(Math.max(PRODUCT.moq, parseInt(e.target.value) || PRODUCT.moq))}
+                                            className="w-24 text-center bg-transparent border-x border-border py-3"
+                                            min={PRODUCT.moq}
+                                            step={PRODUCT.moq}
+                                        />
+                                        <button
+                                            onClick={() => setQuantity(quantity + PRODUCT.moq)}
+                                            className="px-4 py-3 hover:bg-muted transition-colors"
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                    <span className="text-sm text-muted-foreground">
+                                        Total: ${(currentPrice * quantity).toFixed(2)}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Actions */}
-                        <div className="flex gap-3">
-                            <Button size="lg" className="flex-1">
-                                <ShoppingCart className="w-5 h-5 mr-2" />
-                                Add to Cart
-                            </Button>
-                            <Button
-                                size="lg"
-                                variant={isWishlisted ? "default" : "outline"}
-                                onClick={() => setIsWishlisted(!isWishlisted)}
-                            >
-                                <Heart className={cn("w-5 h-5", isWishlisted && "fill-current")} />
-                            </Button>
-                        </div>
+                        {isApproved ? (
+                            <div className="flex gap-3">
+                                <Button 
+                                    size="lg" 
+                                    className="flex-1"
+                                    onClick={handleAddToCart}
+                                >
+                                    <ShoppingCart className="w-5 h-5 mr-2" />
+                                    {addedToCart ? "Added to Cart!" : "Add to Cart"}
+                                </Button>
+                                <Button
+                                    size="lg"
+                                    variant={isWishlisted ? "default" : "outline"}
+                                    onClick={() => setIsWishlisted(!isWishlisted)}
+                                >
+                                    <Heart className={cn("w-5 h-5", isWishlisted && "fill-current")} />
+                                </Button>
+                            </div>
+                        ) : (
+                            <Link href="/login" className="block">
+                                <Button size="lg" className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
+                                    <ShoppingCart className="w-5 h-5 mr-2" />
+                                    Sign In to Order
+                                </Button>
+                            </Link>
+                        )}
 
                         {/* Features */}
                         <div className="border-t border-border pt-6">

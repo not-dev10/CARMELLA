@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Your Carmella Account</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #6b7051 0%, #d4a574 100%);
+            padding: 40px 20px;
+            text-align: center;
+            color: white;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+        .header p {
+            font-size: 14px;
+            opacity: 0.95;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+        .code-section {
+            background: linear-gradient(135deg, #f9f7f4 0%, #f5f1ed 100%);
+            border-left: 4px solid #d4a574;
+            padding: 24px;
+            border-radius: 8px;
+            margin: 32px 0;
+            text-align: center;
+        }
+        .code-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        .code {
+            font-size: 36px;
+            font-weight: 700;
+            color: #6b7051;
+            letter-spacing: 8px;
+            font-family: 'Courier New', monospace;
+            word-spacing: 12px;
+        }
+        .code-expiry {
+            font-size: 12px;
+            color: #999;
+            margin-top: 12px;
+        }
+        .divider {
+            height: 1px;
+            background: #e0e0e0;
+            margin: 32px 0;
+        }
+        .button-section {
+            text-align: center;
+            margin: 32px 0;
+        }
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #6b7051 0%, #8b7555 100%);
+            color: white;
+            padding: 14px 40px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(107, 112, 81, 0.3);
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(107, 112, 81, 0.4);
+        }
+        .info-text {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+            margin: 24px 0;
+        }
+        .security-note {
+            background: #f0f8ff;
+            border-left: 4px solid #4a90e2;
+            padding: 16px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #333;
+            margin: 24px 0;
+        }
+        .security-note strong {
+            color: #4a90e2;
+        }
+        .footer {
+            background: #f9f7f4;
+            padding: 24px 30px;
+            border-top: 1px solid #e0e0e0;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+        }
+        .footer-links {
+            margin-top: 12px;
+        }
+        .footer-links a {
+            color: #d4a574;
+            text-decoration: none;
+            margin: 0 12px;
+        }
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">CARMELLA</div>
+            <h1>Confirm Your Account</h1>
+            <p>Welcome to our community</p>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <p class="greeting">
+                Hello,<br><br>
+                Thank you for signing up with Carmella! To complete your registration and secure your account, please use the verification code below.
+            </p>
+
+            <!-- Code Section -->
+            <div class="code-section">
+                <div class="code-label">Your Verification Code</div>
+                <div class="code">{{ .Token }}</div>
+                <div class="code-expiry">This code expires in 15 minutes</div>
+            </div>
+
+            <!-- Alternative Link -->
+            <div class="button-section">
+                <p style="font-size: 13px; color: #666; margin-bottom: 16px;">Or confirm via link:</p>
+                <a href="{{ .ConfirmationURL }}" class="button">Confirm Email Address</a>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Info Text -->
+            <p class="info-text">
+                <strong>Didn't sign up?</strong><br>
+                If you didn't create this account, you can safely ignore this email. Your email address won't be confirmed, and no account will be created.
+            </p>
+
+            <!-- Security Note -->
+            <div class="security-note">
+                <strong>🔒 Security Tip:</strong> Never share your verification code with anyone. Carmella staff will never ask for your code via email or message.
+            </div>
+
+            <p class="info-text">
+                Once confirmed, you'll have full access to:<br>
+                ✓ Browse our exclusive collections<br>
+                ✓ Save your favorite items<br>
+                ✓ Track your orders<br>
+                ✓ Enjoy special member benefits
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>© 2024 Carmella. All rights reserved.</p>
+            <div class="footer-links">
+                <a href="https://carmella.com">Visit Website</a>
+                <a href="https://carmella.com/contact">Contact Us</a>
+                <a href="https://carmella.com/privacy">Privacy Policy</a>
+            </div>
+            <p style="margin-top: 16px; color: #bbb;">
+                This is an automated message, please do not reply to this email.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

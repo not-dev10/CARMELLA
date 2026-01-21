@@ -46,7 +46,6 @@ export function ProductShowcase() {
     const [products, setProducts] = useState<Product[]>([])
     const [loading, setLoading] = useState(true)
     const [wishlist, setWishlist] = useState<string[]>([])
-    const [hoveredProduct, setHoveredProduct] = useState<string | null>(null)
 
     useEffect(() => {
         const fetchProducts = async () => {
@@ -109,7 +108,6 @@ export function ProductShowcase() {
                         const badgeConfig = product.badge ? BADGE_CONFIG[product.badge as keyof typeof BADGE_CONFIG] : null
                         const stockConfig = getStockStatus(product.stock_quantity)
                         const isWishlisted = wishlist.includes(product.id)
-                        const _isHovered = hoveredProduct === product.id
 
                         return (
                             <FadeIn key={product.id} delay={index * 0.1}>
@@ -118,8 +116,6 @@ export function ProductShowcase() {
                                         whileHover={{ y: -8 }}
                                         transition={{ type: "spring", stiffness: 400, damping: 25 }}
                                         className="group cursor-pointer relative"
-                                        onMouseEnter={() => setHoveredProduct(product.id)}
-                                        onMouseLeave={() => setHoveredProduct(null)}
                                     >
                                         <div className="aspect-[3/4] bg-muted rounded-lg mb-6 relative overflow-hidden shadow-md transition-shadow duration-300 group-hover:shadow-xl">
                                             <ParallaxImage

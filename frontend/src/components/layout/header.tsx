@@ -19,37 +19,46 @@ import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
 import Image from "@/components/ui/image-shim"
 import { useAuth } from "@/contexts/AuthContext"
+import { useCart } from "@/contexts/CartContext"
+import { categoriesAPI } from "@/lib/api"
+import { MiniCart } from "./mini-cart"
 
-
-const CATALOG_CATEGORIES = [
-    {
-        name: "Tableware",
-        image: "https://images.unsplash.com/photo-1578500494198-246f612d3b3d?w=300&h=200&fit=crop",
-        subcategories: ["Plates & Bowls", "Mugs & Cups", "Serving Dishes"]
-    },
-    {
-        name: "Home Decor",
-        image: "https://images.unsplash.com/photo-1615529182904-14819c35db37?w=300&h=200&fit=crop",
-        subcategories: ["Vases", "Planters", "Decorative Objects"]
-    },
-    {
-        name: "Textiles",
-        image: "https://images.unsplash.com/photo-1595306669968-3d5272a445bd?w=300&h=200&fit=crop",
-        subcategories: ["Table Linens", "Cushions", "Throws"]
-    },
-    {
-        name: "Lighting",
-        image: "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=300&h=200&fit=crop",
-        subcategories: ["Table Lamps", "Pendant Lights", "Candle Holders"]
-    }
-]
+interface Category {
+    id: string;
+    name: string;
+    description?: string;
+    image_url?: string;
+}
 
 export function Header() {
     const [isScrolled, setIsScrolled] = useState(false)
     const [searchFocused, setSearchFocused] = useState(false)
     const [scrollProgress, setScrollProgress] = useState(0)
     const [showMegaMenu, setShowMegaMenu] = useState(false)
+    const [categories, setCategories] = useState<Category[]>([])
+    const [loadingCategories, setLoadingCategories] = useState(true)
+    const [cartOpen, setCartOpen] = useState(false)
+    const [megaMenuTimeout, setMegaMenuTimeout] = useState<ReturnType<typeof setTimeout> | null>(null)
+    const [logoHovered, setLogoHovered] = useState(false)
     const { user, signOut } = useAuth()
+    const { items } = useCart()
+
+    // Fetch categories from API
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                setLoadingCategories(true)
+                const response = await categoriesAPI.getAll()
+                setCategories(response.categories || [])
+            } catch (error) {
+                console.error("Failed to fetch categories:", error)
+                setCategories([])
+            } finally {
+                setLoadingCategories(false)
+            }
+        }
+        fetchCategories()
+    }, [])
 
     useEffect(() => {
         const handleScroll = () => {
@@ -63,6 +72,21 @@ export function Header() {
         window.addEventListener("scroll", handleScroll)
         return () => window.removeEventListener("scroll", handleScroll)
     }, [])
+
+    const handleMegaMenuEnter = () => {
+        if (megaMenuTimeout) {
+            clearTimeout(megaMenuTimeout)
+            setMegaMenuTimeout(null)
+        }
+        setShowMegaMenu(true)
+    }
+
+    const handleMegaMenuLeave = () => {
+        const timeout = setTimeout(() => {
+            setShowMegaMenu(false)
+        }, 200)
+        setMegaMenuTimeout(timeout)
+    }
 
     return (
         <>
@@ -118,8 +142,54 @@ export function Header() {
                     </div>
 
                     {/* Logo */}
-                    <Link href="/" className="font-serif text-3xl font-medium tracking-tight text-gradient md:mr-0 mr-auto ml-4 md:ml-0 hover:text-primary transition-colors">
-                        Carmella
+                    <Link href="/" className="flex items-center gap-2 md:mr-0 mr-auto ml-4 md:ml-0 group relative">
+                        <motion.div
+                            className="relative overflow-hidden rounded-lg"
+                            whileHover={{ scale: 1.05 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                            onMouseEnter={() => setLogoHovered(true)}
+                            onMouseLeave={() => setLogoHovered(false)}
+                        >
+                            <img src="/assets/CARMELLA LOGO .svg" alt="Carmella" className="h-20 w-auto relative z-10" />
+                            
+                            {/* Sliding glass shine effect */}
+                            {logoHovered && (
+                                <motion.div
+                                    className="absolute inset-0 opacity-100"
+                                    initial={{ x: "-100%" }}
+                                    animate={{ x: "100%" }}
+                                    transition={{ duration: 0.8, ease: "easeInOut", repeat: Infinity, repeatDelay: 1 }}
+                                >
+                                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent" />
+                                </motion.div>
+                            )}
+
+                            {/* Golden sparkles */}
+                            {logoHovered && (
+                                <>
+                                    {[...Array(6)].map((_, i) => (
+                                        <motion.div
+                                            key={i}
+                                            className="absolute w-1 h-1 bg-yellow-400 rounded-full"
+                                            style={{
+                                                left: `${Math.random() * 100}%`,
+                                                top: `${Math.random() * 100}%`,
+                                            }}
+                                            animate={{
+                                                opacity: [0, 1, 0],
+                                                scale: [0, 1, 0],
+                                            }}
+                                            transition={{
+                                                duration: 1.5,
+                                                delay: i * 0.15,
+                                                repeat: Infinity,
+                                                repeatDelay: 0.5,
+                                            }}
+                                        />
+                                    ))}
+                                </>
+                            )}
+                        </motion.div>
                     </Link>
 
                     {/* Desktop Navigation */}
@@ -131,8 +201,8 @@ export function Header() {
                         {/* Catalog with Mega Menu */}
                         <div
                             className="relative"
-                            onMouseEnter={() => setShowMegaMenu(true)}
-                            onMouseLeave={() => setShowMegaMenu(false)}
+                            onMouseEnter={handleMegaMenuEnter}
+                            onMouseLeave={handleMegaMenuLeave}
                         >
                             <Link
                                 href="/catalog"
@@ -143,39 +213,56 @@ export function Header() {
                             </Link>
 
                             {/* Mega Menu */}
-                            {showMegaMenu && (
+                            {showMegaMenu && !loadingCategories && (
                                 <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: 10 }}
-                                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[600px] bg-card border border-border rounded-lg shadow-2xl p-6 grid grid-cols-2 gap-4"
+                                    initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                                    onMouseEnter={handleMegaMenuEnter}
+                                    onMouseLeave={handleMegaMenuLeave}
+                                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[900px] bg-card border border-border rounded-lg shadow-2xl p-8 grid grid-cols-3 gap-6 backdrop-blur-sm"
                                 >
-                                    {CATALOG_CATEGORIES.map((category) => (
-                                        <Link
-                                            key={category.name}
-                                            href={`/catalog?category=${category.name.toLowerCase()}`}
-                                            className="group flex gap-4 p-3 rounded-lg hover:bg-muted transition-colors"
-                                        >
-                                            <div className="relative w-24 h-20 rounded overflow-hidden flex-shrink-0">
-                                                <Image
-                                                    src={category.image}
-                                                    alt={category.name}
-                                                    fill
-                                                    className="object-cover group-hover:scale-110 transition-transform duration-300"
-                                                />
-                                            </div>
-                                            <div>
-                                                <h4 className="font-serif text-base font-semibold mb-1 group-hover:text-primary transition-colors">
-                                                    {category.name}
-                                                </h4>
-                                                <ul className="text-xs text-muted-foreground space-y-0.5">
-                                                    {category.subcategories.map((sub) => (
-                                                        <li key={sub}>{sub}</li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        </Link>
-                                    ))}
+                                    {categories.length > 0 ? (
+                                        categories.map((category, index) => (
+                                            <motion.div
+                                                key={category.id}
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: index * 0.05, duration: 0.3 }}
+                                            >
+                                                <Link
+                                                    href={`/category/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
+                                                    className="group flex gap-4 p-3 rounded-lg hover:bg-muted transition-colors"
+                                                >
+                                                    {category.image_url && (
+                                                        <div className="relative w-24 h-20 rounded overflow-hidden flex-shrink-0">
+                                                            <Image
+                                                                src={category.image_url}
+                                                                alt={category.name}
+                                                                fill
+                                                                className="object-cover group-hover:scale-110 transition-transform duration-300"
+                                                            />
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <h4 className="font-serif text-base font-semibold mb-1 group-hover:text-primary transition-colors">
+                                                            {category.name}
+                                                        </h4>
+                                                        {category.description && (
+                                                            <p className="text-xs text-muted-foreground">
+                                                                {category.description}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </Link>
+                                            </motion.div>
+                                        ))
+                                    ) : (
+                                        <div className="col-span-3 text-center py-4 text-muted-foreground">
+                                            No categories available
+                                        </div>
+                                    )}
                                 </motion.div>
                             )}
                         </div>
@@ -268,12 +355,20 @@ export function Header() {
                             </div>
                         )}
 
-                        <Button variant="ghost" size="icon" className="relative hover:text-primary">
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="relative hover:text-primary"
+                            onClick={() => setCartOpen(true)}
+                        >
                             <ShoppingBag className="h-5 w-5" />
-                            <Badge className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-primary p-0 text-[10px] text-primary-foreground flex items-center justify-center">
-                                0
-                            </Badge>
+                            {items.length > 0 && (
+                                <Badge className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-primary p-0 text-[10px] text-primary-foreground flex items-center justify-center">
+                                    {items.length}
+                                </Badge>
+                            )}
                         </Button>
+                        <MiniCart open={cartOpen} onOpenChange={setCartOpen} />
                     </div>
                 </div>
             </header>
