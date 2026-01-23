@@ -26,6 +26,8 @@ const apiRequest = async (
   const url = `${API_BASE_URL}${endpoint}`;
   const token = getAuthToken();
 
+  console.log("[API] Request:", { method: options.method || "GET", endpoint, hasToken: !!token });
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...(options.headers as Record<string, string>),
@@ -40,12 +42,17 @@ const apiRequest = async (
     headers,
   });
 
+  console.log("[API] Response status:", response.status, "for", endpoint);
+
   if (!response.ok) {
     const error = await response.json();
+    console.error("[API] Error response:", error);
     throw new Error(error.error || "API request failed");
   }
 
-  return response.json();
+  const data = await response.json();
+  console.log("[API] Success response:", { endpoint, dataKeys: Object.keys(data) });
+  return data;
 };
 
 // Homepage API
@@ -114,6 +121,16 @@ export const wishlistAPI = {
   remove: (productId: string) => apiRequest(`/wishlist/${productId}`, { method: "DELETE" }),
 };
 
+// User API
+export const userAPI = {
+  requestB2BAccess: (userId: string, data: { companyName: string; taxId?: string }) =>
+    apiRequest(`/users/${userId}/request-b2b`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  getB2BStatus: (userId: string) => apiRequest(`/users/${userId}/b2b-status`),
+};
+
 // Reviews API
 export const reviewsAPI = {
   getByProduct: (productId: string) => apiRequest(`/reviews/products/${productId}`),
@@ -146,4 +163,34 @@ export const analyticsAPI = {
   getRevenueByCategory: () => apiRequest("/admin/analytics/revenue-by-category"),
   getTopProducts: (limit?: number) =>
     apiRequest(`/admin/analytics/top-products${limit ? `?limit=${limit}` : ""}`),
+};
+
+// Admin API
+export const adminAPI = {
+  getUsers: (params?: { search?: string; page?: number; limit?: number }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.search) queryParams.append('search', params.search);
+    
+    const queryString = queryParams.toString();
+    const endpoint = `/admin/users${queryString ? `?${queryString}` : ''}`;
+    console.log("[adminAPI] getUsers endpoint:", endpoint);
+    return apiRequest(endpoint);
+  },
+  getUser: (id: string) => apiRequest(`/admin/users/${id}`),
+  updateUser: (id: string, data: any) =>
+    apiRequest(`/admin/users/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  getB2BRequests: (params?: { status?: string; page?: number; limit?: number }) =>
+    apiRequest(`/admin/b2b-requests${params ? `?${new URLSearchParams(params as any).toString()}` : ""}`),
+  approveB2BRequest: (userId: string, notes?: string) =>
+    apiRequest(`/admin/b2b-requests/${userId}/approve`, {
+      method: "PUT",
+      body: JSON.stringify({ notes }),
+    }),
+  rejectB2BRequest: (userId: string, reason?: string) =>
+    apiRequest(`/admin/b2b-requests/${userId}/reject`, {
+      method: "PUT",
+      body: JSON.stringify({ reason }),
+    }),
 };

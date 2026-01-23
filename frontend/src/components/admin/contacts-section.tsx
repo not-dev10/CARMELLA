@@ -20,8 +20,8 @@ export function ContactsSection() {
       className="space-y-6"
     >
       <div>
-        <h2 className="text-4xl font-black tracking-tight text-gray-800 mb-2">Contact Form Submissions</h2>
-        <p className="text-gray-500">Review and respond to customer inquiries.</p>
+        <h2 className="text-4xl font-black tracking-tight text-foreground mb-2">Contact Form Submissions</h2>
+        <p className="text-muted-foreground">Review and respond to customer inquiries.</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4">
@@ -31,40 +31,40 @@ export function ContactsSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-              "bg-white border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow",
-              contact.status === "new" ? "border-l-4 border-l-secondary" : "border-gray-200"
+              "admin-card p-6 hover:shadow-md transition-shadow",
+              contact.status === "new" && "border-l-4 border-l-secondary"
             )}
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <h3 className="font-serif text-lg text-gray-800">{contact.name}</h3>
+                  <h3 className="font-serif text-lg text-foreground">{contact.name}</h3>
                   <Badge className={cn(
                     "text-xs font-bold",
-                    contact.status === "new" ? "bg-secondary/10 text-secondary" :
-                    contact.status === "read" ? "bg-blue-100 text-blue-700" :
-                    "bg-green-100 text-green-700"
+                    contact.status === "new" ? "bg-secondary/10 dark:bg-secondary/20 text-secondary" :
+                    contact.status === "read" ? "bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300" :
+                    "bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300"
                   )}>
                     {contact.status === "new" ? "New" : contact.status === "read" ? "Read" : "Responded"}
                   </Badge>
                 </div>
-                <p className="text-sm text-gray-600 mb-2">
+                <p className="text-sm text-muted-foreground mb-2">
                   <span className="font-semibold">Email:</span> {contact.email}
                 </p>
-                <p className="text-sm text-gray-600 mb-3">
+                <p className="text-sm text-muted-foreground mb-3">
                   <span className="font-semibold">Subject:</span> {contact.subject}
                 </p>
-                <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg mb-3 italic">
+                <p className="text-sm text-foreground bg-muted dark:bg-gray-800 p-3 rounded-lg mb-3 italic">
                   "{contact.message}"
                 </p>
-                <p className="text-xs text-gray-500">{contact.date}</p>
+                <p className="text-xs text-muted-foreground">{contact.date}</p>
               </div>
               <div className="flex gap-2">
                 <Button className="btn-gradient text-sm">
                   <Reply className="w-4 h-4 mr-1" />
                   Reply
                 </Button>
-                <button className="p-2 text-gray-500 hover:text-primary transition-colors">
+                <button className="p-2 text-muted-foreground hover:text-primary transition-colors">
                   <CheckCircle className="w-5 h-5" />
                 </button>
               </div>

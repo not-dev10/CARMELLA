@@ -1,18 +1,25 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import Link from "@/components/ui/link-shim"
 import { Button } from "@/components/ui/button"
 import { useCart } from "@/contexts/CartContext"
 import { useAuth } from "@/contexts/AuthContext"
-import { ArrowLeft, AlertCircle, CheckCircle, ShoppingCart, User, ClipboardList, CreditCard } from "lucide-react"
+import { ArrowLeft, AlertCircle, CheckCircle, ShoppingCart, User, ClipboardList, CreditCard, Loader } from "lucide-react"
 import Image from "@/components/ui/image-shim"
 import { cn } from "@/lib/utils"
+import { ordersAPI } from "@/lib/api"
+import { motion } from "framer-motion"
 
-type CheckoutStep = 'cart' | 'details' | 'review' | 'payment'
+type CheckoutStep = 'cart' | 'details' | 'review' | 'payment' | 'confirmation'
 
 export default function Checkout() {
-  const { items, getSubtotal } = useCart()
+  const navigate = useNavigate()
+  const { items, getSubtotal, clearCart } = useCart()
   const { user } = useAuth()
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('cart')
+  const [isLoading, setIsLoading] = useState(false)
+  const [orderError, setOrderError] = useState<string | null>(null)
+  const [orderId, setOrderId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     email: user?.email || '',
     firstName: user?.first_name || '',
@@ -103,10 +110,11 @@ export default function Checkout() {
     { id: 'details', label: 'Details', icon: User },
     { id: 'review', label: 'Review', icon: ClipboardList },
     { id: 'payment', label: 'Payment', icon: CreditCard },
+    { id: 'confirmation', label: 'Confirmed', icon: CheckCircle },
   ]
 
   const handleNext = () => {
-    const stepOrder: CheckoutStep[] = ['cart', 'details', 'review', 'payment']
+    const stepOrder: CheckoutStep[] = ['cart', 'details', 'review', 'payment', 'confirmation']
     const currentIndex = stepOrder.indexOf(currentStep)
     if (currentIndex < stepOrder.length - 1) {
       setCurrentStep(stepOrder[currentIndex + 1])
@@ -114,10 +122,33 @@ export default function Checkout() {
   }
 
   const handlePrev = () => {
-    const stepOrder: CheckoutStep[] = ['cart', 'details', 'review', 'payment']
+    const stepOrder: CheckoutStep[] = ['cart', 'details', 'review', 'payment', 'confirmation']
     const currentIndex = stepOrder.indexOf(currentStep)
     if (currentIndex > 0) {
       setCurrentStep(stepOrder[currentIndex - 1])
+    }
+  }
+
+  const handleCompleteOrder = async () => {
+    try {
+      setIsLoading(true)
+      setOrderError(null)
+
+      // Create shipping address string
+      const shippingAddress = `${formData.firstName} ${formData.lastName}, ${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`
+
+      // Call API to create order
+      const response = await ordersAPI.create(shippingAddress)
+      
+      if (response.order) {
+        setOrderId(response.order.id)
+        clearCart()
+        setCurrentStep('confirmation')
+      }
+    } catch (error) {
+      setOrderError(error instanceof Error ? error.message : 'Failed to create order')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -135,7 +166,7 @@ export default function Checkout() {
           {/* Step Indicators */}
           <div className="flex gap-8 mb-12">
             {steps.map((step, idx) => {
-              const stepOrder: CheckoutStep[] = ['cart', 'details', 'review', 'payment']
+              const stepOrder: CheckoutStep[] = ['cart', 'details', 'review', 'payment', 'confirmation']
               const currentIndex = stepOrder.indexOf(currentStep)
               const stepIndex = stepOrder.indexOf(step.id)
               const isCompleted = stepIndex < currentIndex
@@ -328,6 +359,11 @@ export default function Checkout() {
             {currentStep === 'payment' && (
               <div className="space-y-8">
                 <h2 className="font-serif text-2xl font-semibold">Payment Method</h2>
+                {orderError && (
+                  <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
+                    {orderError}
+                  </div>
+                )}
                 <div className="space-y-4">
                   <div className="border-2 border-primary rounded-lg p-6">
                     <input type="radio" name="payment" defaultChecked className="mr-3" />
@@ -365,23 +401,75 @@ export default function Checkout() {
               </div>
             )}
 
+            {/* Step 5: Order Confirmation */}
+            {currentStep === 'confirmation' && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="space-y-8 text-center"
+              >
+                <div className="flex justify-center mb-6">
+                  <motion.div
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 0.6, repeat: Infinity }}
+                  >
+                    <CheckCircle className="w-24 h-24 text-green-500" />
+                  </motion.div>
+                </div>
+                <div>
+                  <h2 className="font-serif text-4xl font-semibold mb-4">Order Confirmed!</h2>
+                  <p className="text-muted-foreground text-lg mb-2">Thank you for your order</p>
+                  <p className="text-2xl font-bold text-primary">Order ID: {orderId}</p>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-6 text-left space-y-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Order Total</p>
+                    <p className="text-2xl font-bold">${(getSubtotal() + 42).toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Shipping Address</p>
+                    <p className="font-medium">{formData.firstName} {formData.lastName}</p>
+                    <p className="text-sm">{formData.address}</p>
+                    <p className="text-sm">{formData.city}, {formData.state} {formData.zipCode}</p>
+                  </div>
+                </div>
+                <p className="text-muted-foreground">A confirmation email has been sent to {formData.email}</p>
+              </motion.div>
+            )}
+
             {/* Navigation Buttons */}
             <div className="flex gap-4 mt-12">
-              {currentStep !== 'cart' && (
+              {currentStep !== 'cart' && currentStep !== 'confirmation' && (
                 <Button variant="outline" onClick={handlePrev}>
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Previous
                 </Button>
               )}
-              {currentStep !== 'payment' && (
+              {currentStep !== 'payment' && currentStep !== 'confirmation' && (
                 <Button onClick={handleNext} className="ml-auto">
                   Next Step
                 </Button>
               )}
               {currentStep === 'payment' && (
-                <Button onClick={() => alert('Order placed!')} className="ml-auto bg-green-600 hover:bg-green-700">
-                  Complete Order
+                <Button 
+                  onClick={handleCompleteOrder} 
+                  disabled={isLoading}
+                  className="ml-auto bg-green-600 hover:bg-green-700"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader className="w-4 h-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    'Complete Order'
+                  )}
                 </Button>
+              )}
+              {currentStep === 'confirmation' && (
+                <Link href="/catalog" className="ml-auto">
+                  <Button>Continue Shopping</Button>
+                </Link>
               )}
             </div>
           </div>

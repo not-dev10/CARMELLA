@@ -53,8 +53,8 @@ export function ActivitySection() {
       className="space-y-6"
     >
       <div>
-        <h2 className="text-4xl font-black tracking-tight text-gray-800 mb-2">Activity Log</h2>
-        <p className="text-gray-500">Track all admin actions and system events.</p>
+        <h2 className="admin-heading">Activity Log</h2>
+        <p className="text-muted-foreground">Track all admin actions and system events.</p>
       </div>
 
       <div className="space-y-3">
@@ -64,7 +64,7 @@ export function ActivitySection() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: idx * 0.05 }}
-            className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
+            className="admin-card hover:shadow-md transition-shadow"
           >
             <div className="flex items-start gap-4">
               <div className={cn("p-2 rounded-lg", getColor(log.type))}>
@@ -72,12 +72,12 @@ export function ActivitySection() {
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <h3 className="font-semibold text-gray-800">{log.action}</h3>
-                  <span className="text-xs text-gray-500">{log.date}</span>
+                  <h3 className="font-semibold text-foreground">{log.action}</h3>
+                  <span className="text-xs text-muted-foreground">{log.date}</span>
                 </div>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   <span className="font-medium">{log.user}</span> {log.action.toLowerCase()} on{" "}
-                  <span className="font-medium text-gray-800">{log.target}</span>
+                  <span className="font-medium text-foreground">{log.target}</span>
                 </p>
               </div>
             </div>

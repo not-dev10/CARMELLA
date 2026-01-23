@@ -21,8 +21,8 @@ export function CategoriesSection() {
     >
       <div className="flex items-end justify-between">
         <div>
-          <h2 className="text-4xl font-black tracking-tight text-gray-800 mb-2">Category Management</h2>
-          <p className="text-gray-500">Create, edit, and manage product categories.</p>
+          <h2 className="admin-heading">Category Management</h2>
+          <p className="text-muted-foreground">Create, edit, and manage product categories.</p>
         </div>
         <Button className="btn-gradient">
           <Plus className="w-5 h-5 mr-2" />
@@ -36,40 +36,40 @@ export function CategoriesSection() {
             key={category.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow"
+            className="admin-card hover:shadow-md transition-shadow"
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
+                <div className="p-2 bg-primary/10 dark:bg-primary/20 rounded-lg">
                   <Grid3x3 className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-serif text-lg text-gray-800">{category.name}</h3>
-                  <p className="text-xs text-gray-500">/{category.slug}</p>
+                  <h3 className="font-serif text-lg text-foreground">{category.name}</h3>
+                  <p className="text-xs text-muted-foreground">/{category.slug}</p>
                 </div>
               </div>
-              <Badge className={category.status ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}>
+              <Badge className={category.status ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" : "bg-muted text-muted-foreground"}>
                 {category.status ? "Active" : "Inactive"}
               </Badge>
             </div>
 
-            <div className="space-y-2 mb-4 pb-4 border-b border-gray-200">
+            <div className="space-y-2 mb-4 pb-4 border-b border-border dark:border-gray-800">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Products:</span>
-                <span className="font-semibold text-gray-800">{category.products}</span>
+                <span className="text-muted-foreground">Products:</span>
+                <span className="font-semibold text-foreground">{category.products}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Revenue:</span>
-                <span className="font-semibold text-gray-800">{category.revenue}</span>
+                <span className="text-muted-foreground">Revenue:</span>
+                <span className="font-semibold text-foreground">{category.revenue}</span>
               </div>
             </div>
 
             <div className="flex gap-2">
-              <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-primary border border-primary rounded-lg hover:bg-primary/5 transition-colors text-sm font-medium">
+              <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-primary border border-primary rounded-lg hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors text-sm font-medium">
                 <Edit2 className="w-4 h-4" />
                 Edit
               </button>
-              <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors text-sm font-medium">
+              <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-sm font-medium">
                 <Trash2 className="w-4 h-4" />
                 Delete
               </button>

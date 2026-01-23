@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "@/components/ui/link-shim"
-import { Search, ShoppingBag, User, Menu, FileText, Package, Heart, Settings, LogOut, ChevronDown } from "lucide-react"
+import { Search, ShoppingBag, User, Menu, FileText, Package, Heart, Settings, LogOut, ChevronDown, X, CheckCircle, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ModeToggle } from "@/components/ui/mode-toggle"
@@ -20,8 +20,9 @@ import { motion } from "framer-motion"
 import Image from "@/components/ui/image-shim"
 import { useAuth } from "@/contexts/AuthContext"
 import { useCart } from "@/contexts/CartContext"
-import { categoriesAPI } from "@/lib/api"
+import { categoriesAPI, userAPI } from "@/lib/api"
 import { MiniCart } from "./mini-cart"
+import { useDebounce } from "@/hooks/useDebounce"
 
 interface Category {
     id: string;
@@ -32,7 +33,9 @@ interface Category {
 
 export function Header() {
     const [isScrolled, setIsScrolled] = useState(false)
+    const [searchQuery, setSearchQuery] = useState("")
     const [searchFocused, setSearchFocused] = useState(false)
+    const debouncedSearch = useDebounce(searchQuery, 500)
     const [scrollProgress, setScrollProgress] = useState(0)
     const [showMegaMenu, setShowMegaMenu] = useState(false)
     const [categories, setCategories] = useState<Category[]>([])
@@ -40,8 +43,46 @@ export function Header() {
     const [cartOpen, setCartOpen] = useState(false)
     const [megaMenuTimeout, setMegaMenuTimeout] = useState<ReturnType<typeof setTimeout> | null>(null)
     const [logoHovered, setLogoHovered] = useState(false)
+    const [showB2BModal, setShowB2BModal] = useState(false)
+    const [b2bCompanyName, setB2bCompanyName] = useState("")
+    const [b2bTaxId, setB2bTaxId] = useState("")
+    const [requestingB2B, setRequestingB2B] = useState(false)
     const { user, signOut } = useAuth()
     const { items } = useCart()
+
+    const handleB2BRequest = async () => {
+        if (!user || !b2bCompanyName.trim()) return
+
+        try {
+            setRequestingB2B(true)
+            await userAPI.requestB2BAccess((user as any).id, {
+                companyName: b2bCompanyName,
+                taxId: b2bTaxId || undefined,
+            })
+            
+            // Show success and close modal
+            alert("B2B approval request submitted! You'll be notified within 24 hours.")
+            setShowB2BModal(false)
+            setB2bCompanyName("")
+            setB2bTaxId("")
+            
+            // Refresh the page to update user status
+            window.location.reload()
+        } catch (err: any) {
+            console.error("[HEADER] B2B request error:", err)
+            alert(`Failed to submit request: ${err.message}`)
+        } finally {
+            setRequestingB2B(false)
+        }
+    }
+
+    // Handle debounced search
+    useEffect(() => {
+        if (debouncedSearch) {
+            console.log("[HEADER] Search query:", debouncedSearch)
+            // Add your search logic here
+        }
+    }, [debouncedSearch])
 
     // Fetch categories from API
     useEffect(() => {
@@ -88,6 +129,10 @@ export function Header() {
         setMegaMenuTimeout(timeout)
     }
 
+    const scrollToTop = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+
     return (
         <>
             {/* Scroll Progress Bar */}
@@ -120,16 +165,16 @@ export function Header() {
                                     <SheetTitle className="font-serif text-2xl text-left">Carmella</SheetTitle>
                                 </SheetHeader>
                                 <nav className="flex flex-col gap-4 mt-8">
-                                    <Link href="/" className="text-lg font-medium hover:text-primary transition-colors">
+                                    <Link href="/" onClick={scrollToTop} className="text-lg font-medium hover:text-primary transition-colors">
                                         Home
                                     </Link>
-                                    <Link href="/catalog" className="text-lg font-medium hover:text-primary transition-colors">
+                                    <Link href="/catalog" onClick={scrollToTop} className="text-lg font-medium hover:text-primary transition-colors">
                                         Catalog
                                     </Link>
-                                    <Link href="/about" className="text-lg font-medium hover:text-primary transition-colors">
+                                    <Link href="/about" onClick={scrollToTop} className="text-lg font-medium hover:text-primary transition-colors">
                                         About
                                     </Link>
-                                    <Link href="/contact" className="text-lg font-medium hover:text-primary transition-colors">
+                                    <Link href="/contact" onClick={scrollToTop} className="text-lg font-medium hover:text-primary transition-colors">
                                         Contact
                                     </Link>
                                     <Button className="mt-4 bg-secondary text-secondary-foreground hover:bg-secondary/90">
@@ -194,7 +239,7 @@ export function Header() {
 
                     {/* Desktop Navigation */}
                     <nav className="hidden md:flex items-center gap-10">
-                        <Link href="/" className="text-sm font-medium uppercase tracking-wide text-foreground/80 hover:text-foreground hover:underline underline-offset-4 decoration-primary decoration-2 transition-all">
+                        <Link href="/" onClick={scrollToTop} className="text-sm font-medium uppercase tracking-wide text-foreground/80 hover:text-foreground hover:underline underline-offset-4 decoration-primary decoration-2 transition-all">
                             Home
                         </Link>
 
@@ -206,6 +251,7 @@ export function Header() {
                         >
                             <Link
                                 href="/catalog"
+                                onClick={scrollToTop}
                                 className="text-sm font-medium uppercase tracking-wide text-foreground/80 hover:text-foreground hover:underline underline-offset-4 decoration-primary decoration-2 transition-all flex items-center gap-1"
                             >
                                 Catalog
@@ -267,10 +313,10 @@ export function Header() {
                             )}
                         </div>
 
-                        <Link href="/about" className="text-sm font-medium uppercase tracking-wide text-foreground/80 hover:text-foreground hover:underline underline-offset-4 decoration-primary decoration-2 transition-all">
+                        <Link href="/about" onClick={scrollToTop} className="text-sm font-medium uppercase tracking-wide text-foreground/80 hover:text-foreground hover:underline underline-offset-4 decoration-primary decoration-2 transition-all">
                             About
                         </Link>
-                        <Link href="/contact" className="text-sm font-medium uppercase tracking-wide text-foreground/80 hover:text-foreground hover:underline underline-offset-4 decoration-primary decoration-2 transition-all">
+                        <Link href="/contact" onClick={scrollToTop} className="text-sm font-medium uppercase tracking-wide text-foreground/80 hover:text-foreground hover:underline underline-offset-4 decoration-primary decoration-2 transition-all">
                             Contact
                         </Link>
                     </nav>
@@ -287,6 +333,8 @@ export function Header() {
                                 <input
                                     type="text"
                                     placeholder="Search products..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
                                     onFocus={() => setSearchFocused(true)}
                                     onBlur={() => setSearchFocused(false)}
                                     className="bg-transparent text-foreground placeholder-muted-foreground focus:outline-none w-full text-sm"
@@ -304,6 +352,81 @@ export function Header() {
                             Request Catalog
                         </Button>
 
+                        {/* View Pricing / B2B Status Button */}
+                        {!user ? (
+                            // Non-logged in users - Vibrating button
+                            <motion.div
+                                animate={{
+                                    scale: [1, 1.05, 1],
+                                    rotate: [0, -1, 1, -1, 0],
+                                }}
+                                transition={{
+                                    duration: 0.5,
+                                    repeat: Infinity,
+                                    repeatDelay: 2,
+                                }}
+                            >
+                                <Button
+                                    size="sm"
+                                    onClick={() => setShowB2BModal(true)}
+                                    className="hidden lg:flex bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-full gap-2 shadow-lg relative"
+                                >
+                                    <motion.div
+                                        animate={{ scale: [1, 1.2, 1] }}
+                                        transition={{ duration: 1, repeat: Infinity }}
+                                        className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"
+                                    />
+                                    <FileText className="w-4 h-4" />
+                                    View Pricing
+                                </Button>
+                            </motion.div>
+                        ) : (user as any)?.b2b_approval_status === 'approved' ? (
+                            // Approved users - Green checkmark badge
+                            <Badge className="hidden lg:flex bg-green-100 text-green-700 border-green-300 gap-2 px-3 py-1.5">
+                                <motion.div
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ type: "spring", stiffness: 200 }}
+                                >
+                                    <CheckCircle className="w-4 h-4" />
+                                </motion.div>
+                                B2B Approved
+                            </Badge>
+                        ) : (user as any)?.b2b_approval_status === 'pending' ? (
+                            // Pending users - Yellow badge
+                            <Badge className="hidden lg:flex bg-yellow-100 text-yellow-700 border-yellow-300 gap-2 px-3 py-1.5">
+                                <Clock className="w-4 h-4" />
+                                Approval Pending
+                            </Badge>
+                        ) : (
+                            // Logged in but not requested - Vibrating button
+                            <motion.div
+                                animate={{
+                                    scale: [1, 1.05, 1],
+                                    rotate: [0, -1, 1, -1, 0],
+                                }}
+                                transition={{
+                                    duration: 0.5,
+                                    repeat: Infinity,
+                                    repeatDelay: 2,
+                                }}
+                            >
+                                <Button
+                                    size="sm"
+                                    onClick={() => setShowB2BModal(true)}
+                                    className="hidden lg:flex bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-full gap-2 shadow-lg relative"
+                                >
+                                    <motion.div
+                                        animate={{ scale: [1, 1.2, 1] }}
+                                        transition={{ duration: 1, repeat: Infinity }}
+                                        className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"
+                                    />
+                                    <FileText className="w-4 h-4" />
+                                    Request Approval
+                                </Button>
+                            </motion.div>
+                        )}
+
                         <ModeToggle />
 
                         {/* Account Dropdown - Only show if logged in */}
@@ -318,10 +441,12 @@ export function Header() {
                                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                                     <div className="text-xs text-muted-foreground px-2 py-1">{user.email}</div>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem>
-                                        <Package className="mr-2 h-4 w-4" />
-                                        <span>Orders</span>
-                                    </DropdownMenuItem>
+                                    <Link href="/orders">
+                                      <DropdownMenuItem>
+                                          <Package className="mr-2 h-4 w-4" />
+                                          <span>Orders</span>
+                                      </DropdownMenuItem>
+                                    </Link>
                                     <DropdownMenuItem>
                                         <Heart className="mr-2 h-4 w-4" />
                                         <span>Wishlist</span>
@@ -372,6 +497,151 @@ export function Header() {
                     </div>
                 </div>
             </header>
+
+            {/* B2B Pricing Access Modal */}
+            {showB2BModal && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    onClick={() => setShowB2BModal(false)}
+                >
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative overflow-hidden"
+                    >
+                        {/* Decorative gradient */}
+                        <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500" />
+                        
+                        {/* Close button */}
+                        <button
+                            onClick={() => setShowB2BModal(false)}
+                            className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        >
+                            <X className="w-5 h-5 text-gray-500" />
+                        </button>
+
+                        {/* Icon */}
+                        <div className="flex justify-center mb-6">
+                            <motion.div
+                                animate={{ 
+                                    scale: [1, 1.1, 1],
+                                    rotate: [0, 5, -5, 0]
+                                }}
+                                transition={{ 
+                                    duration: 2,
+                                    repeat: Infinity,
+                                    repeatDelay: 1
+                                }}
+                                className="w-20 h-20 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center shadow-lg"
+                            >
+                                <FileText className="w-10 h-10 text-white" />
+                            </motion.div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="text-center space-y-4">
+                            <h3 className="text-2xl font-black text-gray-800">
+                                {user ? "Request B2B Approval" : "Want to View Pricing?"}
+                            </h3>
+                            <p className="text-gray-600">
+                                {user 
+                                    ? "Fill out the form below to request B2B approval and access wholesale pricing."
+                                    : "Sign up and request B2B approval to access our wholesale pricing and place orders."
+                                }
+                            </p>
+                            
+                            {user ? (
+                                // Logged in - Show B2B request form
+                                <div className="space-y-4 pt-2">
+                                    <div className="text-left">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Company Name *
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={b2bCompanyName}
+                                            onChange={(e) => setB2bCompanyName(e.target.value)}
+                                            placeholder="Your Company Name"
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                                        />
+                                    </div>
+                                    <div className="text-left">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Tax ID (Optional)
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={b2bTaxId}
+                                            onChange={(e) => setB2bTaxId(e.target.value)}
+                                            placeholder="Tax ID or Business Number"
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                                        />
+                                    </div>
+                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
+                                        <p className="text-sm font-semibold text-blue-900 mb-2">
+                                            ⏱️ What happens next:
+                                        </p>
+                                        <ul className="text-sm text-blue-800 space-y-1">
+                                            <li>• Your request will be reviewed</li>
+                                            <li>• Approval within 24 hours</li>
+                                            <li>• You'll receive an email notification</li>
+                                            <li>• Then access wholesale pricing</li>
+                                        </ul>
+                                    </div>
+                                    <Button
+                                        onClick={handleB2BRequest}
+                                        disabled={!b2bCompanyName.trim() || requestingB2B}
+                                        className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-full py-6 text-lg font-bold shadow-lg disabled:opacity-50"
+                                    >
+                                        {requestingB2B ? "Submitting..." : "Submit Request"}
+                                    </Button>
+                                </div>
+                            ) : (
+                                // Not logged in - Show signup flow
+                                <>
+                                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-left">
+                                        <p className="text-sm font-semibold text-orange-900 mb-2">
+                                            ✨ How it works:
+                                        </p>
+                                        <ul className="text-sm text-orange-800 space-y-1">
+                                            <li>• Sign up for a free account</li>
+                                            <li>• Request B2B approval</li>
+                                            <li>• Get approved within 24 hours</li>
+                                            <li>• Access wholesale pricing & order</li>
+                                        </ul>
+                                    </div>
+
+                                    {/* CTA Buttons */}
+                                    <div className="flex flex-col gap-3 pt-4">
+                                        <Link href="/signup">
+                                            <Button
+                                                className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-full py-6 text-lg font-bold shadow-lg"
+                                                onClick={() => setShowB2BModal(false)}
+                                            >
+                                                Sign Up & Request Approval
+                                            </Button>
+                                        </Link>
+                                        <Link href="/login">
+                                            <Button
+                                                variant="outline"
+                                                className="w-full rounded-full py-6"
+                                                onClick={() => setShowB2BModal(false)}
+                                            >
+                                                Already have an account? Log In
+                                            </Button>
+                                        </Link>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
         </>
     )
 }

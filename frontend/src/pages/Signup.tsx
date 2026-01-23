@@ -5,6 +5,8 @@ import { FadeIn } from '@/components/animations/fade-in'
 import Link from '@/components/ui/link-shim'
 import { supabase } from '@/lib/supabase'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+
 export default function Signup() {
   const { signInWithGoogle, loading: authLoading } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
@@ -22,15 +24,34 @@ export default function Signup() {
       setError(null)
       setSuccessMessage(null)
 
-      const { error: err } = await supabase.auth.signUp({
-        email: email,
-        password: password,
+      console.log("[SIGNUP_PAGE] Calling backend signup endpoint...")
+      
+      // Call backend signup endpoint instead of Supabase directly
+      const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          firstName: '',
+          lastName: '',
+          phone: '',
+        }),
       })
 
-      if (err) throw err
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to sign up')
+      }
+
+      console.log("[SIGNUP_PAGE] Signup successful, moving to verification step")
       setStep('verify')
       setSuccessMessage('Confirmation code sent to your email!')
     } catch (err) {
+      console.error("[SIGNUP_PAGE] Signup error:", err)
       setError(err instanceof Error ? err.message : 'Failed to sign up')
     } finally {
       setIsLoading(false)

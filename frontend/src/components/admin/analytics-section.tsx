@@ -37,30 +37,30 @@ export function AnalyticsSection() {
       className="space-y-6"
     >
       <div>
-        <h2 className="text-4xl font-black tracking-tight text-gray-800 mb-2">Analytics & Reports</h2>
-        <p className="text-gray-500">Sales trends, revenue breakdown, and top performing products.</p>
+        <h2 className="text-4xl font-black tracking-tight text-foreground mb-2">Analytics & Reports</h2>
+        <p className="text-muted-foreground">Sales trends, revenue breakdown, and top performing products.</p>
       </div>
 
       {/* Sales Trend Chart */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+      <div className="admin-card p-6">
+        <h3 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
           <BarChart3 className="w-5 h-5 text-primary" />
           Sales Trend (Last 7 Days)
         </h3>
         <div className="space-y-4">
           {SALES_TREND.map((item, idx) => (
             <div key={idx} className="flex items-center gap-4">
-              <span className="w-16 text-sm font-semibold text-gray-600">{item.date}</span>
+              <span className="w-16 text-sm font-semibold text-muted-foreground">{item.date}</span>
               <div className="flex-1 flex items-center gap-2">
-                <div className="flex-1 bg-gray-100 rounded-full h-8 relative overflow-hidden">
+                <div className="flex-1 bg-muted dark:bg-gray-800 rounded-full h-8 relative overflow-hidden">
                   <div
                     className="bg-gradient-to-r from-primary to-primary/70 h-full rounded-full transition-all"
                     style={{ width: `${(item.sales / 7100) * 100}%` }}
                   />
                 </div>
-                <span className="w-20 text-right text-sm font-semibold text-gray-800">${item.sales}</span>
+                <span className="w-20 text-right text-sm font-semibold text-foreground">${item.sales}</span>
               </div>
-              <Badge className="bg-blue-100 text-blue-700 text-xs">{item.orders} orders</Badge>
+              <Badge className="bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-xs">{item.orders} orders</Badge>
             </div>
           ))}
         </div>
@@ -68,40 +68,40 @@ export function AnalyticsSection() {
 
       {/* Revenue by Category */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">Revenue by Category</h3>
+        <div className="admin-card p-6">
+          <h3 className="text-lg font-bold text-foreground mb-4">Revenue by Category</h3>
           <div className="space-y-4">
             {REVENUE_BY_CATEGORY.map((item, idx) => (
               <div key={idx}>
                 <div className="flex justify-between mb-2">
-                  <span className="text-sm font-semibold text-gray-700">{item.category}</span>
-                  <span className="text-sm font-bold text-gray-800">{item.revenue}</span>
+                  <span className="text-sm font-semibold text-foreground">{item.category}</span>
+                  <span className="text-sm font-bold text-foreground">{item.revenue}</span>
                 </div>
-                <div className="w-full bg-gray-100 rounded-full h-2">
+                <div className="w-full bg-muted dark:bg-gray-800 rounded-full h-2">
                   <div
                     className="bg-primary h-2 rounded-full transition-all"
                     style={{ width: `${item.percentage}%` }}
                   />
                 </div>
-                <span className="text-xs text-gray-500 mt-1">{item.percentage}% of total</span>
+                <span className="text-xs text-muted-foreground mt-1">{item.percentage}% of total</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Top Products */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">Top Performing Products</h3>
+        <div className="admin-card p-6">
+          <h3 className="text-lg font-bold text-foreground mb-4">Top Performing Products</h3>
           <div className="space-y-3">
             {TOP_PRODUCTS.map((product) => (
-              <div key={product.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div key={product.id} className="flex items-center justify-between p-3 bg-muted dark:bg-gray-800 rounded-lg">
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-800">{product.name}</p>
-                  <p className="text-xs text-gray-500">{product.sales} sales</p>
+                  <p className="text-sm font-semibold text-foreground">{product.name}</p>
+                  <p className="text-xs text-muted-foreground">{product.sales} sales</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-bold text-gray-800">{product.revenue}</p>
-                  <p className={cn("text-xs font-semibold", product.trend.includes("+") ? "text-green-600" : "text-red-600")}>
+                  <p className="text-sm font-bold text-foreground">{product.revenue}</p>
+                  <p className={cn("text-xs font-semibold", product.trend.includes("+") ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400")}>
                     {product.trend}
                   </p>
                 </div>

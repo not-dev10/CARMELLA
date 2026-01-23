@@ -1,5 +1,129 @@
 import { Request, Response } from "express";
-import { supabase } from "../config/supabase.js";
+import { supabase, supabaseAdmin } from "../config/supabase.js";
+
+/**
+ * Get all users with full details
+ * GET /api/admin/users
+ */
+export async function getUsers(req: Request, res: Response) {
+  try {
+    console.log("[ADMIN] getUsers called by user:", req.userId);
+    
+    const { search = "", page = "1", limit = "20" } = req.query;
+    const pageNum = parseInt(page as string) || 1;
+    const limitNum = parseInt(limit as string) || 20;
+    const offset = (pageNum - 1) * limitNum;
+
+    console.log("[ADMIN] Query params:", { search, page: pageNum, limit: limitNum, offset });
+
+    // Use supabaseAdmin to bypass RLS
+    let query = supabaseAdmin
+      .from("users")
+      .select(`
+        id,
+        email,
+        company_name,
+        user_type,
+        is_b2b_user,
+        b2b_approval_status,
+        b2b_approval_requested_at,
+        b2b_approval_expires_at,
+        b2b_approved_at,
+        phone,
+        address,
+        city,
+        state,
+        postal_code,
+        country,
+        status,
+        total_orders,
+        total_spent,
+        created_at,
+        updated_at
+      `, { count: "exact" });
+
+    // Search by name or email
+    if (search) {
+      console.log("[ADMIN] Applying search filter:", search);
+      query = query.or(`email.ilike.%${search}%,company_name.ilike.%${search}%`);
+    }
+
+    const { data, error, count } = await query
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limitNum - 1);
+
+    if (error) {
+      console.error("[ADMIN] Query error:", error);
+      return res.status(400).json({ error: error.message });
+    }
+
+    console.log("[ADMIN] Query successful. Found users:", count, "Returned:", data?.length);
+    console.log("[ADMIN] Sample user data:", data?.[0]);
+
+    return res.json({
+      users: data || [],
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limitNum),
+      },
+    });
+  } catch (error: any) {
+    console.error("[ADMIN] Unexpected error:", error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+/**
+ * Get single user details
+ * GET /api/admin/users/:userId
+ */
+export async function getUser(req: Request, res: Response) {
+  try {
+    const { userId } = req.params;
+
+    const { data, error } = await supabaseAdmin
+      .from("users")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
+    if (error) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    return res.json({ user: data });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+/**
+ * Update user details
+ * PUT /api/admin/users/:userId
+ */
+export async function updateUser(req: Request, res: Response) {
+  try {
+    const { userId } = req.params;
+    const updates = req.body;
+
+    const { data, error } = await supabaseAdmin
+      .from("users")
+      .update(updates)
+      .eq("id", userId)
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+
+    return res.json({ user: data });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+}
 
 /**
  * Get all B2B approval requests

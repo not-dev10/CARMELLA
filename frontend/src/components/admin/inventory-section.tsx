@@ -19,8 +19,8 @@ export function InventorySection() {
       className="space-y-6"
     >
       <div>
-        <h2 className="text-4xl font-black tracking-tight text-gray-800 mb-2">Inventory Alerts</h2>
-        <p className="text-gray-500">Monitor low stock items and reorder suggestions.</p>
+        <h2 className="text-4xl font-black tracking-tight text-foreground mb-2">Inventory Alerts</h2>
+        <p className="text-muted-foreground">Monitor low stock items and reorder suggestions.</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4">
@@ -30,10 +30,10 @@ export function InventorySection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-              "bg-white border-l-4 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow",
-              item.status === "out" ? "border-l-red-600 bg-red-50/30" :
-              item.status === "critical" ? "border-l-orange-600 bg-orange-50/30" :
-              "border-l-yellow-600 bg-yellow-50/30"
+              "admin-card border-l-4 p-6 hover:shadow-md transition-shadow",
+              item.status === "out" ? "border-l-red-600 bg-red-50/30 dark:bg-red-950/20" :
+              item.status === "critical" ? "border-l-orange-600 bg-orange-50/30 dark:bg-orange-950/20" :
+              "border-l-yellow-600 bg-yellow-50/30 dark:bg-yellow-950/20"
             )}
           >
             <div className="flex items-start justify-between">
@@ -41,48 +41,48 @@ export function InventorySection() {
                 <div className="flex items-center gap-3 mb-2">
                   <div className={cn(
                     "p-2 rounded-lg",
-                    item.status === "out" ? "bg-red-100" :
-                    item.status === "critical" ? "bg-orange-100" :
-                    "bg-yellow-100"
+                    item.status === "out" ? "bg-red-100 dark:bg-red-950" :
+                    item.status === "critical" ? "bg-orange-100 dark:bg-orange-950" :
+                    "bg-yellow-100 dark:bg-yellow-950"
                   )}>
                     {item.status === "out" ? (
                       <AlertCircle className={cn(
                         "w-5 h-5",
-                        item.status === "out" ? "text-red-600" :
-                        item.status === "critical" ? "text-orange-600" :
-                        "text-yellow-600"
+                        item.status === "out" ? "text-red-600 dark:text-red-400" :
+                        item.status === "critical" ? "text-orange-600 dark:text-orange-400" :
+                        "text-yellow-600 dark:text-yellow-400"
                       )} />
                     ) : (
                       <AlertTriangle className={cn(
                         "w-5 h-5",
-                        item.status === "out" ? "text-red-600" :
-                        item.status === "critical" ? "text-orange-600" :
-                        "text-yellow-600"
+                        item.status === "out" ? "text-red-600 dark:text-red-400" :
+                        item.status === "critical" ? "text-orange-600 dark:text-orange-400" :
+                        "text-yellow-600 dark:text-yellow-400"
                       )} />
                     )}
                   </div>
                   <div>
-                    <h3 className="font-serif text-lg text-gray-800">{item.name}</h3>
-                    <p className="text-xs text-gray-500">SKU: {item.sku}</p>
+                    <h3 className="font-serif text-lg text-foreground">{item.name}</h3>
+                    <p className="text-xs text-muted-foreground">SKU: {item.sku}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4 mt-4">
                   <div>
-                    <p className="text-xs text-gray-600 mb-1">Current Stock</p>
-                    <p className="text-2xl font-bold text-gray-800">{item.stock}</p>
+                    <p className="text-xs text-muted-foreground mb-1">Current Stock</p>
+                    <p className="text-2xl font-bold text-foreground">{item.stock}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-600 mb-1">Reorder Level</p>
-                    <p className="text-2xl font-bold text-gray-800">{item.reorderLevel}</p>
+                    <p className="text-xs text-muted-foreground mb-1">Reorder Level</p>
+                    <p className="text-2xl font-bold text-foreground">{item.reorderLevel}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-600 mb-1">Status</p>
+                    <p className="text-xs text-muted-foreground mb-1">Status</p>
                     <Badge className={cn(
                       "text-xs font-bold",
-                      item.status === "out" ? "bg-red-100 text-red-700" :
-                      item.status === "critical" ? "bg-orange-100 text-orange-700" :
-                      "bg-yellow-100 text-yellow-700"
+                      item.status === "out" ? "bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300" :
+                      item.status === "critical" ? "bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300" :
+                      "bg-yellow-100 dark:bg-yellow-950 text-yellow-700 dark:text-yellow-300"
                     )}>
                       {item.status === "out" ? "Out of Stock" :
                        item.status === "critical" ? "Critical" :

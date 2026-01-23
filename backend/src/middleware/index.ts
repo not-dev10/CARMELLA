@@ -20,10 +20,13 @@ export async function authMiddleware(
   const token = req.headers.authorization?.split(" ")[1];
 
   if (!token) {
+    console.warn("[AUTH] Missing authorization token");
     return res.status(401).json({ error: "Missing authorization token" });
   }
 
   try {
+    console.log("[AUTH] Verifying token...");
+    
     // Verify token with Supabase
     const {
       data: { user },
@@ -31,11 +34,14 @@ export async function authMiddleware(
     } = await supabase.auth.getUser(token);
 
     if (error || !user) {
+      console.error("[AUTH] Token verification failed:", error);
       return res.status(401).json({ error: "Invalid token" });
     }
 
     req.userId = user.id;
     req.userEmail = user.email || "";
+
+    console.log("[AUTH] Token verified for user:", user.id, user.email);
 
     // Get user type from custom claims or database
     const { data: userData } = await supabase
@@ -45,8 +51,11 @@ export async function authMiddleware(
       .single();
 
     req.userType = userData?.user_type || "customer";
+    console.log("[AUTH] User type:", req.userType);
+    
     next();
   } catch (error) {
+    console.error("[AUTH] Unexpected error:", error);
     return res.status(401).json({ error: "Invalid token" });
   }
 }
@@ -56,9 +65,14 @@ export function adminMiddleware(
   res: Response,
   next: NextFunction
 ) {
+  console.log("[ADMIN_MIDDLEWARE] Checking admin access for user:", req.userId, "Type:", req.userType);
+  
   if (req.userType !== "admin") {
+    console.warn("[ADMIN_MIDDLEWARE] Access denied. User type is:", req.userType);
     return res.status(403).json({ error: "Admin access required" });
   }
+  
+  console.log("[ADMIN_MIDDLEWARE] Admin access granted");
   next();
 }
 

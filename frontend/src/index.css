@@ -6,9 +6,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, monospace;
-  --font-serif: ui-serif, serif;
+  --font-serif: 'Cormorant Garamond', 'Crimson Pro', ui-serif, Georgia, serif;
   
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -604,5 +604,50 @@
   /* Mini Cart Sheet Overlay - Dark Mode Support */
   .dark [data-state="open"] {
     @apply bg-black/50;
+  }
+
+  /* Admin Panel Dark Theme Utilities */
+  .admin-card {
+    @apply bg-card dark:bg-gray-900 border border-border dark:border-gray-800 rounded-xl shadow-sm dark:shadow-gray-800/50;
+  }
+
+  .admin-input {
+    @apply w-full px-3 py-2 border border-border dark:border-gray-700 bg-background dark:bg-gray-800 text-foreground rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary;
+  }
+
+  .admin-select {
+    @apply w-full px-3 py-2 border border-border dark:border-gray-700 bg-background dark:bg-gray-800 text-foreground rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary;
+  }
+
+  .admin-label {
+    @apply block text-sm font-medium text-foreground mb-1;
+  }
+
+  .admin-heading {
+    @apply text-sm font-bold text-foreground uppercase mb-3;
+  }
+
+  .admin-modal {
+    @apply bg-card dark:bg-gray-900 rounded-xl shadow-2xl border border-border dark:border-gray-800;
+  }
+
+  .admin-modal-header {
+    @apply sticky top-0 bg-card dark:bg-gray-900 border-b border-border dark:border-gray-800;
+  }
+
+  .admin-modal-footer {
+    @apply sticky bottom-0 bg-muted dark:bg-gray-800 border-t border-border dark:border-gray-800;
+  }
+
+  .admin-table-header {
+    @apply bg-muted dark:bg-gray-800;
+  }
+
+  .admin-table-row {
+    @apply hover:bg-muted/50 dark:hover:bg-gray-800/50 transition-colors;
+  }
+
+  .admin-button-secondary {
+    @apply px-4 py-2 text-foreground hover:bg-muted dark:hover:bg-gray-800 rounded-lg transition-colors;
   }
 }

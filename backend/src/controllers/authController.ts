@@ -8,40 +8,55 @@ import { signupSchema, loginSchema, googleAuthSchema } from "../types/validation
  */
 export async function signup(req: Request, res: Response) {
   try {
+    console.log("[SIGNUP] Request received:", { email: req.body.email });
+    
     const { email, password, firstName, lastName, phone } = signupSchema.parse(
       req.body
     );
 
+    console.log("[SIGNUP] Validation passed for:", email);
+
     // Create user with Supabase Auth
+    console.log("[SIGNUP] Creating auth user...");
     const { data: authData, error: authError } =
-      await supabase.auth.signInWithPassword({
+      await supabase.auth.signUp({
         email,
         password,
       });
 
     if (authError) {
+      console.error("[SIGNUP] Auth error:", authError);
       return res.status(400).json({ error: authError.message });
     }
 
+    if (!authData.user) {
+      console.error("[SIGNUP] No user returned from auth");
+      return res.status(400).json({ error: "Failed to create user" });
+    }
+
+    console.log("[SIGNUP] Auth user created:", authData.user.id);
+
     // Create user profile in database
+    console.log("[SIGNUP] Creating user profile in database...");
     const { error: profileError } = await supabase.from("users").insert({
-      id: authData.user!.id,
+      id: authData.user.id,
       email,
-      first_name: firstName,
-      last_name: lastName,
-      phone,
       user_type: "user",
     });
 
     if (profileError) {
+      console.error("[SIGNUP] Profile creation error:", profileError);
       return res.status(400).json({ error: profileError.message });
     }
 
+    console.log("[SIGNUP] User profile created successfully:", authData.user.id);
+
     return res.status(201).json({
-      message: "User created successfully",
+      message: "User created successfully. Please verify your email.",
       user: authData.user,
     });
   } catch (error: any) {
+    console.error("[SIGNUP] Unexpected error:", error);
     return res.status(400).json({ error: error.message });
   }
 }
@@ -52,7 +67,11 @@ export async function signup(req: Request, res: Response) {
  */
 export async function login(req: Request, res: Response) {
   try {
+    console.log("[LOGIN] Request received:", { email: req.body.email });
+    
     const { email, password } = loginSchema.parse(req.body);
+
+    console.log("[LOGIN] Validation passed for:", email);
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -60,14 +79,18 @@ export async function login(req: Request, res: Response) {
     });
 
     if (error) {
+      console.error("[LOGIN] Auth error:", error);
       return res.status(401).json({ error: error.message });
     }
+
+    console.log("[LOGIN] Login successful for user:", data.user?.id);
 
     return res.json({
       user: data.user,
       session: data.session,
     });
   } catch (error: any) {
+    console.error("[LOGIN] Unexpected error:", error);
     return res.status(400).json({ error: error.message });
   }
 }
