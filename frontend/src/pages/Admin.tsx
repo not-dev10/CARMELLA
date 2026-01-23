@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   BarChart3, ShoppingCart, TrendingUp, Users, Package, AlertCircle,
@@ -20,16 +20,11 @@ import { CategoriesSection } from "@/components/admin/categories-section"
 import { InventorySection } from "@/components/admin/inventory-section"
 import { ActivitySection } from "@/components/admin/activity-section"
 import { SettingsSection } from "@/components/admin/settings-section"
+import { ProductsSection } from "@/components/admin/products-section"
 import { useAuth } from "@/contexts/AuthContext"
+import { adminAPI } from "@/lib/api"
 
 // Mock Data
-const DASHBOARD_STATS = [
-  { label: "Total Orders", value: "1,284", trend: "+12.5%", icon: ShoppingCart, color: "primary" },
-  { label: "Revenue", value: "$42,500.00", trend: "+8.2%", icon: TrendingUp, color: "primary" },
-  { label: "Pending B2B Requests", value: "12", trend: "23:58:12", icon: AlertCircle, color: "terracotta", urgent: true },
-  { label: "Active Users", value: "842", trend: "-2%", icon: Users, color: "primary" }
-]
-
 const RECENT_ORDERS = [
   { id: "#CR-9821", client: "The Clay Studio", status: "Shipped", date: "Jan 23, 2024", total: "$4,210.00" },
   { id: "#CR-9820", client: "Nordic Living Co.", status: "Pending", date: "Jan 23, 2024", total: "$1,850.50" },
@@ -72,6 +67,16 @@ export default function Admin() {
   const [searchQuery, setSearchQuery] = useState("")
   const debouncedSearch = useDebounce(searchQuery, 500)
   const [editingSection, setEditingSection] = useState<string | null>(null)
+  const [b2bRequests, setB2bRequests] = useState<any[]>([])
+  const [loadingB2B, setLoadingB2B] = useState(false)
+  const [processingRequest, setProcessingRequest] = useState<string | null>(null)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [showErrorModal, setShowErrorModal] = useState(false)
+  const [modalMessage, setModalMessage] = useState("")
+  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [rejectUserId, setRejectUserId] = useState<string | null>(null)
+  const [rejectionReason, setRejectionReason] = useState("")
+  const [pendingB2BCount, setPendingB2BCount] = useState(0)
 
   const handleLogout = async () => {
     try {
@@ -81,13 +86,105 @@ export default function Admin() {
     }
   }
 
+  // Fetch B2B requests when B2B tab is active
+  useEffect(() => {
+    if (activeTab === "b2b") {
+      fetchB2BRequests()
+    }
+  }, [activeTab])
+
+  // Fetch B2B count on mount for the badge
+  useEffect(() => {
+    fetchB2BRequests()
+  }, [])
+
+  const fetchB2BRequests = async () => {
+    try {
+      setLoadingB2B(true)
+      const response = await adminAPI.getB2BRequests()
+      setB2bRequests(response.requests || [])
+      // Count pending requests
+      const pendingCount = (response.requests || []).filter((req: any) => req.status === 'pending').length
+      setPendingB2BCount(pendingCount)
+    } catch (error) {
+      console.error("Failed to fetch B2B requests:", error)
+      setB2bRequests([])
+      setPendingB2BCount(0)
+    } finally {
+      setLoadingB2B(false)
+    }
+  }
+
+  const handleApproveB2B = async (userId: string) => {
+    try {
+      setProcessingRequest(userId)
+      await adminAPI.approveB2BRequest(userId)
+      setModalMessage("B2B request approved successfully! The user can now access wholesale pricing.")
+      setShowSuccessModal(true)
+      fetchB2BRequests() // Refresh the list
+    } catch (error: any) {
+      console.error("Failed to approve B2B request:", error)
+      setModalMessage(error.message || "Failed to approve the request. Please try again.")
+      setShowErrorModal(true)
+    } finally {
+      setProcessingRequest(null)
+    }
+  }
+
+  const handleRejectB2B = async (userId: string) => {
+    setRejectUserId(userId)
+    setShowRejectModal(true)
+  }
+
+  const confirmRejectB2B = async () => {
+    if (!rejectUserId) return
+    
+    try {
+      setProcessingRequest(rejectUserId)
+      await adminAPI.rejectB2BRequest(rejectUserId, rejectionReason || undefined)
+      setModalMessage("B2B request has been rejected. The user will be notified.")
+      setShowSuccessModal(true)
+      setShowRejectModal(false)
+      setRejectionReason("")
+      setRejectUserId(null)
+      fetchB2BRequests() // Refresh the list
+    } catch (error: any) {
+      console.error("Failed to reject B2B request:", error)
+      setModalMessage(error.message || "Failed to reject the request. Please try again.")
+      setShowErrorModal(true)
+      setShowRejectModal(false)
+    } finally {
+      setProcessingRequest(null)
+    }
+  }
+
+  const calculateTimeLeft = (expiresAt: string) => {
+    const now = new Date().getTime()
+    const expiry = new Date(expiresAt).getTime()
+    const diff = expiry - now
+    
+    if (diff <= 0) return "Expired"
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60))
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+    
+    return `${hours}h ${minutes}m left`
+  }
+
+  const DASHBOARD_STATS = [
+    { label: "Total Orders", value: "1,284", trend: "+12.5%", icon: ShoppingCart, color: "primary" },
+    { label: "Revenue", value: "$42,500.00", trend: "+8.2%", icon: TrendingUp, color: "primary" },
+    { label: "Pending B2B Requests", value: pendingB2BCount.toString(), trend: "23:58:12", icon: AlertCircle, color: "terracotta", urgent: true },
+    { label: "Active Users", value: "842", trend: "-2%", icon: Users, color: "primary" }
+  ]
+
   const SIDEBAR_ITEMS = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
     { id: "analytics", label: "Analytics", icon: TrendingUp },
     { id: "orders", label: "Orders", icon: ShoppingCart },
     { id: "products", label: "Products", icon: Package },
     { id: "categories", label: "Categories", icon: Grid3x3 },
-    { id: "b2b", label: "B2B Requests", icon: AlertCircle, badge: 12 },
+    { id: "b2b", label: "B2B Requests", icon: AlertCircle, badge: pendingB2BCount > 0 ? pendingB2BCount : undefined },
     { id: "clients", label: "Clients", icon: Users },
     { id: "contacts", label: "Contacts", icon: Mail, badge: 2 },
     { id: "inventory", label: "Inventory Alerts", icon: AlertCircle, badge: 3 },
@@ -273,147 +370,7 @@ export default function Admin() {
                 )}
 
                 {/* Products Tab */}
-                {activeTab === "products" && (
-                  <motion.div
-                    key="products"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="space-y-6"
-                  >
-                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                      <div className="flex flex-col gap-2">
-                        <h2 className="admin-heading">Product Catalog</h2>
-                        <p className="text-muted-foreground text-base">Manage your ceramic inventory and B2B pricing tiers.</p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Button className="flex items-center gap-2 bg-accent text-white hover:bg-accent/90">
-                          <Upload className="w-5 h-5" />
-                          Bulk CSV Upload
-                        </Button>
-                        <Button className="flex items-center gap-2 btn-gradient">
-                          <Plus className="w-5 h-5" />
-                          Add Product
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Filters */}
-                    <div className="admin-card">
-                      <div className="flex flex-col lg:flex-row gap-4">
-                        <div className="flex-1 relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
-                          <input
-                            type="text"
-                            placeholder="Search products by name, SKU, or category..."
-                            className="admin-input pl-10"
-                          />
-                        </div>
-                        <div className="flex gap-3">
-                          <button className="admin-button-secondary">
-                            Category: All
-                          </button>
-                          <button className="admin-button-secondary">
-                            Stock Status: All
-                          </button>
-                          <button className="flex items-center justify-center p-2 bg-muted dark:bg-gray-800 rounded-lg text-muted-foreground hover:text-primary">
-                            <Filter className="w-5 h-5" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Products Table */}
-                    <div className="admin-card overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                          <thead className="admin-table-header">
-                            <tr>
-                              <th className="px-6 py-4 w-10">
-                                <input type="checkbox" className="rounded text-primary" />
-                              </th>
-                              <th className="px-4 py-4 w-20 text-center text-[11px] font-bold text-muted-foreground uppercase">Image</th>
-                              <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase">Product Details</th>
-                              <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase">Stock Level</th>
-                              <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase">B2B Price</th>
-                              <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase">Status</th>
-                              <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase text-right">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-border dark:divide-gray-800">
-                            {PRODUCTS.map((product) => (
-                              <tr key={product.id} className="admin-table-row">
-                                <td className="px-6 py-4">
-                                  <input type="checkbox" className="rounded text-primary" />
-                                </td>
-                                <td className="px-4 py-4">
-                                  <div className="w-12 h-12 rounded-lg bg-cover bg-center border border-border dark:border-gray-800 mx-auto" style={{ backgroundImage: `url(${product.image})` }} />
-                                </td>
-                                <td className="px-6 py-4">
-                                  <div className="flex flex-col">
-                                    <span className="font-serif text-lg text-foreground">{product.name}</span>
-                                    <span className="text-xs text-muted-foreground mt-0.5">SKU: {product.sku}</span>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm font-semibold text-foreground">{product.stock}</span>
-                                    <Badge className={cn(
-                                      "text-[11px] font-bold uppercase",
-                                      product.outOfStock ? "bg-muted text-muted-foreground" :
-                                        product.lowStock ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400" :
-                                          "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
-                                    )}>
-                                      {product.outOfStock ? "Out of Stock" : product.lowStock ? "Low Stock" : "In Stock"}
-                                    </Badge>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <span className="font-bold text-sm text-foreground">{product.price}</span>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <label className="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" defaultChecked={product.status} className="sr-only" />
-                                    <div className="w-10 h-5 bg-muted dark:bg-gray-700 rounded-full transition-colors"></div>
-                                    <div className="absolute left-0.5 top-0.5 bg-white dark:bg-gray-900 w-4 h-4 rounded-full transition-transform shadow-sm"></div>
-                                  </label>
-                                </td>
-                                <td className="px-6 py-4 text-right">
-                                  <div className="flex items-center justify-end gap-2 text-muted-foreground">
-                                    <button className="p-1 hover:text-primary transition-colors">
-                                      <Edit2 className="w-5 h-5" />
-                                    </button>
-                                    <button className="p-1 hover:text-red-500 dark:hover:text-red-400 transition-colors">
-                                      <Trash2 className="w-5 h-5" />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      {/* Pagination */}
-                      <div className="px-6 py-4 flex items-center justify-between bg-muted dark:bg-gray-800 border-t border-border dark:border-gray-800">
-                        <span className="text-sm text-muted-foreground">Showing 1 to 4 of 128 products</span>
-                        <div className="flex items-center gap-2">
-                          <button className="p-2 rounded-lg border border-border dark:border-gray-800 text-muted-foreground hover:bg-card dark:hover:bg-gray-900 disabled:opacity-30" disabled>
-                            <ChevronLeft className="w-5 h-5" />
-                          </button>
-                          <button className="px-3 py-1.5 rounded-lg bg-primary text-white font-medium text-sm">1</button>
-                          <button className="px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:bg-muted dark:hover:bg-gray-800">2</button>
-                          <button className="px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:bg-muted dark:hover:bg-gray-800">3</button>
-                          <span className="text-muted-foreground">...</span>
-                          <button className="px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:bg-muted dark:hover:bg-gray-800">32</button>
-                          <button className="p-2 rounded-lg border border-border dark:border-gray-800 text-muted-foreground hover:bg-card dark:hover:bg-gray-900">
-                            <ChevronRight className="w-5 h-5" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
+                {activeTab === "products" && <ProductsSection />}
 
                 {/* B2B Requests Tab */}
                 {activeTab === "b2b" && (
@@ -429,74 +386,161 @@ export default function Admin() {
                       <p className="text-muted-foreground">Review and approve wholesale requests with 24-hour expiration windows.</p>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4">
-                      {B2B_REQUESTS.map((request) => (
-                        <motion.div
-                          key={request.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className={cn(
-                            "admin-card hover:shadow-lg transition-shadow",
-                            request.status === "pending" && "ring-2 ring-secondary ring-offset-2 dark:ring-offset-gray-950"
-                          )}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                <h3 className="font-serif text-lg text-foreground">{request.company}</h3>
-                                <Badge className={cn(
-                                  "text-xs font-bold",
-                                  request.status === "pending" ? "bg-secondary/10 dark:bg-secondary/20 text-secondary" :
-                                    request.status === "approved" ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" :
-                                      "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
-                                )}>
-                                  {request.status === "pending" ? "Pending" : request.status === "approved" ? "Approved" : "Rejected"}
-                                </Badge>
+                    {loadingB2B ? (
+                      <div className="text-center py-12">
+                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <p className="mt-4 text-muted-foreground">Loading B2B requests...</p>
+                      </div>
+                    ) : b2bRequests.length === 0 ? (
+                      <div className="admin-card text-center py-12">
+                        <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-foreground font-semibold">No B2B requests found</p>
+                        <p className="text-muted-foreground text-sm mt-2">New requests will appear here</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-4">
+                        {b2bRequests.map((request) => (
+                          <motion.div
+                            key={request.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={cn(
+                              "admin-card hover:shadow-lg transition-shadow",
+                              request.status === "pending" && "ring-2 ring-secondary ring-offset-2 dark:ring-offset-gray-950"
+                            )}
+                          >
+                            {/* Header with Company Name and Status */}
+                            <div className="flex items-start justify-between mb-4">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <h3 className="font-serif text-xl text-foreground">{request.company_name || 'N/A'}</h3>
+                                  <Badge className={cn(
+                                    "text-xs font-bold",
+                                    request.status === "pending" ? "bg-secondary/10 dark:bg-secondary/20 text-secondary" :
+                                      request.status === "approved" ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" :
+                                        "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                                  )}>
+                                    {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                                  </Badge>
+                                </div>
                               </div>
-                              <p className="text-sm text-muted-foreground mb-3">Contact: {request.contact}</p>
-                              <p className="text-xs text-muted-foreground">Requested: {request.date}</p>
+
+                              {request.status === "pending" && request.expires_at && (
+                                <div className="flex items-center gap-2 bg-secondary/5 dark:bg-secondary/10 border border-secondary/20 dark:border-secondary/30 px-3 py-2 rounded-lg">
+                                  <Clock className="w-4 h-4 text-secondary" />
+                                  <span className="text-sm font-bold text-secondary">{calculateTimeLeft(request.expires_at)}</span>
+                                </div>
+                              )}
                             </div>
 
-                            {request.status === "pending" && (
-                              <div className="flex items-center gap-2 bg-secondary/5 dark:bg-secondary/10 border border-secondary/20 dark:border-secondary/30 px-3 py-2 rounded-lg">
-                                <Clock className="w-4 h-4 text-secondary" />
-                                <span className="text-sm font-bold text-secondary">{request.timeLeft}</span>
+                            {/* Contact Information */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 pb-4 border-b border-border dark:border-gray-800">
+                              <div>
+                                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Contact Person</p>
+                                <p className="text-sm font-semibold text-foreground">{request.contact_name || 'N/A'}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Email</p>
+                                <p className="text-sm font-semibold text-foreground">{request.contact_email || 'N/A'}</p>
+                              </div>
+                              {request.contact_phone && (
+                                <div>
+                                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Phone</p>
+                                  <p className="text-sm font-semibold text-foreground">{request.contact_phone}</p>
+                                </div>
+                              )}
+                              {request.tax_id && (
+                                <div>
+                                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Tax ID</p>
+                                  <p className="text-sm font-semibold text-foreground">{request.tax_id}</p>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Business Information */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                              {request.business_type && (
+                                <div>
+                                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Business Type</p>
+                                  <p className="text-sm text-foreground">{request.business_type}</p>
+                                </div>
+                              )}
+                              {request.order_quantity && (
+                                <div>
+                                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Order Quantity</p>
+                                  <p className="text-sm text-foreground">{request.order_quantity}</p>
+                                </div>
+                              )}
+                              {request.purchase_frequency && (
+                                <div>
+                                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Purchase Frequency</p>
+                                  <p className="text-sm text-foreground">{request.purchase_frequency}</p>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Reason */}
+                            {request.reason && (
+                              <div className="mb-4">
+                                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Reason for Request</p>
+                                <p className="text-sm text-foreground bg-muted dark:bg-gray-800 p-3 rounded-lg">{request.reason}</p>
                               </div>
                             )}
 
-                            {request.status === "approved" && (
-                              <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                            {/* Request Date */}
+                            <div className="text-xs text-muted-foreground mb-4">
+                              Requested: {new Date(request.requested_at).toLocaleString()}
+                            </div>
+
+                            {/* Action Buttons */}
+                            {request.status === "pending" && (
+                              <div className="flex gap-3 pt-4 border-t border-border dark:border-gray-800">
+                                <Button 
+                                  onClick={() => handleApproveB2B(request.user_id)}
+                                  disabled={processingRequest === request.user_id}
+                                  className="flex-1 btn-gradient"
+                                >
+                                  <CheckCircle className="w-4 h-4 mr-2" />
+                                  {processingRequest === request.user_id ? "Processing..." : "Approve"}
+                                </Button>
+                                <Button 
+                                  onClick={() => handleRejectB2B(request.user_id)}
+                                  disabled={processingRequest === request.user_id}
+                                  className="flex-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50"
+                                >
+                                  <XCircle className="w-4 h-4 mr-2" />
+                                  {processingRequest === request.user_id ? "Processing..." : "Reject"}
+                                </Button>
+                              </div>
+                            )}
+
+                            {/* Approved/Rejected Status */}
+                            {request.status === "approved" && request.approved_at && (
+                              <div className="flex items-center gap-2 text-green-600 dark:text-green-400 pt-4 border-t border-border dark:border-gray-800">
                                 <CheckCircle className="w-5 h-5" />
-                                <span className="text-sm font-semibold">Approved {request.approvedDate}</span>
+                                <span className="text-sm font-semibold">
+                                  Approved on {new Date(request.approved_at).toLocaleDateString()}
+                                </span>
                               </div>
                             )}
 
                             {request.status === "rejected" && (
-                              <div className="flex flex-col items-end gap-1">
-                                <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                              <div className="pt-4 border-t border-border dark:border-gray-800">
+                                <div className="flex items-center gap-2 text-red-600 dark:text-red-400 mb-2">
                                   <XCircle className="w-5 h-5" />
                                   <span className="text-sm font-semibold">Rejected</span>
                                 </div>
-                                <p className="text-xs text-red-600 dark:text-red-400">{request.reason}</p>
+                                {request.rejection_reason && (
+                                  <p className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-2 rounded">
+                                    Reason: {request.rejection_reason}
+                                  </p>
+                                )}
                               </div>
                             )}
-                          </div>
-
-                          {request.status === "pending" && (
-                            <div className="flex gap-3 mt-4 pt-4 border-t border-border dark:border-gray-800">
-                              <Button className="flex-1 btn-gradient">
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                                Approve
-                              </Button>
-                              <Button className="flex-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50">
-                                <XCircle className="w-4 h-4 mr-2" />
-                                Reject
-                              </Button>
-                            </div>
-                          )}
-                        </motion.div>
-                      ))}
-                    </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
                   </motion.div>
                 )}
 
@@ -806,6 +850,198 @@ export default function Admin() {
             </div>
           </div>
         </main>
+
+        {/* Success Modal */}
+        <AnimatePresence>
+          {showSuccessModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={() => setShowSuccessModal(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-card dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full p-8 relative overflow-hidden border border-border dark:border-gray-800"
+              >
+                {/* Success gradient */}
+                <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500" />
+                
+                {/* Success Icon */}
+                <div className="flex justify-center mb-6">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                    className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg"
+                  >
+                    <CheckCircle className="w-10 h-10 text-white" />
+                  </motion.div>
+                </div>
+
+                {/* Content */}
+                <div className="text-center space-y-4">
+                  <h3 className="text-2xl font-black text-foreground">
+                    Success!
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {modalMessage}
+                  </p>
+
+                  <Button
+                    onClick={() => setShowSuccessModal(false)}
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-full py-4 text-base font-bold shadow-lg"
+                  >
+                    Got it!
+                  </Button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Error Modal */}
+        <AnimatePresence>
+          {showErrorModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={() => setShowErrorModal(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-card dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full p-8 relative overflow-hidden border border-border dark:border-gray-800"
+              >
+                {/* Error gradient */}
+                <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-red-500 via-rose-500 to-pink-500" />
+                
+                {/* Error Icon */}
+                <div className="flex justify-center mb-6">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                    className="w-20 h-20 bg-gradient-to-br from-red-500 to-rose-500 rounded-full flex items-center justify-center shadow-lg"
+                  >
+                    <XCircle className="w-10 h-10 text-white" />
+                  </motion.div>
+                </div>
+
+                {/* Content */}
+                <div className="text-center space-y-4">
+                  <h3 className="text-2xl font-black text-foreground">
+                    Error
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {modalMessage}
+                  </p>
+
+                  <Button
+                    onClick={() => setShowErrorModal(false)}
+                    className="w-full bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white rounded-full py-4 text-base font-bold shadow-lg"
+                  >
+                    Close
+                  </Button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Reject Confirmation Modal */}
+        <AnimatePresence>
+          {showRejectModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={() => {
+                setShowRejectModal(false)
+                setRejectionReason("")
+                setRejectUserId(null)
+              }}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-card dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full p-8 relative overflow-hidden border border-border dark:border-gray-800"
+              >
+                {/* Warning gradient */}
+                <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500" />
+                
+                {/* Warning Icon */}
+                <div className="flex justify-center mb-6">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                    className="w-20 h-20 bg-gradient-to-br from-orange-500 to-red-500 rounded-full flex items-center justify-center shadow-lg"
+                  >
+                    <AlertCircle className="w-10 h-10 text-white" />
+                  </motion.div>
+                </div>
+
+                {/* Content */}
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <h3 className="text-2xl font-black text-foreground mb-2">
+                      Reject B2B Request
+                    </h3>
+                    <p className="text-muted-foreground text-sm">
+                      Are you sure you want to reject this request? The user will be notified.
+                    </p>
+                  </div>
+
+                  <div className="text-left">
+                    <label className="block text-sm font-semibold text-foreground mb-2">
+                      Rejection Reason (Optional)
+                    </label>
+                    <textarea
+                      value={rejectionReason}
+                      onChange={(e) => setRejectionReason(e.target.value)}
+                      placeholder="Provide a reason for rejection..."
+                      rows={4}
+                      className="w-full px-4 py-3 border border-border dark:border-gray-700 bg-background dark:bg-gray-800 text-foreground rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors resize-none"
+                    />
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <Button
+                      onClick={() => {
+                        setShowRejectModal(false)
+                        setRejectionReason("")
+                        setRejectUserId(null)
+                      }}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={confirmRejectB2B}
+                      disabled={processingRequest === rejectUserId}
+                      className="flex-1 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white"
+                    >
+                      {processingRequest === rejectUserId ? "Rejecting..." : "Confirm Reject"}
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
   )
 }

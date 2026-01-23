@@ -136,16 +136,20 @@ export async function getB2BRequests(req: Request, res: Response) {
     const limitNum = parseInt(limit as string) || 20;
     const offset = (pageNum - 1) * limitNum;
 
-    let query = supabase
-      .from("b2b_approvals")
-      .select("*, users(*)", { count: "exact" });
+    let query = supabaseAdmin
+      .from("b2b_requests")
+      .select(`
+        *,
+        user:users!user_id(id, email, company_name),
+        approver:users!approved_by(id, email)
+      `, { count: "exact" });
 
     if (status && status !== "all") {
       query = query.eq("status", status);
     }
 
     const { data, error, count } = await query
-      .order("request_date", { ascending: false })
+      .order("requested_at", { ascending: false })
       .range(offset, offset + limitNum - 1);
 
     if (error) {
@@ -176,13 +180,12 @@ export async function approveB2BRequest(req: Request, res: Response) {
     const { notes } = req.body;
 
     // Update B2B approval status
-    const { data: approval, error: approvalError } = await supabase
-      .from("b2b_approvals")
+    const { data: approval, error: approvalError } = await supabaseAdmin
+      .from("b2b_requests")
       .update({
         status: "approved",
-        approval_date: new Date().toISOString(),
-        expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(), // 90 days
-        notes,
+        approved_at: new Date().toISOString(),
+        approved_by: req.userId,
       })
       .eq("user_id", userId)
       .eq("status", "pending")
@@ -193,10 +196,13 @@ export async function approveB2BRequest(req: Request, res: Response) {
       return res.status(400).json({ error: approvalError.message });
     }
 
-    // Update user type to b2b_approved
-    const { error: userError } = await supabase
+    // Update user's B2B status
+    const { error: userError } = await supabaseAdmin
       .from("users")
-      .update({ user_type: "b2b_approved" })
+      .update({ 
+        b2b_approval_status: "approved",
+        b2b_approved_at: new Date().toISOString(),
+      })
       .eq("id", userId);
 
     if (userError) {
@@ -221,11 +227,11 @@ export async function rejectB2BRequest(req: Request, res: Response) {
     const { userId } = req.params;
     const { notes } = req.body;
 
-    const { data, error } = await supabase
-      .from("b2b_approvals")
+    const { data, error } = await supabaseAdmin
+      .from("b2b_requests")
       .update({
         status: "rejected",
-        notes,
+        rejection_reason: notes,
       })
       .eq("user_id", userId)
       .eq("status", "pending")
@@ -235,6 +241,15 @@ export async function rejectB2BRequest(req: Request, res: Response) {
     if (error) {
       return res.status(400).json({ error: error.message });
     }
+
+    // Update user's B2B status
+    await supabaseAdmin
+      .from("users")
+      .update({ 
+        b2b_approval_status: "rejected",
+        b2b_rejection_reason: notes,
+      })
+      .eq("id", userId);
 
     return res.json({
       message: "B2B request rejected",

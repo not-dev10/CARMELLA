@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { supabase } from "../config/supabase.js";
+import { supabase, supabaseAdmin } from "../config/supabase.js";
 import { updateProfileSchema, b2bRequestSchema } from "../types/validation.js";
 
 /**
@@ -81,23 +81,51 @@ export async function requestB2BAccess(req: Request, res: Response) {
       return res.status(403).json({ error: "Access denied" });
     }
 
-    const { companyName, taxId } = b2bRequestSchema.parse(req.body);
+    const { 
+      companyName, 
+      taxId, 
+      contactName, 
+      contactEmail, 
+      contactPhone,
+      businessType,
+      orderQuantity,
+      purchaseFrequency,
+      reason
+    } = b2bRequestSchema.parse(req.body);
 
-    // Create B2B approval request
-    const { data, error } = await supabase
-      .from("b2b_approvals")
+    // Create B2B approval request (using admin client to bypass RLS)
+    const { data, error } = await supabaseAdmin
+      .from("b2b_requests")
       .insert({
         user_id: id,
         company_name: companyName,
         tax_id: taxId,
+        contact_name: contactName,
+        contact_email: contactEmail,
+        contact_phone: contactPhone,
+        business_type: businessType,
+        order_quantity: orderQuantity,
+        purchase_frequency: purchaseFrequency,
+        reason: reason,
         status: "pending",
-        request_date: new Date().toISOString(),
+        requested_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
       })
       .select();
 
     if (error) {
       return res.status(400).json({ error: error.message });
     }
+
+    // Update user's B2B status (using admin client)
+    await supabaseAdmin
+      .from("users")
+      .update({
+        b2b_approval_status: "pending",
+        b2b_approval_requested_at: new Date().toISOString(),
+        b2b_approval_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      })
+      .eq("id", id);
 
     return res.status(201).json(data[0]);
   } catch (error: any) {
@@ -119,7 +147,7 @@ export async function getB2BStatus(req: Request, res: Response) {
     }
 
     const { data, error } = await supabase
-      .from("b2b_approvals")
+      .from("b2b_requests")
       .select("*")
       .eq("user_id", id)
       .order("request_date", { ascending: false })

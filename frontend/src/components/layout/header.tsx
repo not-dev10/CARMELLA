@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "@/components/ui/link-shim"
-import { Search, ShoppingBag, User, Menu, FileText, Package, Heart, Settings, LogOut, ChevronDown, X, CheckCircle, Clock } from "lucide-react"
+import { Search, ShoppingBag, User, Menu, FileText, Package, Heart, Settings, LogOut, ChevronDown, X, CheckCircle, Clock, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ModeToggle } from "@/components/ui/mode-toggle"
@@ -46,31 +46,61 @@ export function Header() {
     const [showB2BModal, setShowB2BModal] = useState(false)
     const [b2bCompanyName, setB2bCompanyName] = useState("")
     const [b2bTaxId, setB2bTaxId] = useState("")
+    const [b2bContactName, setB2bContactName] = useState("")
+    const [b2bContactEmail, setB2bContactEmail] = useState("")
+    const [b2bContactPhone, setB2bContactPhone] = useState("")
+    const [b2bBusinessType, setB2bBusinessType] = useState("")
+    const [b2bOrderQuantity, setB2bOrderQuantity] = useState("")
+    const [b2bPurchaseFrequency, setB2bPurchaseFrequency] = useState("")
+    const [b2bReason, setB2bReason] = useState("")
     const [requestingB2B, setRequestingB2B] = useState(false)
+    const [showSuccessModal, setShowSuccessModal] = useState(false)
+    const [showErrorModal, setShowErrorModal] = useState(false)
+    const [errorMessage, setErrorMessage] = useState("")
     const { user, signOut } = useAuth()
     const { items } = useCart()
 
     const handleB2BRequest = async () => {
-        if (!user || !b2bCompanyName.trim()) return
+        if (!user || !b2bCompanyName.trim() || !b2bContactName.trim() || !b2bContactEmail.trim()) return
 
         try {
             setRequestingB2B(true)
             await userAPI.requestB2BAccess((user as any).id, {
                 companyName: b2bCompanyName,
                 taxId: b2bTaxId || undefined,
+                contactName: b2bContactName,
+                contactEmail: b2bContactEmail,
+                contactPhone: b2bContactPhone || undefined,
+                businessType: b2bBusinessType || undefined,
+                orderQuantity: b2bOrderQuantity || undefined,
+                purchaseFrequency: b2bPurchaseFrequency || undefined,
+                reason: b2bReason || undefined,
             })
             
-            // Show success and close modal
-            alert("B2B approval request submitted! You'll be notified within 24 hours.")
+            // Show success modal
             setShowB2BModal(false)
+            setShowSuccessModal(true)
+            
+            // Reset form
             setB2bCompanyName("")
             setB2bTaxId("")
+            setB2bContactName("")
+            setB2bContactEmail("")
+            setB2bContactPhone("")
+            setB2bBusinessType("")
+            setB2bOrderQuantity("")
+            setB2bPurchaseFrequency("")
+            setB2bReason("")
             
-            // Refresh the page to update user status
-            window.location.reload()
+            // Refresh after 3 seconds
+            setTimeout(() => {
+                window.location.reload()
+            }, 3000)
         } catch (err: any) {
             console.error("[HEADER] B2B request error:", err)
-            alert(`Failed to submit request: ${err.message}`)
+            setShowB2BModal(false)
+            setErrorMessage(err.message || "Failed to submit request. Please try again.")
+            setShowErrorModal(true)
         } finally {
             setRequestingB2B(false)
         }
@@ -83,6 +113,24 @@ export function Header() {
             // Add your search logic here
         }
     }, [debouncedSearch])
+
+    // Lock body scroll when B2B modal is open (but allow modal content to scroll)
+    useEffect(() => {
+        if (showB2BModal) {
+            // Prevent body scroll but allow modal scroll
+            document.body.style.overflow = 'hidden'
+            document.body.style.paddingRight = '0px' // Prevent layout shift
+        } else {
+            document.body.style.overflow = ''
+            document.body.style.paddingRight = ''
+        }
+        
+        // Cleanup on unmount
+        return () => {
+            document.body.style.overflow = ''
+            document.body.style.paddingRight = ''
+        }
+    }, [showB2BModal])
 
     // Fetch categories from API
     useEffect(() => {
@@ -504,7 +552,7 @@ export function Header() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
                     onClick={() => setShowB2BModal(false)}
                 >
                     <motion.div
@@ -512,7 +560,7 @@ export function Header() {
                         animate={{ scale: 1, opacity: 1, y: 0 }}
                         exit={{ scale: 0.9, opacity: 0, y: 20 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative overflow-hidden"
+                        className="bg-card dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full p-8 relative overflow-hidden border border-border dark:border-gray-800"
                     >
                         {/* Decorative gradient */}
                         <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500" />
@@ -520,9 +568,9 @@ export function Header() {
                         {/* Close button */}
                         <button
                             onClick={() => setShowB2BModal(false)}
-                            className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
+                            className="absolute top-4 right-4 p-2 hover:bg-muted dark:hover:bg-gray-800 rounded-full transition-colors"
                         >
-                            <X className="w-5 h-5 text-gray-500" />
+                            <X className="w-5 h-5 text-muted-foreground" />
                         </button>
 
                         {/* Icon */}
@@ -545,10 +593,10 @@ export function Header() {
 
                         {/* Content */}
                         <div className="text-center space-y-4">
-                            <h3 className="text-2xl font-black text-gray-800">
+                            <h3 className="text-2xl font-black text-foreground">
                                 {user ? "Request B2B Approval" : "Want to View Pricing?"}
                             </h3>
-                            <p className="text-gray-600">
+                            <p className="text-muted-foreground">
                                 {user 
                                     ? "Fill out the form below to request B2B approval and access wholesale pricing."
                                     : "Sign up and request B2B approval to access our wholesale pricing and place orders."
@@ -557,58 +605,190 @@ export function Header() {
                             
                             {user ? (
                                 // Logged in - Show B2B request form
-                                <div className="space-y-4 pt-2">
-                                    <div className="text-left">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Company Name *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={b2bCompanyName}
-                                            onChange={(e) => setB2bCompanyName(e.target.value)}
-                                            placeholder="Your Company Name"
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                                        />
+                                <div className="space-y-4 pt-2 max-h-[60vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-orange-500 scrollbar-track-muted dark:scrollbar-track-gray-800">
+                                    {/* Contact Information Section */}
+                                    <div className="space-y-4">
+                                        <h4 className="text-sm font-bold text-foreground uppercase tracking-wide border-b border-border dark:border-gray-800 pb-2">
+                                            Contact Information
+                                        </h4>
+                                        
+                                        <div className="text-left">
+                                            <label className="block text-sm font-semibold text-foreground mb-2">
+                                                Full Name *
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={b2bContactName}
+                                                onChange={(e) => setB2bContactName(e.target.value)}
+                                                placeholder="John Doe"
+                                                className="w-full px-4 py-3 border border-border dark:border-gray-700 bg-background dark:bg-gray-800 text-foreground rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                                            />
+                                        </div>
+
+                                        <div className="text-left">
+                                            <label className="block text-sm font-semibold text-foreground mb-2">
+                                                Email Address *
+                                            </label>
+                                            <input
+                                                type="email"
+                                                value={b2bContactEmail}
+                                                onChange={(e) => setB2bContactEmail(e.target.value)}
+                                                placeholder="john@company.com"
+                                                className="w-full px-4 py-3 border border-border dark:border-gray-700 bg-background dark:bg-gray-800 text-foreground rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                                            />
+                                        </div>
+
+                                        <div className="text-left">
+                                            <label className="block text-sm font-semibold text-foreground mb-2">
+                                                Phone Number
+                                            </label>
+                                            <input
+                                                type="tel"
+                                                value={b2bContactPhone}
+                                                onChange={(e) => setB2bContactPhone(e.target.value)}
+                                                placeholder="+1 (555) 123-4567"
+                                                className="w-full px-4 py-3 border border-border dark:border-gray-700 bg-background dark:bg-gray-800 text-foreground rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="text-left">
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Tax ID (Optional)
-                                        </label>
-                                        <input
-                                            type="text"
-                                            value={b2bTaxId}
-                                            onChange={(e) => setB2bTaxId(e.target.value)}
-                                            placeholder="Tax ID or Business Number"
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                                        />
+
+                                    {/* Business Information Section */}
+                                    <div className="space-y-4">
+                                        <h4 className="text-sm font-bold text-foreground uppercase tracking-wide border-b border-border dark:border-gray-800 pb-2">
+                                            Business Information
+                                        </h4>
+
+                                        <div className="text-left">
+                                            <label className="block text-sm font-semibold text-foreground mb-2">
+                                                Company Name *
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={b2bCompanyName}
+                                                onChange={(e) => setB2bCompanyName(e.target.value)}
+                                                placeholder="Your Company Name"
+                                                className="w-full px-4 py-3 border border-border dark:border-gray-700 bg-background dark:bg-gray-800 text-foreground rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                                            />
+                                        </div>
+
+                                        <div className="text-left">
+                                            <label className="block text-sm font-semibold text-foreground mb-2">
+                                                Business Type
+                                            </label>
+                                            <select
+                                                value={b2bBusinessType}
+                                                onChange={(e) => setB2bBusinessType(e.target.value)}
+                                                className="w-full px-4 py-3 border border-border dark:border-gray-700 bg-background dark:bg-gray-800 text-foreground rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                                            >
+                                                <option value="">Select business type</option>
+                                                <option value="retailer">Retailer</option>
+                                                <option value="wholesaler">Wholesaler</option>
+                                                <option value="distributor">Distributor</option>
+                                                <option value="interior_designer">Interior Designer</option>
+                                                <option value="restaurant">Restaurant/Hospitality</option>
+                                                <option value="online_store">Online Store</option>
+                                                <option value="other">Other</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="text-left">
+                                            <label className="block text-sm font-semibold text-foreground mb-2">
+                                                Tax ID / Business Number
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={b2bTaxId}
+                                                onChange={(e) => setB2bTaxId(e.target.value)}
+                                                placeholder="Tax ID or Business Number"
+                                                className="w-full px-4 py-3 border border-border dark:border-gray-700 bg-background dark:bg-gray-800 text-foreground rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
-                                        <p className="text-sm font-semibold text-blue-900 mb-2">
+
+                                    {/* Purchase Information Section */}
+                                    <div className="space-y-4">
+                                        <h4 className="text-sm font-bold text-foreground uppercase tracking-wide border-b border-border dark:border-gray-800 pb-2">
+                                            Purchase Information
+                                        </h4>
+
+                                        <div className="text-left">
+                                            <label className="block text-sm font-semibold text-foreground mb-2">
+                                                Expected Order Quantity
+                                            </label>
+                                            <select
+                                                value={b2bOrderQuantity}
+                                                onChange={(e) => setB2bOrderQuantity(e.target.value)}
+                                                className="w-full px-4 py-3 border border-border dark:border-gray-700 bg-background dark:bg-gray-800 text-foreground rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                                            >
+                                                <option value="">Select quantity range</option>
+                                                <option value="small">Small (1-50 units)</option>
+                                                <option value="medium">Medium (51-200 units)</option>
+                                                <option value="large">Large (201-500 units)</option>
+                                                <option value="bulk">Bulk (500+ units)</option>
+                                                <option value="mixed">Mixed - Both Small & Bulk</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="text-left">
+                                            <label className="block text-sm font-semibold text-foreground mb-2">
+                                                Purchase Frequency
+                                            </label>
+                                            <select
+                                                value={b2bPurchaseFrequency}
+                                                onChange={(e) => setB2bPurchaseFrequency(e.target.value)}
+                                                className="w-full px-4 py-3 border border-border dark:border-gray-700 bg-background dark:bg-gray-800 text-foreground rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                                            >
+                                                <option value="">Select frequency</option>
+                                                <option value="weekly">Weekly</option>
+                                                <option value="monthly">Monthly</option>
+                                                <option value="quarterly">Quarterly</option>
+                                                <option value="annually">Annually</option>
+                                                <option value="as_needed">As Needed</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="text-left">
+                                            <label className="block text-sm font-semibold text-foreground mb-2">
+                                                Reason for B2B Access
+                                            </label>
+                                            <textarea
+                                                value={b2bReason}
+                                                onChange={(e) => setB2bReason(e.target.value)}
+                                                placeholder="Tell us about your business and why you need wholesale access..."
+                                                rows={4}
+                                                className="w-full px-4 py-3 border border-border dark:border-gray-700 bg-background dark:bg-gray-800 text-foreground rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors resize-none"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-900 rounded-lg p-4 text-left">
+                                        <p className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-2">
                                             ⏱️ What happens next:
                                         </p>
-                                        <ul className="text-sm text-blue-800 space-y-1">
-                                            <li>• Your request will be reviewed</li>
-                                            <li>• Approval within 24 hours</li>
+                                        <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
+                                            <li>• Your request will be reviewed by our team</li>
+                                            <li>• Approval decision within 24 hours</li>
                                             <li>• You'll receive an email notification</li>
-                                            <li>• Then access wholesale pricing</li>
+                                            <li>• Access wholesale pricing immediately after approval</li>
                                         </ul>
                                     </div>
+
                                     <Button
                                         onClick={handleB2BRequest}
-                                        disabled={!b2bCompanyName.trim() || requestingB2B}
-                                        className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-full py-6 text-lg font-bold shadow-lg disabled:opacity-50"
+                                        disabled={!b2bCompanyName.trim() || !b2bContactName.trim() || !b2bContactEmail.trim() || requestingB2B}
+                                        className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-full py-6 text-lg font-bold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        {requestingB2B ? "Submitting..." : "Submit Request"}
+                                        {requestingB2B ? "Submitting..." : "Submit B2B Request"}
                                     </Button>
                                 </div>
                             ) : (
                                 // Not logged in - Show signup flow
                                 <>
-                                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-left">
-                                        <p className="text-sm font-semibold text-orange-900 mb-2">
+                                    <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-900 rounded-lg p-4 text-left">
+                                        <p className="text-sm font-semibold text-orange-900 dark:text-orange-200 mb-2">
                                             ✨ How it works:
                                         </p>
-                                        <ul className="text-sm text-orange-800 space-y-1">
+                                        <ul className="text-sm text-orange-800 dark:text-orange-300 space-y-1">
                                             <li>• Sign up for a free account</li>
                                             <li>• Request B2B approval</li>
                                             <li>• Get approved within 24 hours</li>
@@ -638,6 +818,129 @@ export function Header() {
                                     </div>
                                 </>
                             )}
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+
+            {/* Success Modal */}
+            {showSuccessModal && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    onClick={() => setShowSuccessModal(false)}
+                >
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-card dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full p-8 relative overflow-hidden border border-border dark:border-gray-800"
+                    >
+                        {/* Success gradient */}
+                        <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500" />
+                        
+                        {/* Success Icon */}
+                        <div className="flex justify-center mb-6">
+                            <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                                className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg"
+                            >
+                                <CheckCircle className="w-10 h-10 text-white" />
+                            </motion.div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="text-center space-y-4">
+                            <h3 className="text-2xl font-black text-foreground">
+                                Request Submitted!
+                            </h3>
+                            <p className="text-muted-foreground">
+                                Your B2B approval request has been successfully submitted. Our team will review it and get back to you within 24 hours.
+                            </p>
+                            
+                            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900 rounded-lg p-4 text-left">
+                                <p className="text-sm font-semibold text-green-900 dark:text-green-200 mb-2">
+                                    📧 Check your email
+                                </p>
+                                <p className="text-sm text-green-800 dark:text-green-300">
+                                    You'll receive a confirmation email shortly with your request details and next steps.
+                                </p>
+                            </div>
+
+                            <Button
+                                onClick={() => setShowSuccessModal(false)}
+                                className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white rounded-full py-4 text-base font-bold shadow-lg"
+                            >
+                                Got it!
+                            </Button>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+
+            {/* Error Modal */}
+            {showErrorModal && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    onClick={() => setShowErrorModal(false)}
+                >
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-card dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full p-8 relative overflow-hidden border border-border dark:border-gray-800"
+                    >
+                        {/* Error gradient */}
+                        <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-red-500 via-rose-500 to-pink-500" />
+                        
+                        {/* Error Icon */}
+                        <div className="flex justify-center mb-6">
+                            <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                                className="w-20 h-20 bg-gradient-to-br from-red-500 to-rose-500 rounded-full flex items-center justify-center shadow-lg"
+                            >
+                                <XCircle className="w-10 h-10 text-white" />
+                            </motion.div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="text-center space-y-4">
+                            <h3 className="text-2xl font-black text-foreground">
+                                Oops! Something went wrong
+                            </h3>
+                            <p className="text-muted-foreground">
+                                {errorMessage || "We couldn't process your request. Please try again."}
+                            </p>
+                            
+                            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900 rounded-lg p-4 text-left">
+                                <p className="text-sm font-semibold text-red-900 dark:text-red-200 mb-2">
+                                    💡 What you can do:
+                                </p>
+                                <ul className="text-sm text-red-800 dark:text-red-300 space-y-1">
+                                    <li>• Check your internet connection</li>
+                                    <li>• Make sure all required fields are filled</li>
+                                    <li>• Try again in a few moments</li>
+                                    <li>• Contact support if the issue persists</li>
+                                </ul>
+                            </div>
+
+                            <Button
+                                onClick={() => setShowErrorModal(false)}
+                                className="w-full bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white rounded-full py-4 text-base font-bold shadow-lg"
+                            >
+                                Try Again
+                            </Button>
                         </div>
                     </motion.div>
                 </motion.div>

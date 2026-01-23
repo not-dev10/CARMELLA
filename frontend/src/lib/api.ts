@@ -123,7 +123,17 @@ export const wishlistAPI = {
 
 // User API
 export const userAPI = {
-  requestB2BAccess: (userId: string, data: { companyName: string; taxId?: string }) =>
+  requestB2BAccess: (userId: string, data: { 
+    companyName: string; 
+    taxId?: string;
+    contactName: string;
+    contactEmail: string;
+    contactPhone?: string;
+    businessType?: string;
+    orderQuantity?: string;
+    purchaseFrequency?: string;
+    reason?: string;
+  }) =>
     apiRequest(`/users/${userId}/request-b2b`, {
       method: "POST",
       body: JSON.stringify(data),

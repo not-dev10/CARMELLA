@@ -25,8 +25,15 @@ export const updateProfileSchema = z.object({
 });
 
 export const b2bRequestSchema = z.object({
-  companyName: z.string(),
+  companyName: z.string().min(1, "Company name is required"),
   taxId: z.string().optional(),
+  contactName: z.string().min(1, "Contact name is required"),
+  contactEmail: z.string().email("Valid email is required"),
+  contactPhone: z.string().optional(),
+  businessType: z.string().optional(),
+  orderQuantity: z.string().optional(),
+  purchaseFrequency: z.string().optional(),
+  reason: z.string().optional(),
 });
 
 export const productSchema = z.object({

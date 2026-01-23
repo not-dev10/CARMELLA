@@ -28,7 +28,7 @@ export const getDashboardStats = async (req: Request, res: Response) => {
 
     // Pending B2B requests
     const { count: pendingB2B } = await supabase
-      .from("b2b_approvals")
+      .from("b2b_requests")
       .select("*", { count: "exact", head: true })
       .eq("status", "pending");
 

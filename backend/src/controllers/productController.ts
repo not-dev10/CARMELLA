@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { supabase } from "../config/supabase.js";
+import { supabase, supabaseAdmin } from "../config/supabase.js";
 import { getSupabaseClient } from "../utils/supabaseClient.js";
 
 /**
@@ -155,7 +155,7 @@ export async function createProduct(req: Request, res: Response) {
     const { name, slug, description, long_description, base_price, sale_price, b2b_price, category_id, image_url, stock_quantity, is_featured, moq, b2b_min_quantity } =
       req.body;
 
-    const { data, error } = await supabase.from("products").insert({
+    const { data, error } = await supabaseAdmin.from("products").insert({
       name,
       slug,
       description,
@@ -191,7 +191,7 @@ export async function updateProduct(req: Request, res: Response) {
     const { id } = req.params;
     const updates = req.body;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("products")
       .update(updates)
       .eq("id", id)
@@ -199,6 +199,10 @@ export async function updateProduct(req: Request, res: Response) {
 
     if (error) {
       return res.status(400).json({ error: error.message });
+    }
+
+    if (!data || data.length === 0) {
+      return res.status(404).json({ error: "Product not found" });
     }
 
     return res.json(data[0]);
@@ -215,7 +219,7 @@ export async function deleteProduct(req: Request, res: Response) {
   try {
     const { id } = req.params;
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from("products")
       .delete()
       .eq("id", id);
@@ -224,7 +228,7 @@ export async function deleteProduct(req: Request, res: Response) {
       return res.status(400).json({ error: error.message });
     }
 
-    return res.json({ message: "Product deleted" });
+    return res.json({ message: "Product deleted successfully" });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }

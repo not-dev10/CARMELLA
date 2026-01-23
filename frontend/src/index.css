@@ -608,7 +608,7 @@
 
   /* Admin Panel Dark Theme Utilities */
   .admin-card {
-    @apply bg-card dark:bg-gray-900 border border-border dark:border-gray-800 rounded-xl shadow-sm dark:shadow-gray-800/50;
+    @apply bg-card dark:bg-gray-900 border border-border dark:border-gray-800 rounded-xl p-6 shadow-sm dark:shadow-gray-800/50;
   }
 
   .admin-input {
@@ -620,11 +620,11 @@
   }
 
   .admin-label {
-    @apply block text-sm font-medium text-foreground mb-1;
+    @apply block text-sm font-semibold text-foreground mb-2;
   }
 
   .admin-heading {
-    @apply text-sm font-bold text-foreground uppercase mb-3;
+    @apply text-4xl font-black tracking-tight text-foreground mb-2;
   }
 
   .admin-modal {
@@ -632,11 +632,11 @@
   }
 
   .admin-modal-header {
-    @apply sticky top-0 bg-card dark:bg-gray-900 border-b border-border dark:border-gray-800;
+    @apply sticky top-0 bg-card dark:bg-gray-900 border-b border-border dark:border-gray-800 px-6 py-4 flex items-center justify-between;
   }
 
   .admin-modal-footer {
-    @apply sticky bottom-0 bg-muted dark:bg-gray-800 border-t border-border dark:border-gray-800;
+    @apply sticky bottom-0 bg-muted dark:bg-gray-800 border-t border-border dark:border-gray-800 px-6 py-4 flex gap-3 justify-end;
   }
 
   .admin-table-header {
@@ -649,5 +649,22 @@
 
   .admin-button-secondary {
     @apply px-4 py-2 text-foreground hover:bg-muted dark:hover:bg-gray-800 rounded-lg transition-colors;
+  }
+
+  /* Custom Scrollbar Styles */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-muted dark:bg-gray-800 rounded-full;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-orange-500 rounded-full;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-orange-600;
   }
 }
