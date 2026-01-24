@@ -205,6 +205,10 @@ export const adminAPI = {
       method: "PUT",
       body: JSON.stringify({ status }),
     }),
+  deleteOrder: (orderId: string) =>
+    apiRequest(`/admin/orders/${orderId}`, {
+      method: "DELETE",
+    }),
   getB2BRequests: (params?: { status?: string; page?: number; limit?: number }) =>
     apiRequest(`/admin/b2b-requests${params ? `?${new URLSearchParams(params as any).toString()}` : ""}`),
   approveB2BRequest: (userId: string, notes?: string) =>

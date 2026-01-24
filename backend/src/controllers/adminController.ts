@@ -148,6 +148,8 @@ export async function getOrders(req: Request, res: Response) {
         status,
         items_count,
         shipping_address,
+        billing_address,
+        notes,
         created_at,
         updated_at
       `, { count: "exact" });
@@ -214,6 +216,46 @@ export async function updateOrderStatus(req: Request, res: Response) {
     return res.json({ success: true, order });
   } catch (error: any) {
     console.error("[ADMIN] updateOrderStatus unexpected error:", error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+/**
+ * Delete order
+ * DELETE /api/admin/orders/:orderId
+ */
+export async function deleteOrder(req: Request, res: Response) {
+  try {
+    const { orderId } = req.params;
+
+    console.log("[ADMIN] deleteOrder called:", { orderId });
+
+    // Delete order items first (foreign key constraint)
+    const { error: itemsError } = await supabaseAdmin
+      .from("order_items")
+      .delete()
+      .eq("order_id", orderId);
+
+    if (itemsError) {
+      console.error("[ADMIN] Failed to delete order items:", itemsError);
+      return res.status(400).json({ error: "Failed to delete order items" });
+    }
+
+    // Delete the order
+    const { error: orderError } = await supabaseAdmin
+      .from("orders")
+      .delete()
+      .eq("id", orderId);
+
+    if (orderError) {
+      console.error("[ADMIN] Failed to delete order:", orderError);
+      return res.status(400).json({ error: "Failed to delete order" });
+    }
+
+    console.log("[ADMIN] Order deleted successfully:", orderId);
+    return res.json({ success: true, message: "Order deleted successfully" });
+  } catch (error: any) {
+    console.error("[ADMIN] deleteOrder unexpected error:", error);
     return res.status(500).json({ error: error.message });
   }
 }

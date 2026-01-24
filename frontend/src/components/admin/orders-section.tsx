@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search, Download, Loader, X, Eye } from 'lucide-react'
+import { Search, Download, Loader, X, Eye, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -30,6 +30,8 @@ export function OrdersSection() {
   const [newStatus, setNewStatus] = useState<string>('')
   const [updatingStatus, setUpdatingStatus] = useState(false)
   const [updateMessage, setUpdateMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<{ orderId: string; orderNumber: string } | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     fetchOrders()
@@ -150,6 +152,31 @@ export function OrdersSection() {
     }
   }
 
+  const handleDeleteOrder = async () => {
+    if (!deleteConfirm) return
+
+    try {
+      setDeleting(true)
+      await adminAPI.deleteOrder(deleteConfirm.orderId)
+      
+      // Remove from local state
+      const updatedOrders = orders.filter(order => order.id !== deleteConfirm.orderId)
+      setOrders(updatedOrders)
+      setDeleteConfirm(null)
+      
+      // Close modal if it was open
+      if (selectedOrder?.id === deleteConfirm.orderId) {
+        setShowModal(false)
+        setSelectedOrder(null)
+      }
+    } catch (err) {
+      console.error('Failed to delete order:', err)
+      alert(err instanceof Error ? err.message : 'Failed to delete order')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -234,13 +261,22 @@ export function OrdersSection() {
                       {formatCurrency(order.total_amount)}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={() => handleViewOrder(order)}
-                        className="text-primary hover:text-primary/70 text-sm font-semibold flex items-center gap-1"
-                      >
-                        <Eye className="w-4 h-4" />
-                        View
-                      </button>
+                      <div className="flex items-center gap-2 justify-end">
+                        <button 
+                          onClick={() => handleViewOrder(order)}
+                          className="text-primary hover:text-primary/70 text-sm font-semibold flex items-center gap-1"
+                        >
+                          <Eye className="w-4 h-4" />
+                          View
+                        </button>
+                        <button 
+                          onClick={() => setDeleteConfirm({ orderId: order.id, orderNumber: order.order_number || order.id.slice(0, 8) })}
+                          className="text-destructive hover:text-destructive/70 text-sm font-semibold flex items-center gap-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -394,6 +430,49 @@ export function OrdersSection() {
                   {updateMessage.text}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-lg max-w-md w-full shadow-xl">
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
+                  <Trash2 className="w-6 h-6 text-destructive" />
+                </div>
+                <div>
+                  <h3 className="font-serif text-lg font-semibold">Delete Order?</h3>
+                  <p className="text-sm text-muted-foreground">This action cannot be undone.</p>
+                </div>
+              </div>
+
+              <div className="bg-muted/50 rounded-lg p-3">
+                <p className="text-sm text-foreground">
+                  <span className="font-semibold">Order:</span> {deleteConfirm.orderNumber}
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteConfirm(null)}
+                  disabled={deleting}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleDeleteOrder}
+                  disabled={deleting}
+                  className="flex-1 bg-destructive hover:bg-destructive/90"
+                >
+                  {deleting ? 'Deleting...' : 'Delete'}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
