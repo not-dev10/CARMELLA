@@ -126,6 +126,99 @@ export async function updateUser(req: Request, res: Response) {
 }
 
 /**
+ * Get all orders
+ * GET /api/admin/orders
+ */
+export async function getOrders(req: Request, res: Response) {
+  try {
+    const { status = "all", page = "1", limit = "20" } = req.query;
+    const pageNum = parseInt(page as string) || 1;
+    const limitNum = parseInt(limit as string) || 20;
+    const offset = (pageNum - 1) * limitNum;
+
+    console.log("[ADMIN] getOrders called with:", { status, page: pageNum, limit: limitNum });
+
+    let query = supabaseAdmin
+      .from("orders")
+      .select(`
+        id,
+        order_number,
+        user_id,
+        total_amount,
+        status,
+        items_count,
+        shipping_address,
+        created_at,
+        updated_at
+      `, { count: "exact" });
+
+    if (status && status !== "all") {
+      query = query.eq("status", status);
+    }
+
+    const { data, error, count } = await query
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limitNum - 1);
+
+    if (error) {
+      console.error("[ADMIN] getOrders error:", error);
+      return res.status(400).json({ error: error.message });
+    }
+
+    console.log("[ADMIN] getOrders successful. Found orders:", count, "Returned:", data?.length);
+
+    return res.json({
+      orders: data || [],
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limitNum),
+      },
+    });
+  } catch (error: any) {
+    console.error("[ADMIN] getOrders unexpected error:", error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+/**
+ * Update order status
+ * PUT /api/admin/orders/:orderId
+ */
+export async function updateOrderStatus(req: Request, res: Response) {
+  try {
+    const { orderId } = req.params;
+    const { status } = req.body;
+
+    console.log("[ADMIN] updateOrderStatus called:", { orderId, status });
+
+    const validStatuses = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+
+    const { data: order, error } = await supabaseAdmin
+      .from("orders")
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq("id", orderId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("[ADMIN] updateOrderStatus error:", error);
+      return res.status(400).json({ error: error.message });
+    }
+
+    console.log("[ADMIN] Order status updated successfully:", order.id, "to", status);
+    return res.json({ success: true, order });
+  } catch (error: any) {
+    console.error("[ADMIN] updateOrderStatus unexpected error:", error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+/**
  * Get all B2B approval requests
  * GET /api/admin/b2b-requests
  */

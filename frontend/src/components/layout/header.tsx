@@ -318,7 +318,7 @@ export function Header() {
                                     className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[900px] bg-card border border-border rounded-lg shadow-2xl p-8 grid grid-cols-3 gap-6 backdrop-blur-sm"
                                 >
                                     {categories.length > 0 ? (
-                                        categories.map((category, index) => (
+                                        categories.map((category: any, index) => (
                                             <motion.div
                                                 key={category.id}
                                                 initial={{ opacity: 0, y: 10 }}
@@ -326,7 +326,8 @@ export function Header() {
                                                 transition={{ delay: index * 0.05, duration: 0.3 }}
                                             >
                                                 <Link
-                                                    href={`/category/${category.name.toLowerCase().replace(/\s+/g, '-')}`}
+                                                    href={`/category/${category.slug || category.name.toLowerCase().replace(/\s+/g, '-')}`}
+                                                    onClick={scrollToTop}
                                                     className="group flex gap-4 p-3 rounded-lg hover:bg-muted transition-colors"
                                                 >
                                                     {category.image_url && (

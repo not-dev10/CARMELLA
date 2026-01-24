@@ -4,14 +4,12 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   BarChart3, ShoppingCart, TrendingUp, Users, Package, AlertCircle,
-  Search, Plus, Upload, Edit2, Trash2, ChevronLeft, ChevronRight,
-  Settings, LogOut, Bell, Filter, Grid3x3, Clock, CheckCircle, XCircle,
-  Mail, Save, X, Download
+  Search, Edit2, Settings, LogOut, Bell, Clock, CheckCircle, XCircle,
+  Mail, Save, X, Grid3x3
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { useDebounce } from "@/hooks/useDebounce"
 import { ModeToggle } from "@/components/ui/mode-toggle"
 import { AnalyticsSection } from "@/components/admin/analytics-section"
 import { UsersSection } from "@/components/admin/users-section"
@@ -21,37 +19,16 @@ import { InventorySection } from "@/components/admin/inventory-section"
 import { ActivitySection } from "@/components/admin/activity-section"
 import { SettingsSection } from "@/components/admin/settings-section"
 import { ProductsSection } from "@/components/admin/products-section"
+import { OrdersSection } from "@/components/admin/orders-section"
 import { useAuth } from "@/contexts/AuthContext"
 import { adminAPI } from "@/lib/api"
 
-// Mock Data
+// Mock Data - Recent orders shown on dashboard
 const RECENT_ORDERS = [
-  { id: "#CR-9821", client: "The Clay Studio", status: "Shipped", date: "Jan 23, 2024", total: "$4,210.00" },
-  { id: "#CR-9820", client: "Nordic Living Co.", status: "Pending", date: "Jan 23, 2024", total: "$1,850.50" },
-  { id: "#CR-9819", client: "Earth & Fire Gallery", status: "Processing", date: "Jan 22, 2024", total: "$920.00" },
-  { id: "#CR-9818", client: "Minimalist Home", status: "Shipped", date: "Jan 22, 2024", total: "$12,400.00" }
-]
-
-const PRODUCTS = [
-  { id: 1, name: "Earthbound Charcoal Vase", sku: "CR-2024-EBV", stock: 142, price: "$42.50", status: true, image: "https://images.unsplash.com/photo-1578500494198-246f612d3b3d?w=100&h=100&fit=crop" },
-  { id: 2, name: "Artisan Nesting Bowls (Set of 3)", sku: "CR-2024-NB3", stock: 8, price: "$85.00", status: true, image: "https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=100&h=100&fit=crop", lowStock: true },
-  { id: 3, name: "Speckled Morning Mug", sku: "CR-2024-SMM", stock: 520, price: "$12.00", status: false, image: "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=100&h=100&fit=crop" },
-  { id: 4, name: "Minimalist Water Pitcher", sku: "CR-2024-MWP", stock: 0, price: "$28.90", status: true, image: "https://images.unsplash.com/photo-1581783342308-f792ca11df53?w=100&h=100&fit=crop", outOfStock: true }
-]
-
-const B2B_REQUESTS = [
-  { id: 1, company: "Nordic Interiors Ltd", contact: "Anna Bergström", date: "Jan 24, 2024", status: "pending", timeLeft: "23:45:30" },
-  { id: 2, company: "Earth & Fire Gallery", contact: "Marcus Chen", date: "Jan 24, 2024", status: "pending", timeLeft: "22:15:00" },
-  { id: 3, company: "Minimalist Home Co.", contact: "Sarah Jenkins", date: "Jan 23, 2024", status: "approved", approvedDate: "Jan 23, 2024" },
-  { id: 4, company: "Artisan Collective", contact: "James Wilson", date: "Jan 23, 2024", status: "rejected", reason: "Incomplete documentation" }
-]
-
-const ALL_ORDERS = [
-  { id: "#CR-9821", client: "The Clay Studio", email: "contact@claystudio.com", status: "Shipped", date: "Jan 23, 2024", total: "$4,210.00", items: 12 },
-  { id: "#CR-9820", client: "Nordic Living Co.", email: "orders@nordicliving.com", status: "Pending", date: "Jan 23, 2024", total: "$1,850.50", items: 5 },
-  { id: "#CR-9819", client: "Earth & Fire Gallery", email: "info@earthfire.com", status: "Processing", date: "Jan 22, 2024", total: "$920.00", items: 3 },
-  { id: "#CR-9818", client: "Minimalist Home", email: "sales@minimalisthome.com", status: "Shipped", date: "Jan 22, 2024", total: "$12,400.00", items: 28 },
-  { id: "#CR-9817", client: "Artisan Collective", email: "wholesale@artisancollective.com", status: "Delivered", date: "Jan 21, 2024", total: "$3,560.00", items: 8 }
+  { id: "ORD-20250124-00001", client: "The Clay Studio", status: "Shipped", date: "Jan 23, 2024", total: "$4,210.00" },
+  { id: "ORD-20250124-00002", client: "Nordic Living Co.", status: "Pending", date: "Jan 23, 2024", total: "$1,850.50" },
+  { id: "ORD-20250123-00001", client: "Earth & Fire Gallery", status: "Processing", date: "Jan 22, 2024", total: "$920.00" },
+  { id: "ORD-20250123-00002", client: "Minimalist Home", status: "Shipped", date: "Jan 22, 2024", total: "$12,400.00" }
 ]
 
 const HOMEPAGE_SECTIONS = [
@@ -65,7 +42,6 @@ export default function Admin() {
   const { signOut } = useAuth()
   const [activeTab, setActiveTab] = useState("dashboard")
   const [searchQuery, setSearchQuery] = useState("")
-  const debouncedSearch = useDebounce(searchQuery, 500)
   const [editingSection, setEditingSection] = useState<string | null>(null)
   const [b2bRequests, setB2bRequests] = useState<any[]>([])
   const [loadingB2B, setLoadingB2B] = useState(false)
@@ -545,90 +521,7 @@ export default function Admin() {
                 )}
 
                 {/* Orders Tab */}
-                {activeTab === "orders" && (
-                  <motion.div
-                    key="orders"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="space-y-6"
-                  >
-                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                      <div className="flex flex-col gap-2">
-                        <h2 className="admin-heading">All Orders</h2>
-                        <p className="text-muted-foreground text-base">Manage customer orders and track shipments.</p>
-                      </div>
-                      <Button className="btn-gradient">
-                        <Download className="w-5 h-5 mr-2" />
-                        Export Orders
-                      </Button>
-                    </div>
-
-                    <div className="admin-card">
-                      <div className="flex flex-col lg:flex-row gap-4">
-                        <div className="flex-1 relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
-                          <input
-                            type="text"
-                            placeholder="Search by order ID, client name, or email..."
-                            className="admin-input pl-10"
-                          />
-                        </div>
-                        <button className="admin-button-secondary">
-                          Status: All
-                        </button>
-                        <button className="admin-button-secondary">
-                          Date Range: All
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="admin-card overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                          <thead className="admin-table-header">
-                            <tr>
-                              <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase">Order ID</th>
-                              <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase">Client</th>
-                              <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase">Email</th>
-                              <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase">Items</th>
-                              <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase">Status</th>
-                              <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase">Date</th>
-                              <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase text-right">Total</th>
-                              <th className="px-6 py-4 text-[11px] font-bold text-muted-foreground uppercase text-right">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-border dark:divide-gray-800">
-                            {ALL_ORDERS.map((order) => (
-                              <tr key={order.id} className="admin-table-row">
-                                <td className="px-6 py-4 text-sm font-mono text-muted-foreground">{order.id}</td>
-                                <td className="px-6 py-4 text-base font-serif text-foreground">{order.client}</td>
-                                <td className="px-6 py-4 text-sm text-muted-foreground">{order.email}</td>
-                                <td className="px-6 py-4 text-sm text-muted-foreground">{order.items} items</td>
-                                <td className="px-6 py-4">
-                                  <Badge className={cn(
-                                    "text-xs font-medium",
-                                    order.status === "Shipped" ? "bg-primary/10 dark:bg-primary/20 text-primary" :
-                                      order.status === "Pending" ? "bg-secondary/10 dark:bg-secondary/20 text-secondary" :
-                                        order.status === "Delivered" ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" :
-                                          "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
-                                  )}>
-                                    {order.status}
-                                  </Badge>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-muted-foreground">{order.date}</td>
-                                <td className="px-6 py-4 text-sm font-bold text-foreground text-right">{order.total}</td>
-                                <td className="px-6 py-4 text-right">
-                                  <button className="text-primary hover:text-primary/70 text-sm font-semibold">View</button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
+                {activeTab === "orders" && <OrdersSection />}
 
 
 

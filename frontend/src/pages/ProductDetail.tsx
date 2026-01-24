@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import { Heart, ShoppingCart, Package, Shield, Truck, ChevronLeft, ChevronRight, Star, AlertCircle } from "lucide-react"
+import { useState, useEffect } from "react"
+import { useParams, useNavigate } from "react-router-dom"
+import { Heart, ShoppingCart, Package, Shield, Truck, ChevronLeft, ChevronRight, Star, AlertCircle, Loader2, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Image from "@/components/ui/image-shim"
@@ -9,84 +10,184 @@ import Link from "@/components/ui/link-shim"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/AuthContext"
 import { useCart } from "@/contexts/CartContext"
+import { productsAPI, cartAPI } from "@/lib/api"
 
-const PRODUCT = {
-    id: 1,
-    name: "Terra Ceramic Vase",
-    category: "Decor",
-    price: 45,
-    images: [
-        "https://images.unsplash.com/photo-1581783342308-f792ca11df53?w=800&h=1000&fit=crop",
-        "https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=800&h=1000&fit=crop",
-        "https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=800&h=1000&fit=crop",
-        "https://images.unsplash.com/photo-1615529182904-14819c35db37?w=800&h=1000&fit=crop",
-    ],
-    badge: "new",
-    stock: "in-stock",
-    moq: 12,
-    description: "Handcrafted ceramic vase with organic texture and earthy glaze.",
-    features: [
-        "100% handcrafted ceramic",
-        "Food-safe glaze finish",
-        "Microwave and dishwasher safe",
-        "Dimensions: 8\" H x 5\" W",
-        "Weight: 1.2 lbs",
-        "Made in Portugal"
-    ],
-    tieredPricing: [
-        { qty: "12-49", price: 45, discount: "10%" },
-        { qty: "50-199", price: 40, discount: "20%" },
-        { qty: "200+", price: 36, discount: "30%" }
-    ],
-    rating: 4.8,
-    reviews: 127
+interface Product {
+    id: string
+    name: string
+    category: string
+    base_price: number
+    sale_price?: number
+    b2b_price?: number
+    image_url?: string
+    images?: string[]
+    badge?: string
+    stock_status: string
+    moq: number
+    description: string
+    features?: string[]
+    tier_pricing?: Array<{ min_qty: number; max_qty?: number; price: number; discount_percent: number }>
+    rating?: number
+    review_count?: number
 }
 
 export default function ProductDetail() {
+    const { id } = useParams<{ id: string }>()
+    const navigate = useNavigate()
+    const [product, setProduct] = useState<Product | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     const [currentImage, setCurrentImage] = useState(0)
-    const [quantity, setQuantity] = useState(PRODUCT.moq)
+    const [quantity, setQuantity] = useState(12)
     const [isWishlisted, setIsWishlisted] = useState(false)
     const [addedToCart, setAddedToCart] = useState(false)
+    const [addingToCart, setAddingToCart] = useState(false)
+    const [showCartOptions, setShowCartOptions] = useState(false)
     const { addItem } = useCart()
     const { user } = useAuth()
+    const navigateTo = useNavigate()
+
+    useEffect(() => {
+        const fetchProduct = async () => {
+            if (!id) return
+            
+            try {
+                setLoading(true)
+                setError(null)
+                const data = await productsAPI.getById(id)
+                setProduct(data.product || data)
+                setQuantity(data.product?.moq || data.moq || 12)
+            } catch (err: any) {
+                console.error('Error fetching product:', err)
+                setError(err.message || 'Failed to load product')
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchProduct()
+    }, [id])
 
     // Get approval status from user object (from AuthContext)
     const approvalStatus = (user as any)?.b2b_approval_status || 'none'
     const isApproved = approvalStatus === 'approved'
     const needsApproval = approvalStatus === 'none' && user // Logged in but no approval status
 
-    const currentPrice = PRODUCT.tieredPricing.find(tier => {
-        const [min, max] = tier.qty.split('-').map(n => parseInt(n.replace('+', '')))
-        if (max) {
-            return quantity >= min && quantity <= max
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="text-center">
+                    <Loader2 className="w-12 h-12 animate-spin mx-auto mb-4 text-primary" />
+                    <p className="text-muted-foreground">Loading product...</p>
+                </div>
+            </div>
+        )
+    }
+
+    if (error || !product) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="text-center max-w-md">
+                    <AlertCircle className="w-16 h-16 mx-auto mb-4 text-destructive" />
+                    <h2 className="text-2xl font-serif font-semibold mb-2">Product Not Found</h2>
+                    <p className="text-muted-foreground mb-6">{error || 'The product you are looking for does not exist.'}</p>
+                    <Button onClick={() => navigate('/catalog')}>Browse Catalog</Button>
+                </div>
+            </div>
+        )
+    }
+
+    // Prepare images array
+    const productImages = product.images && product.images.length > 0 
+        ? product.images 
+        : product.image_url 
+            ? [product.image_url]
+            : ['https://images.unsplash.com/photo-1581783342308-f792ca11df53?w=800&h=1000&fit=crop']
+
+    // Parse features if stored as JSON string
+    const productFeatures = typeof product.features === 'string' 
+        ? JSON.parse(product.features) 
+        : product.features || []
+
+    // Calculate current price based on tier pricing
+    const currentPrice = product.tier_pricing?.find(tier => {
+        if (tier.max_qty) {
+            return quantity >= tier.min_qty && quantity <= tier.max_qty
         }
-        return quantity >= min
-    })?.price || PRODUCT.price
+        return quantity >= tier.min_qty
+    })?.price || product.b2b_price || product.sale_price || product.base_price
+
+    // Format tier pricing for display
+    const tieredPricing = product.tier_pricing?.map(tier => ({
+        qty: tier.max_qty ? `${tier.min_qty}-${tier.max_qty}` : `${tier.min_qty}+`,
+        price: tier.price,
+        discount: `${tier.discount_percent}%`
+    })) || []
 
     const nextImage = () => {
-        setCurrentImage((prev) => (prev + 1) % PRODUCT.images.length)
+        setCurrentImage((prev) => (prev + 1) % productImages.length)
     }
 
     const prevImage = () => {
-        setCurrentImage((prev) => (prev - 1 + PRODUCT.images.length) % PRODUCT.images.length)
+        setCurrentImage((prev) => (prev - 1 + productImages.length) % productImages.length)
     }
 
-    const handleAddToCart = () => {
-        addItem(PRODUCT.id.toString(), quantity, {
-            id: `${PRODUCT.id}-${Date.now()}`,
-            productId: PRODUCT.id.toString(),
-            name: PRODUCT.name,
-            sku: `SKU-${PRODUCT.id}`,
-            image: PRODUCT.images[0],
-            price: PRODUCT.price,
-            quantity: quantity,
-            discountPrice: currentPrice !== PRODUCT.price ? currentPrice : undefined,
-            discountPercentage: currentPrice !== PRODUCT.price 
-                ? Math.round(((PRODUCT.price - currentPrice) / PRODUCT.price) * 100)
-                : undefined,
-        })
-        setAddedToCart(true)
-        setTimeout(() => setAddedToCart(false), 2000)
+    const handleAddToCart = async () => {
+        try {
+            setAddingToCart(true)
+            const cartItem = {
+                id: `${product.id}-${Date.now()}`,
+                productId: product.id,
+                name: product.name,
+                sku: `SKU-${product.id}`,
+                image: productImages[0],
+                price: product.base_price,
+                quantity: quantity,
+                discountPrice: currentPrice !== product.base_price ? currentPrice : undefined,
+                discountPercentage: currentPrice !== product.base_price 
+                    ? Math.round(((product.base_price - currentPrice) / product.base_price) * 100)
+                    : undefined,
+            }
+
+            // Add to local cart
+            await addItem(product.id, quantity, cartItem)
+
+            // Sync to backend if user is logged in
+            if (user) {
+                try {
+                    console.log('[ProductDetail] User logged in, syncing to backend:', { userId: user.id, productId: product.id, quantity })
+                    const response = await cartAPI.add(product.id, quantity)
+                    console.log('[ProductDetail] Cart synced to backend:', response)
+                } catch (err) {
+                    console.error('[ProductDetail] Error syncing to backend:', err)
+                    // Continue anyway - local cart is still updated
+                }
+            } else {
+                console.log('[ProductDetail] User not logged in, skipping backend sync')
+            }
+
+            setAddedToCart(true)
+            setShowCartOptions(true)
+            // Auto-hide after 5 seconds if user doesn't interact
+            setTimeout(() => {
+                setAddedToCart(false)
+                setShowCartOptions(false)
+            }, 5000)
+        } catch (err) {
+            console.error('Error adding to cart:', err)
+        } finally {
+            setAddingToCart(false)
+        }
+    }
+
+    const handleViewCart = () => {
+        setShowCartOptions(false)
+        navigateTo('/checkout')
+    }
+
+    const handleContinueShopping = () => {
+        setShowCartOptions(false)
+        setAddedToCart(false)
     }
 
     return (
@@ -145,7 +246,7 @@ export default function ProductDetail() {
                         <span>/</span>
                         <Link href="/catalog" className="hover:text-foreground">Catalog</Link>
                         <span>/</span>
-                        <span className="text-foreground">{PRODUCT.name}</span>
+                        <span className="text-foreground">{product.name}</span>
                     </div>
                 </div>
             </div>
@@ -157,14 +258,14 @@ export default function ProductDetail() {
                         {/* Main Image */}
                         <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-muted">
                             <Image
-                                src={PRODUCT.images[currentImage]}
-                                alt={PRODUCT.name}
+                                src={productImages[currentImage]}
+                                alt={product.name}
                                 fill
                                 className="object-cover"
                             />
-                            {PRODUCT.badge && (
+                            {product.badge && (
                                 <Badge className="absolute top-4 left-4 z-10">
-                                    {PRODUCT.badge}
+                                    {product.badge}
                                 </Badge>
                             )}
 
@@ -184,7 +285,7 @@ export default function ProductDetail() {
 
                             {/* Image Indicators */}
                             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                                {PRODUCT.images.map((_, idx) => (
+                                {productImages.map((_, idx) => (
                                     <button
                                         key={idx}
                                         onClick={() => setCurrentImage(idx)}
@@ -201,7 +302,7 @@ export default function ProductDetail() {
 
                         {/* Thumbnail Grid */}
                         <div className="grid grid-cols-4 gap-4">
-                            {PRODUCT.images.map((image, idx) => (
+                            {productImages.map((image, idx) => (
                                 <button
                                     key={idx}
                                     onClick={() => setCurrentImage(idx)}
@@ -212,7 +313,7 @@ export default function ProductDetail() {
                                             : "border-transparent hover:border-muted-foreground/20"
                                     )}
                                 >
-                                    <Image src={image} alt={`${PRODUCT.name} ${idx + 1}`} fill className="object-cover" />
+                                    <Image src={image} alt={`${product.name} ${idx + 1}`} fill className="object-cover" />
                                 </button>
                             ))}
                         </div>
@@ -222,26 +323,28 @@ export default function ProductDetail() {
                     <div className="space-y-6">
                         <div>
                             <div className="flex items-center gap-3 mb-2">
-                                <Badge variant="outline">{PRODUCT.category}</Badge>
-                                <div className="flex items-center gap-1">
-                                    <div className="flex">
-                                        {[...Array(5)].map((_, i) => (
-                                            <Star
-                                                key={i}
-                                                className={cn(
-                                                    "w-4 h-4 fill-current",
-                                                    i < Math.floor(PRODUCT.rating) ? "text-secondary" : "text-gray-300"
-                                                )}
-                                            />
-                                        ))}
+                                <Badge variant="outline">{product.category}</Badge>
+                                {product.rating && product.review_count && (
+                                    <div className="flex items-center gap-1">
+                                        <div className="flex">
+                                            {[...Array(5)].map((_, i) => (
+                                                <Star
+                                                    key={i}
+                                                    className={cn(
+                                                        "w-4 h-4 fill-current",
+                                                        i < Math.floor(product.rating!) ? "text-secondary" : "text-gray-300"
+                                                    )}
+                                                />
+                                            ))}
+                                        </div>
+                                        <span className="text-sm text-muted-foreground">
+                                            {product.rating} ({product.review_count} reviews)
+                                        </span>
                                     </div>
-                                    <span className="text-sm text-muted-foreground">
-                                        {PRODUCT.rating} ({PRODUCT.reviews} reviews)
-                                    </span>
-                                </div>
+                                )}
                             </div>
-                            <h1 className="font-serif text-4xl md:text-5xl font-medium mb-4">{PRODUCT.name}</h1>
-                            <p className="text-lg text-muted-foreground leading-relaxed">{PRODUCT.description}</p>
+                            <h1 className="font-serif text-4xl md:text-5xl font-medium mb-4">{product.name}</h1>
+                            <p className="text-lg text-muted-foreground leading-relaxed">{product.description}</p>
                         </div>
 
                         {/* Pricing */}
@@ -255,7 +358,7 @@ export default function ProductDetail() {
                                 {/* Tiered Pricing Table */}
                                 <div className="space-y-2">
                                     <p className="text-sm font-semibold mb-2">Volume Discounts:</p>
-                                    {PRODUCT.tieredPricing.map((tier, idx) => (
+                                    {tieredPricing.map((tier, idx) => (
                                         <div
                                             key={idx}
                                             className={cn(
@@ -318,12 +421,12 @@ export default function ProductDetail() {
                         {isApproved && (
                             <div>
                                 <label className="block text-sm font-semibold mb-2">
-                                    Quantity (MOQ: {PRODUCT.moq} units)
+                                    Quantity (MOQ: {product.moq} units)
                                 </label>
                                 <div className="flex items-center gap-4">
                                     <div className="flex items-center border border-border rounded-lg">
                                         <button
-                                            onClick={() => setQuantity(Math.max(PRODUCT.moq, quantity - PRODUCT.moq))}
+                                            onClick={() => setQuantity(Math.max(product.moq, quantity - product.moq))}
                                             className="px-4 py-3 hover:bg-muted transition-colors"
                                         >
                                             -
@@ -331,13 +434,13 @@ export default function ProductDetail() {
                                         <input
                                             type="number"
                                             value={quantity}
-                                            onChange={(e) => setQuantity(Math.max(PRODUCT.moq, parseInt(e.target.value) || PRODUCT.moq))}
+                                            onChange={(e) => setQuantity(Math.max(product.moq, parseInt(e.target.value) || product.moq))}
                                             className="w-24 text-center bg-transparent border-x border-border py-3"
-                                            min={PRODUCT.moq}
-                                            step={PRODUCT.moq}
+                                            min={product.moq}
+                                            step={product.moq}
                                         />
                                         <button
-                                            onClick={() => setQuantity(quantity + PRODUCT.moq)}
+                                            onClick={() => setQuantity(quantity + product.moq)}
                                             className="px-4 py-3 hover:bg-muted transition-colors"
                                         >
                                             +
@@ -352,23 +455,70 @@ export default function ProductDetail() {
 
                         {/* Actions */}
                         {isApproved ? (
-                            <div className="flex gap-3">
-                                <Button 
-                                    size="lg" 
-                                    className="flex-1"
-                                    onClick={handleAddToCart}
-                                >
-                                    <ShoppingCart className="w-5 h-5 mr-2" />
-                                    {addedToCart ? "Added to Cart!" : "Add to Cart"}
-                                </Button>
-                                <Button
-                                    size="lg"
-                                    variant={isWishlisted ? "default" : "outline"}
-                                    onClick={() => setIsWishlisted(!isWishlisted)}
-                                >
-                                    <Heart className={cn("w-5 h-5", isWishlisted && "fill-current")} />
-                                </Button>
-                            </div>
+                            <>
+                                <div className="flex gap-3">
+                                    <Button 
+                                        size="lg" 
+                                        className="flex-1"
+                                        onClick={handleAddToCart}
+                                        disabled={addingToCart}
+                                    >
+                                        {addingToCart ? (
+                                            <>
+                                                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                                Adding...
+                                            </>
+                                        ) : addedToCart ? (
+                                            <>
+                                                <Check className="w-5 h-5 mr-2" />
+                                                Added to Cart!
+                                            </>
+                                        ) : (
+                                            <>
+                                                <ShoppingCart className="w-5 h-5 mr-2" />
+                                                Add to Cart
+                                            </>
+                                        )}
+                                    </Button>
+                                    <Button
+                                        size="lg"
+                                        variant={isWishlisted ? "default" : "outline"}
+                                        onClick={() => setIsWishlisted(!isWishlisted)}
+                                    >
+                                        <Heart className={cn("w-5 h-5", isWishlisted && "fill-current")} />
+                                    </Button>
+                                </div>
+
+                                {/* Cart Options Modal */}
+                                {showCartOptions && addedToCart && (
+                                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                                        <div className="bg-background rounded-lg p-6 max-w-sm w-full shadow-lg">
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <Check className="w-6 h-6 text-green-500" />
+                                                <h3 className="text-lg font-semibold">Added to Cart!</h3>
+                                            </div>
+                                            <p className="text-muted-foreground mb-6">
+                                                {product.name} has been added to your cart.
+                                            </p>
+                                            <div className="flex gap-3">
+                                                <Button
+                                                    variant="outline"
+                                                    className="flex-1"
+                                                    onClick={handleContinueShopping}
+                                                >
+                                                    Continue Shopping
+                                                </Button>
+                                                <Button
+                                                    className="flex-1"
+                                                    onClick={handleViewCart}
+                                                >
+                                                    View Cart
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
                         ) : (
                             <Link href="/login" className="block">
                                 <Button size="lg" className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
@@ -379,17 +529,19 @@ export default function ProductDetail() {
                         )}
 
                         {/* Features */}
-                        <div className="border-t border-border pt-6">
-                            <h3 className="font-semibold mb-4">Product Features</h3>
-                            <ul className="space-y-2">
-                                {PRODUCT.features.map((feature, idx) => (
-                                    <li key={idx} className="flex items-start gap-2 text-sm">
-                                        <span className="text-primary mt-1">✓</span>
-                                        <span>{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                        {productFeatures.length > 0 && (
+                            <div className="border-t border-border pt-6">
+                                <h3 className="font-semibold mb-4">Product Features</h3>
+                                <ul className="space-y-2">
+                                    {productFeatures.map((feature: string, idx: number) => (
+                                        <li key={idx} className="flex items-start gap-2 text-sm">
+                                            <span className="text-primary mt-1">✓</span>
+                                            <span>{feature}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
 
                         {/* Trust Badges */}
                         <div className="grid grid-cols-3 gap-4 pt-6 border-t border-border">

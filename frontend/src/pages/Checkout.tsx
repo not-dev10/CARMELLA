@@ -141,7 +141,8 @@ export default function Checkout() {
       const response = await ordersAPI.create(shippingAddress)
       
       if (response.order) {
-        setOrderId(response.order.id)
+        // Use order_number if available, otherwise fall back to id
+        setOrderId(response.order.order_number || response.order.id)
         clearCart()
         setCurrentStep('confirmation')
       }
@@ -331,13 +332,13 @@ export default function Checkout() {
                 {/* Shipping Details */}
                 <div className="border border-border rounded-lg p-6">
                   <h3 className="font-semibold mb-4">Shipping Address</h3>
-                  <p className="text-sm text-muted-foreground space-y-1">
+                  <div className="text-sm text-muted-foreground space-y-1">
                     <div>{formData.firstName} {formData.lastName}</div>
                     <div>{formData.address}</div>
                     <div>{formData.city}, {formData.state} {formData.zipCode}</div>
                     <div className="pt-2">{formData.phone}</div>
                     <div>{formData.email}</div>
-                  </p>
+                  </div>
                 </div>
 
                 {/* Order Items */}

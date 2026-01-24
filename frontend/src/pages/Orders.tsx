@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Package, Calendar, DollarSign, Truck } from 'lucide-react'
@@ -8,6 +9,7 @@ import { motion } from 'framer-motion'
 
 interface Order {
   id: string
+  order_number?: string
   total_amount: number
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
   created_at: string
@@ -32,6 +34,7 @@ const statusIcons = {
 }
 
 export default function Orders() {
+  const navigate = useNavigate()
   const { user, loading: authLoading } = useAuth()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
@@ -135,7 +138,7 @@ export default function Orders() {
                     {/* Order ID */}
                     <div>
                       <p className="text-xs text-muted-foreground mb-1">Order ID</p>
-                      <p className="font-mono text-sm font-semibold">{order.id.slice(0, 8)}...</p>
+                      <p className="font-mono text-sm font-semibold">{order.order_number || order.id.slice(0, 8)}</p>
                     </div>
 
                     {/* Date */}
@@ -167,7 +170,11 @@ export default function Orders() {
 
                     {/* Action */}
                     <div className="text-right">
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => navigate(`/orders/${order.id}`)}
+                      >
                         View Details
                       </Button>
                     </div>

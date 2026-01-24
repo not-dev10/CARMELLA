@@ -1,21 +1,28 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
-// Get auth token from localStorage
-const getAuthToken = () => {
-  // Supabase stores session with project-specific key
-  const authKey = Object.keys(localStorage).find(k => k.includes('auth-token'));
-  if (authKey) {
-    try {
-      const session = localStorage.getItem(authKey);
-      if (session) {
-        const parsed = JSON.parse(session);
-        return parsed.access_token || parsed;
+// Get auth token from Supabase session
+const getAuthToken = async () => {
+  try {
+    // Import supabase client
+    const { supabase } = await import('./supabase');
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || null;
+  } catch {
+    // Fallback to localStorage
+    const authKey = Object.keys(localStorage).find(k => k.includes('supabase'));
+    if (authKey) {
+      try {
+        const data = localStorage.getItem(authKey);
+        if (data) {
+          const parsed = JSON.parse(data);
+          return parsed.access_token || null;
+        }
+      } catch {
+        return null;
       }
-    } catch {
-      return null;
     }
+    return null;
   }
-  return null;
 };
 
 // Make API request
@@ -24,7 +31,7 @@ const apiRequest = async (
   options: RequestInit = {}
 ) => {
   const url = `${API_BASE_URL}${endpoint}`;
-  const token = getAuthToken();
+  const token = await getAuthToken();
 
   console.log("[API] Request:", { method: options.method || "GET", endpoint, hasToken: !!token });
 
@@ -191,6 +198,13 @@ export const adminAPI = {
   getUser: (id: string) => apiRequest(`/admin/users/${id}`),
   updateUser: (id: string, data: any) =>
     apiRequest(`/admin/users/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  getOrders: (params?: { status?: string; page?: number; limit?: number }) =>
+    apiRequest(`/admin/orders${params ? `?${new URLSearchParams(params as any).toString()}` : ""}`),
+  updateOrderStatus: (orderId: string, status: string) =>
+    apiRequest(`/admin/orders/${orderId}`, {
+      method: "PUT",
+      body: JSON.stringify({ status }),
+    }),
   getB2BRequests: (params?: { status?: string; page?: number; limit?: number }) =>
     apiRequest(`/admin/b2b-requests${params ? `?${new URLSearchParams(params as any).toString()}` : ""}`),
   approveB2BRequest: (userId: string, notes?: string) =>

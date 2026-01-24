@@ -6,6 +6,8 @@ import {
   getB2BRequests,
   approveB2BRequest,
   rejectB2BRequest,
+  getOrders,
+  updateOrderStatus,
 } from "../controllers/adminController.js";
 import { authMiddleware, adminMiddleware } from "../middleware/index.js";
 
@@ -17,6 +19,10 @@ router.use(authMiddleware, adminMiddleware);
 router.get("/users", getUsers);
 router.get("/users/:userId", getUser);
 router.put("/users/:userId", updateUser);
+
+// Orders endpoints
+router.get("/orders", getOrders);
+router.put("/orders/:orderId", updateOrderStatus);
 
 // B2B requests endpoints
 router.get("/b2b-requests", getB2BRequests);

@@ -17,6 +17,7 @@ import Category from "@/pages/Category"
 import ProductDetail from "@/pages/ProductDetail"
 import Checkout from "@/pages/Checkout"
 import Orders from "@/pages/Orders"
+import OrderDetail from "@/pages/OrderDetail"
 import About from "@/pages/About"
 import Contact from "@/pages/Contact"
 import Login from "@/pages/Login"
@@ -60,6 +61,7 @@ function App() {
                             <Route path="/product/:id" element={<ProductDetail />} />
                             <Route path="/checkout" element={<Checkout />} />
                             <Route path="/orders" element={<Orders />} />
+                            <Route path="/orders/:id" element={<OrderDetail />} />
                             <Route path="/about" element={<About />} />
                             <Route path="/contact" element={<Contact />} />
                             <Route 
