@@ -7,6 +7,7 @@ import { supabase, supabaseAdmin } from "../config/supabase.js";
  */
 export async function getUsers(req: Request, res: Response) {
   try {
+    const startTime = Date.now();
     console.log("[ADMIN] getUsers called by user:", req.userId);
     
     const { search = "", page = "1", limit = "20" } = req.query;
@@ -52,12 +53,14 @@ export async function getUsers(req: Request, res: Response) {
       .order("created_at", { ascending: false })
       .range(offset, offset + limitNum - 1);
 
+    const queryTime = Date.now() - startTime;
+
     if (error) {
-      console.error("[ADMIN] Query error:", error);
+      console.error(`[ADMIN] Query error after ${queryTime}ms:`, error);
       return res.status(400).json({ error: error.message });
     }
 
-    console.log("[ADMIN] Query successful. Found users:", count, "Returned:", data?.length);
+    console.log(`[ADMIN] Query successful after ${queryTime}ms. Found users: ${count}, Returned: ${data?.length}`);
     console.log("[ADMIN] Sample user data:", data?.[0]);
 
     return res.json({

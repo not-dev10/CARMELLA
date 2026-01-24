@@ -22,9 +22,10 @@ import { getSupabaseClient } from "../utils/supabaseClient.js";
  */
 export async function getProducts(req: Request, res: Response) {
   try {
-    const { category, search, sort = "created_at", minPrice, maxPrice, page = "1", limit = "12" } = req.query;
+    const startTime = Date.now();
+    const { category, search, sort = "created_at", minPrice, maxPrice, page = "1", limit = "100" } = req.query;
     const pageNum = parseInt(page as string) || 1;
-    const limitNum = parseInt(limit as string) || 12;
+    const limitNum = parseInt(limit as string) || 100;
     const offset = (pageNum - 1) * limitNum;
 
     // Use user-specific client to pass auth context to products_safe view
@@ -54,7 +55,10 @@ export async function getProducts(req: Request, res: Response) {
       .order(sort as string, { ascending: false })
       .range(offset, offset + limitNum - 1);
 
+    const queryTime = Date.now() - startTime;
+
     if (error) {
+      console.error(`[PRODUCTS] getProducts error after ${queryTime}ms:`, error);
       return res.status(400).json({ error: error.message });
     }
 
@@ -64,6 +68,9 @@ export async function getProducts(req: Request, res: Response) {
       pricingLocked: p.pricing_locked,
       userTier: p.user_tier,
     }));
+
+    const totalTime = Date.now() - startTime;
+    console.log(`[PRODUCTS] getProducts completed - Query: ${queryTime}ms, Total: ${totalTime}ms, Items: ${products.length}`);
 
     return res.json({
       products,
@@ -75,6 +82,7 @@ export async function getProducts(req: Request, res: Response) {
       },
     });
   } catch (error: any) {
+    console.error("[PRODUCTS] getProducts unexpected error:", error);
     return res.status(500).json({ error: error.message });
   }
 }
@@ -85,6 +93,7 @@ export async function getProducts(req: Request, res: Response) {
  */
 export async function getProduct(req: Request, res: Response) {
   try {
+    const startTime = Date.now();
     const { id } = req.params;
 
     // Use user-specific client to pass auth context to products_safe view
@@ -95,7 +104,10 @@ export async function getProduct(req: Request, res: Response) {
       .eq("id", id)
       .single();
 
+    const queryTime = Date.now() - startTime;
+
     if (error) {
+      console.error(`[PRODUCTS] getProduct error after ${queryTime}ms:`, error);
       return res.status(404).json({ error: "Product not found" });
     }
 
@@ -106,8 +118,10 @@ export async function getProduct(req: Request, res: Response) {
       userTier: data.user_tier,
     };
 
+    console.log(`[PRODUCTS] getProduct completed - ${queryTime}ms`);
     return res.json(transformedProduct);
   } catch (error: any) {
+    console.error("[PRODUCTS] getProduct unexpected error:", error);
     return res.status(500).json({ error: error.message });
   }
 }

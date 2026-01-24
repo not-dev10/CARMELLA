@@ -3,12 +3,15 @@ import { supabaseAdmin } from "../config/supabase.js";
 import { generateOrderId } from "../utils/orderId.js";
 
 export const createOrder = async (req: Request, res: Response) => {
+  const startTime = Date.now();
   const userId = req.userId;
   const { shippingAddress } = req.body;
 
   console.log("[ORDER] Create order request:", { userId, hasShippingAddress: !!shippingAddress });
 
   if (!shippingAddress) {
+    const latency = Date.now() - startTime;
+    console.error(`[ORDER] Missing shipping address after ${latency}ms`);
     return res.status(400).json({ error: "Shipping address is required" });
   }
 
@@ -21,9 +24,12 @@ export const createOrder = async (req: Request, res: Response) => {
       .eq("id", userId)
       .single();
 
-    console.log("[ORDER] User B2B status:", user?.b2b_approval_status);
+    const userCheckTime = Date.now() - startTime;
+    console.log(`[ORDER] User B2B status checked after ${userCheckTime}ms:`, user?.b2b_approval_status);
 
     if (user?.b2b_approval_status !== "approved") {
+      const latency = Date.now() - startTime;
+      console.error(`[ORDER] B2B approval required after ${latency}ms`);
       return res.status(403).json({
         error: "B2B approval required to place orders",
         message: "Please request B2B approval to access pricing and place orders"
@@ -38,12 +44,14 @@ export const createOrder = async (req: Request, res: Response) => {
       .eq("user_id", userId)
       .single();
 
+    const cartFetchTime = Date.now() - startTime;
+
     if (cartError || !cart) {
-      console.error("[ORDER] Cart not found:", cartError);
+      console.error(`[ORDER] Cart not found after ${cartFetchTime}ms:`, cartError);
       return res.status(400).json({ error: "Cart not found" });
     }
 
-    console.log("[ORDER] Cart found:", cart.id);
+    console.log(`[ORDER] Cart found after ${cartFetchTime}ms:`, cart.id);
 
     // Get cart items
     console.log("[ORDER] Fetching cart items for cart:", cart.id);
@@ -52,12 +60,14 @@ export const createOrder = async (req: Request, res: Response) => {
       .select("product_id, quantity")
       .eq("cart_id", cart.id);
 
+    const itemsFetchTime = Date.now() - startTime;
+
     if (itemsError || !cartItems || cartItems.length === 0) {
-      console.error("[ORDER] Cart items error:", itemsError, "Items:", cartItems);
+      console.error(`[ORDER] Cart items error after ${itemsFetchTime}ms:`, itemsError, "Items:", cartItems);
       return res.status(400).json({ error: "Cart is empty" });
     }
 
-    console.log("[ORDER] Cart items found:", cartItems.length, cartItems);
+    console.log(`[ORDER] Cart items found after ${itemsFetchTime}ms:`, cartItems.length, cartItems);
 
     // Fetch products with pricing
     const productIds = cartItems.map(item => item.product_id);
@@ -68,22 +78,25 @@ export const createOrder = async (req: Request, res: Response) => {
       .select("id, base_price, sale_price, b2b_price, moq, name")
       .in("id", productIds);
 
+    const productsFetchTime = Date.now() - startTime;
+
     if (productsError) {
-      console.error("[ORDER] Failed to fetch products - Query error:", productsError);
+      console.error(`[ORDER] Failed to fetch products after ${productsFetchTime}ms - Query error:`, productsError);
       return res.status(500).json({ error: "Failed to fetch product pricing", details: productsError.message });
     }
 
     if (!products || products.length === 0) {
-      console.error("[ORDER] No products found for IDs:", productIds);
+      console.error(`[ORDER] No products found after ${productsFetchTime}ms for IDs:`, productIds);
       return res.status(500).json({ error: "Products not found in database" });
     }
 
-    console.log("[ORDER] Fetched products:", products);
+    console.log(`[ORDER] Fetched products after ${productsFetchTime}ms:`, products);
 
     // Verify all cart items have corresponding products
     const missingProducts = cartItems.filter(item => !products.find(p => p.id === item.product_id));
     if (missingProducts.length > 0) {
-      console.error("[ORDER] Missing products:", missingProducts);
+      const latency = Date.now() - startTime;
+      console.error(`[ORDER] Missing products after ${latency}ms:`, missingProducts);
       return res.status(500).json({ error: `Products not found: ${missingProducts.map(p => p.product_id).join(', ')}` });
     }
 
@@ -93,7 +106,8 @@ export const createOrder = async (req: Request, res: Response) => {
       const product = products.find(p => p.id === item.product_id);
 
       if (!product) {
-        console.error("[ORDER] Product not found:", item.product_id);
+        const latency = Date.now() - startTime;
+        console.error(`[ORDER] Product not found after ${latency}ms:`, item.product_id);
         throw new Error(`Product ${item.product_id} not found`);
       }
 

@@ -8,8 +8,35 @@ declare global {
       userId?: string;
       userEmail?: string;
       userType?: string;
+      startTime?: number;
     }
   }
+}
+
+// Latency tracking middleware
+export function latencyMiddleware(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  req.startTime = Date.now();
+  
+  // Capture the original send function
+  const originalSend = res.send;
+  
+  res.send = function(data: any) {
+    const latency = Date.now() - (req.startTime || Date.now());
+    const method = req.method;
+    const path = req.path;
+    const status = res.statusCode;
+    
+    console.log(`[LATENCY] ${method} ${path} - Status: ${status} - ${latency}ms`);
+    
+    // Call the original send function
+    return originalSend.call(this, data);
+  };
+  
+  next();
 }
 
 export async function authMiddleware(

@@ -32,6 +32,7 @@ const apiRequest = async (
 ) => {
   const url = `${API_BASE_URL}${endpoint}`;
   const token = await getAuthToken();
+  const startTime = performance.now();
 
   console.log("[API] Request:", { method: options.method || "GET", endpoint, hasToken: !!token });
 
@@ -49,16 +50,19 @@ const apiRequest = async (
     headers,
   });
 
-  console.log("[API] Response status:", response.status, "for", endpoint);
+  const endTime = performance.now();
+  const latency = Math.round(endTime - startTime);
+
+  console.log("[API] Response status:", response.status, "for", endpoint, `(${latency}ms)`);
 
   if (!response.ok) {
     const error = await response.json();
-    console.error("[API] Error response:", error);
+    console.error("[API] Error response:", error, `(${latency}ms)`);
     throw new Error(error.error || "API request failed");
   }
 
   const data = await response.json();
-  console.log("[API] Success response:", { endpoint, dataKeys: Object.keys(data) });
+  console.log("[API] Success response:", { endpoint, dataKeys: Object.keys(data), latency: `${latency}ms` });
   return data;
 };
 
@@ -77,8 +81,14 @@ export const homepageAPI = {
 
 // Products API
 export const productsAPI = {
-  getAll: (params?: { category?: string; search?: string; limit?: number; offset?: number }) =>
-    apiRequest(`/products${params ? `?${new URLSearchParams(params as any).toString()}` : ""}`),
+  getAll: (params?: { category?: string; search?: string; limit?: number; offset?: number }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.category) queryParams.append('category', params.category);
+    if (params?.search) queryParams.append('search', params.search);
+    queryParams.append('limit', (params?.limit || 100).toString());
+    if (params?.offset) queryParams.append('offset', params.offset.toString());
+    return apiRequest(`/products?${queryParams.toString()}`);
+  },
   getById: (id: string) => apiRequest(`/products/${id}`),
   getPricing: (id: string) => apiRequest(`/products/${id}/pricing`),
   create: (data: any) =>
@@ -221,4 +231,24 @@ export const adminAPI = {
       method: "PUT",
       body: JSON.stringify({ reason }),
     }),
+};
+
+// Inventory API
+export const inventoryAPI = {
+  getAll: (params?: { search?: string; warehouse?: string; status?: string; page?: number; limit?: number }) =>
+    apiRequest(`/admin/inventory${params ? `?${new URLSearchParams(params as any).toString()}` : ""}`),
+  getStats: () => apiRequest("/admin/inventory/stats"),
+  getLowStock: () => apiRequest("/admin/inventory/low-stock"),
+  update: (inventoryId: string, data: any) =>
+    apiRequest(`/admin/inventory/${inventoryId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  adjust: (inventoryId: string, quantity_change: number, transaction_type: string, notes?: string) =>
+    apiRequest(`/admin/inventory/${inventoryId}/adjust`, {
+      method: "POST",
+      body: JSON.stringify({ quantity_change, transaction_type, notes }),
+    }),
+  getHistory: (inventoryId: string, limit?: number) =>
+    apiRequest(`/admin/inventory/${inventoryId}/history${limit ? `?limit=${limit}` : ""}`),
 };

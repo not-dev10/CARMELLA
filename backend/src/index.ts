@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import "express-async-errors";
 import { config } from "./config/index.js";
-import { errorHandler } from "./middleware/index.js";
+import { errorHandler, latencyMiddleware } from "./middleware/index.js";
 import authRoutes from "./routes/auth.js";
 import productRoutes from "./routes/products.js";
 import userRoutes from "./routes/users.js";
@@ -14,6 +14,7 @@ import wishlistRoutes from "./routes/wishlist.js";
 import reviewRoutes from "./routes/reviews.js";
 import analyticsRoutes from "./routes/analytics.js";
 import homepageRoutes from "./routes/homepage.js";
+import inventoryRoutes from "./routes/inventory.js";
 
 const app = express();
 
@@ -21,6 +22,7 @@ const app = express();
 app.use(cors(config.cors));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(latencyMiddleware);
 
 // Health check
 app.get("/health", (req, res) => {
@@ -33,6 +35,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/admin/inventory", inventoryRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/wishlist", wishlistRoutes);

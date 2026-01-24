@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import {
   BarChart3, ShoppingCart, TrendingUp, Users, Package, AlertCircle,
   Search, Edit2, Settings, LogOut, Bell, Clock, CheckCircle, XCircle,
-  Mail, Save, X, Grid3x3
+  Mail, Save, X, Grid3x3, Activity
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -20,6 +20,7 @@ import { ActivitySection } from "@/components/admin/activity-section"
 import { SettingsSection } from "@/components/admin/settings-section"
 import { ProductsSection } from "@/components/admin/products-section"
 import { OrdersSection } from "@/components/admin/orders-section"
+import { PerformanceSection } from "@/components/admin/performance-section"
 import { useAuth } from "@/contexts/AuthContext"
 import { adminAPI } from "@/lib/api"
 
@@ -166,6 +167,7 @@ export default function Admin() {
     { id: "inventory", label: "Inventory Alerts", icon: AlertCircle, badge: 3 },
     { id: "content", label: "Homepage Content", icon: Grid3x3 },
     { id: "activity", label: "Activity Log", icon: Clock },
+    { id: "performance", label: "Performance Monitor", icon: Activity },
     { id: "settings", label: "Settings", icon: Settings }
   ]
 
@@ -736,6 +738,9 @@ export default function Admin() {
 
                 {/* Activity Tab */}
                 {activeTab === "activity" && <ActivitySection />}
+
+                {/* Performance Monitor Tab */}
+                {activeTab === "performance" && <PerformanceSection />}
 
                 {/* Settings Tab */}
                 {activeTab === "settings" && <SettingsSection />}
