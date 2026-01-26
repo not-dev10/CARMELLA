@@ -55,11 +55,28 @@ export default function ProductDetail() {
                 setLoading(true)
                 setError(null)
                 const data = await productsAPI.getById(id)
-                setProduct(data.product || data)
-                setQuantity(data.product?.moq || data.moq || 12)
+                
+                // Check if response is an error
+                if (data?.error) {
+                    setError(data.error)
+                    setProduct(null)
+                    return
+                }
+                
+                // Handle both wrapped and unwrapped responses
+                const product = data?.product || data
+                if (!product || !product.id) {
+                    setError('Product not found')
+                    setProduct(null)
+                    return
+                }
+                
+                setProduct(product)
+                setQuantity(product.moq || 12)
             } catch (err: any) {
                 console.error('Error fetching product:', err)
                 setError(err.message || 'Failed to load product')
+                setProduct(null)
             } finally {
                 setLoading(false)
             }

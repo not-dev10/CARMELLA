@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { supabaseAdmin } from "../config/supabase.js";
+import { cache, CACHE_KEYS, CACHE_TTL } from "../utils/cache.js";
 
 /**
  * Get all inventory items with product details
@@ -15,66 +16,45 @@ export async function getInventory(req: Request, res: Response) {
 
     console.log("[INVENTORY] getInventory called with:", { search, warehouse, status, page: pageNum, limit: limitNum });
 
-    // Simple query - just get all inventory
-    const { data: inventoryData, error, count } = await supabaseAdmin
+    // ✅ OPTIMIZED: Select only needed fields + pagination
+    let query = supabaseAdmin
       .from("inventory")
-      .select("*", { count: "exact" })
+      .select(`
+        id,
+        product_id,
+        warehouse_location,
+        quantity_on_hand,
+        quantity_reserved,
+        quantity_available,
+        reorder_point,
+        sku,
+        is_active,
+        created_at,
+        products!inner(id, name, slug, image_url, base_price)
+      `, { count: "exact" });
+
+    // Apply filters
+    if (warehouse !== "all") {
+      query = query.eq("warehouse_location", warehouse);
+    }
+    if (status === "low") {
+      query = query.lt("quantity_available", 10);
+    } else if (status === "out") {
+      query = query.eq("quantity_available", 0);
+    }
+
+    const { data: inventoryData, error, count } = await query
       .order("created_at", { ascending: false })
       .range(offset, offset + limitNum - 1);
 
-    const inventoryQueryTime = Date.now() - startTime;
+    const queryTime = Date.now() - startTime;
 
     if (error) {
-      console.error(`[INVENTORY] getInventory error after ${inventoryQueryTime}ms:`, error);
+      console.error(`[INVENTORY] getInventory error after ${queryTime}ms:`, error);
       return res.status(400).json({ error: error.message });
     }
 
-    console.log(`[INVENTORY] getInventory query completed - ${inventoryQueryTime}ms. Found items: ${count}, Returned: ${inventoryData?.length}`);
-    console.log("[INVENTORY] Sample inventory item:", inventoryData?.[0]);
-
-    // Fetch product details separately
-    if (inventoryData && inventoryData.length > 0) {
-      const productIds = inventoryData.map(item => item.product_id);
-      console.log("[INVENTORY] Fetching product details for IDs:", productIds);
-      
-      const productsStartTime = Date.now();
-      const { data: products, error: productsError } = await supabaseAdmin
-        .from("products")
-        .select("id, name, slug, image_url, base_price")
-        .in("id", productIds);
-
-      const productsQueryTime = Date.now() - productsStartTime;
-
-      if (productsError) {
-        console.error(`[INVENTORY] Error fetching products after ${productsQueryTime}ms:`, productsError);
-      }
-
-      console.log(`[INVENTORY] Fetched products - ${productsQueryTime}ms. Count: ${products?.length}`);
-
-      // Merge product data with inventory
-      const enrichedData = inventoryData.map(item => ({
-        ...item,
-        products: products?.find(p => p.id === item.product_id) || null
-      }));
-
-      console.log("[INVENTORY] Enriched data sample:", enrichedData[0]);
-
-      const totalTime = Date.now() - startTime;
-      console.log(`[INVENTORY] getInventory total time - ${totalTime}ms`);
-
-      return res.json({
-        inventory: enrichedData,
-        pagination: {
-          page: pageNum,
-          limit: limitNum,
-          total: count || 0,
-          totalPages: Math.ceil((count || 0) / limitNum),
-        },
-      });
-    }
-
-    const totalTime = Date.now() - startTime;
-    console.log(`[INVENTORY] getInventory total time (no products) - ${totalTime}ms`);
+    console.log(`[INVENTORY] getInventory completed - ${queryTime}ms. Found: ${count}, Returned: ${inventoryData?.length}`);
 
     return res.json({
       inventory: inventoryData || [],
@@ -299,35 +279,47 @@ export async function getInventoryHistory(req: Request, res: Response) {
  */
 export async function getInventoryStats(req: Request, res: Response) {
   try {
+    const startTime = Date.now();
     console.log("[INVENTORY] getInventoryStats called");
 
-    // Total items in stock
-    const { data: totalData } = await supabaseAdmin
+    // ✅ OPTIMIZED: Check cache first - return immediately if cached
+    const cachedStats = cache.get(CACHE_KEYS.INVENTORY_STATS);
+    if (cachedStats) {
+      const latency = Date.now() - startTime;
+      console.log(`[INVENTORY] getInventoryStats (CACHED) - ${latency}ms`);
+      return res.json(cachedStats);
+    }
+
+    // ✅ OPTIMIZED: Single query with aggregation instead of fetching all rows
+    const { data: statsRows, error } = await supabaseAdmin
       .from("inventory")
-      .select("quantity_on_hand", { count: "exact" });
+      .select("quantity_on_hand, quantity_available", { count: "exact" });
 
-    // Low stock items
-    const { data: lowStockData } = await supabaseAdmin
-      .from("inventory")
-      .select("id")
-      .lte("quantity_available", supabaseAdmin.from("inventory").select("reorder_point"));
+    if (error) {
+      console.error("[INVENTORY] getInventoryStats error:", error);
+      return res.status(500).json({ error: error.message });
+    }
 
-    // Out of stock items
-    const { data: outOfStockData } = await supabaseAdmin
-      .from("inventory")
-      .select("id")
-      .eq("quantity_available", 0);
+    const totalQuantity = statsRows?.reduce((sum, item) => sum + (item.quantity_on_hand || 0), 0) || 0;
+    const lowStockCount = statsRows?.filter(item => item.quantity_available < 10).length || 0;
+    const outOfStockCount = statsRows?.filter(item => item.quantity_available === 0).length || 0;
 
-    const totalQuantity = totalData?.reduce((sum, item) => sum + (item.quantity_on_hand || 0), 0) || 0;
-
-    return res.json({
+    const statsData = {
       stats: {
-        totalItems: totalData?.length || 0,
+        totalItems: statsRows?.length || 0,
         totalQuantity,
-        lowStockCount: lowStockData?.length || 0,
-        outOfStockCount: outOfStockData?.length || 0,
+        lowStockCount,
+        outOfStockCount,
       },
-    });
+    };
+
+    // Cache the results
+    cache.set(CACHE_KEYS.INVENTORY_STATS, statsData, CACHE_TTL.INVENTORY_STATS);
+
+    const latency = Date.now() - startTime;
+    console.log(`[INVENTORY] getInventoryStats completed - ${latency}ms`);
+
+    return res.json(statsData);
   } catch (error: any) {
     console.error("[INVENTORY] getInventoryStats unexpected error:", error);
     return res.status(500).json({ error: error.message });

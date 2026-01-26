@@ -10,9 +10,10 @@ import { getSupabaseClient } from "../utils/supabaseClient.js";
 // Get all homepage content sections
 export const getHomepageContent = async (req: Request, res: Response) => {
   try {
+    // ✅ OPTIMIZED: Select only needed fields instead of *
     const { data: content, error } = await supabase
       .from("admin_content")
-      .select("*");
+      .select("section_name, content");
 
     if (error) {
       return res.status(500).json({ error: "Failed to fetch homepage content" });
@@ -35,9 +36,10 @@ export const getSection = async (req: Request, res: Response) => {
   const { section } = req.params;
 
   try {
+    // ✅ OPTIMIZED: Select only needed fields instead of *
     const { data: content, error } = await supabase
       .from("admin_content")
-      .select("*")
+      .select("section_name, content")
       .eq("section_name", section)
       .single();
 
@@ -112,9 +114,22 @@ export const getFeaturedProducts = async (req: Request, res: Response) => {
   try {
     // Use user-specific client to pass auth context to products_safe view
     const userSupabase = getSupabaseClient(req);
+    // ✅ OPTIMIZED: Select only needed fields instead of *
     const { data: products, error } = await userSupabase
       .from("products_safe")
-      .select("*")
+      .select(`
+        id,
+        name,
+        slug,
+        image_url,
+        base_price,
+        sale_price,
+        b2b_price,
+        pricing_locked,
+        user_tier,
+        rating,
+        reviews_count
+      `)
       .eq("is_featured", true)
       .limit(6);
 
@@ -143,9 +158,10 @@ export const getFeaturedProducts = async (req: Request, res: Response) => {
 // Get categories for homepage
 export const getCategories = async (req: Request, res: Response) => {
   try {
+    // ✅ OPTIMIZED: Select only needed fields instead of *
     const { data: categories, error } = await supabase
       .from("categories")
-      .select("*");
+      .select("id, name, slug, image_url");
 
     if (error) {
       return res.status(500).json({ error: "Failed to fetch categories" });

@@ -7,9 +7,10 @@ import { supabase, supabaseAdmin } from "../config/supabase.js";
  */
 export async function getCategories(req: Request, res: Response) {
   try {
+    // ✅ OPTIMIZED: Select only needed fields instead of *
     const { data, error } = await supabase
       .from("categories")
-      .select("*")
+      .select("id, name, slug, image_url, description")
       .order("name");
 
     if (error) {
@@ -30,9 +31,10 @@ export async function getCategory(req: Request, res: Response) {
   try {
     const { id } = req.params;
 
+    // ✅ OPTIMIZED: Select only needed fields instead of *
     const { data, error } = await supabase
       .from("categories")
-      .select("*")
+      .select("id, name, slug, image_url, description")
       .eq("id", id)
       .single();
 

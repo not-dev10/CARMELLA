@@ -5,38 +5,42 @@ export const getCart = async (req: Request, res: Response) => {
   const startTime = Date.now();
   const userId = req.userId;
   
-  const { data: cart, error: cartError } = await supabaseAdmin
-    .from("carts")
-    .select("*")
-    .eq("user_id", userId)
-    .single();
+  try {
+    // ✅ OPTIMIZED: Single nested query instead of 2 sequential queries
+    const { data: cart, error: cartError } = await supabaseAdmin
+      .from("carts")
+      .select(`
+        id,
+        cart_items(
+          id,
+          quantity,
+          products(id, name, slug, image_url, base_price, category_id)
+        )
+      `)
+      .eq("user_id", userId)
+      .single();
 
-  if (cartError && cartError.code !== "PGRST116") {
+    if (cartError) {
+      const latency = Date.now() - startTime;
+      console.error(`[CART] getCart error after ${latency}ms:`, cartError);
+      return res.status(500).json({ error: "Failed to fetch cart" });
+    }
+
+    if (!cart) {
+      const latency = Date.now() - startTime;
+      console.log(`[CART] getCart completed - ${latency}ms, Items: 0`);
+      return res.json({ items: [], total: 0 });
+    }
+
     const latency = Date.now() - startTime;
-    console.error(`[CART] getCart error after ${latency}ms:`, cartError);
-    return res.status(500).json({ error: "Failed to fetch cart" });
-  }
-
-  if (!cart) {
+    const items = cart.cart_items || [];
+    console.log(`[CART] getCart completed - ${latency}ms, Items: ${items.length}`);
+    res.json({ items, total: 0 });
+  } catch (error: any) {
     const latency = Date.now() - startTime;
-    console.log(`[CART] getCart completed (empty) - ${latency}ms`);
-    return res.json({ items: [], total: 0 });
+    console.error(`[CART] getCart error after ${latency}ms:`, error);
+    return res.status(500).json({ error: error.message });
   }
-
-  const { data: items, error: itemsError } = await supabaseAdmin
-    .from("cart_items")
-    .select("*, products(*)")
-    .eq("cart_id", cart.id);
-
-  if (itemsError) {
-    const latency = Date.now() - startTime;
-    console.error(`[CART] getCart items error after ${latency}ms:`, itemsError);
-    return res.status(500).json({ error: "Failed to fetch cart items" });
-  }
-
-  const latency = Date.now() - startTime;
-  console.log(`[CART] getCart completed - ${latency}ms, Items: ${items?.length || 0}`);
-  res.json({ cart, items });
 };
 
 export const addToCart = async (req: Request, res: Response) => {
@@ -61,7 +65,7 @@ export const addToCart = async (req: Request, res: Response) => {
   try {
     let { data: cart, error: cartError } = await supabaseAdmin
       .from("carts")
-      .select("*")
+      .select("id, user_id")
       .eq("user_id", userId)
       .single();
 
@@ -185,13 +189,14 @@ export const removeFromCart = async (req: Request, res: Response) => {
 export const clearCart = async (req: Request, res: Response) => {
   const userId = req.userId;
 
+  // ✅ OPTIMIZED: Get cart ID in single query
   const { data: cart, error: cartError } = await supabaseAdmin
     .from("carts")
-    .select("*")
+    .select("id")
     .eq("user_id", userId)
     .single();
 
-  if (cartError) {
+  if (cartError || !cart) {
     return res.status(500).json({ error: "Failed to fetch cart" });
   }
 

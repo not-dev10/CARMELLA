@@ -1,3 +1,5 @@
+import { cache } from './cache';
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 // Get auth token from Supabase session
@@ -45,38 +47,110 @@ const apiRequest = async (
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  // Add request timeout (5 seconds)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-  const endTime = performance.now();
-  const latency = Math.round(endTime - startTime);
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers,
+      signal: controller.signal,
+    });
 
-  console.log("[API] Response status:", response.status, "for", endpoint, `(${latency}ms)`);
+    clearTimeout(timeoutId);
+    const endTime = performance.now();
+    const latency = Math.round(endTime - startTime);
 
-  if (!response.ok) {
-    const error = await response.json();
-    console.error("[API] Error response:", error, `(${latency}ms)`);
-    throw new Error(error.error || "API request failed");
+    console.log("[API] Response status:", response.status, "for", endpoint, `(${latency}ms)`);
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error("[API] Error response:", error, `(${latency}ms)`);
+      throw new Error(error.error || "API request failed");
+    }
+
+    const data = await response.json();
+    console.log("[API] Success response:", { endpoint, dataKeys: Object.keys(data), latency: `${latency}ms` });
+    return data;
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    const endTime = performance.now();
+    const latency = Math.round(endTime - startTime);
+
+    if (error.name === 'AbortError') {
+      console.error(`[API] Request timeout after ${latency}ms for ${endpoint}`);
+      throw new Error(`Request timeout: ${endpoint}`);
+    }
+
+    throw error;
   }
-
-  const data = await response.json();
-  console.log("[API] Success response:", { endpoint, dataKeys: Object.keys(data), latency: `${latency}ms` });
-  return data;
 };
 
 // Homepage API
 export const homepageAPI = {
-  getContent: () => apiRequest("/homepage/content"),
-  getSection: (section: string) => apiRequest(`/homepage/content/${section}`),
-  updateSection: (section: string, content: any) =>
-    apiRequest(`/homepage/content/${section}`, {
+  getContent: () => {
+    // ✅ Cache homepage content for 60 minutes (static content)
+    const cached = cache.get<any>('homepage_content');
+    if (cached) {
+      console.log('[CACHE] Homepage content hit from localStorage');
+      return Promise.resolve(cached);
+    }
+    
+    return apiRequest("/homepage/content").then(data => {
+      cache.set('homepage_content', data, 60);
+      return data;
+    });
+  },
+  getSection: (section: string) => {
+    // ✅ Cache individual sections for 60 minutes
+    const cacheKey = `homepage_section_${section}`;
+    const cached = cache.get<any>(cacheKey);
+    if (cached) {
+      console.log('[CACHE] Homepage section hit from localStorage');
+      return Promise.resolve(cached);
+    }
+    
+    return apiRequest(`/homepage/content/${section}`).then(data => {
+      cache.set(cacheKey, data, 60);
+      return data;
+    });
+  },
+  updateSection: (section: string, content: any) => {
+    // Clear cache when updating
+    cache.clear('homepage_content');
+    cache.clear(`homepage_section_${section}`);
+    return apiRequest(`/homepage/content/${section}`, {
       method: "PUT",
       body: JSON.stringify({ content }),
-    }),
-  getFeaturedProducts: () => apiRequest("/homepage/featured-products"),
-  getCategories: () => apiRequest("/homepage/categories"),
+    });
+  },
+  getFeaturedProducts: () => {
+    // ✅ Cache featured products for 30 minutes
+    const cached = cache.get<any>('featured_products');
+    if (cached) {
+      console.log('[CACHE] Featured products hit from localStorage');
+      return Promise.resolve(cached);
+    }
+    
+    return apiRequest("/homepage/featured-products").then(data => {
+      cache.set('featured_products', data, 30);
+      return data;
+    });
+  },
+  getCategories: () => {
+    // ✅ Cache categories for 60 minutes
+    const cached = cache.get<any>('homepage_categories');
+    if (cached) {
+      console.log('[CACHE] Homepage categories hit from localStorage');
+      return Promise.resolve(cached);
+    }
+    
+    return apiRequest("/homepage/categories").then(data => {
+      cache.set('homepage_categories', data, 60);
+      return data;
+    });
+  },
 };
 
 // Products API
@@ -87,15 +161,50 @@ export const productsAPI = {
     if (params?.search) queryParams.append('search', params.search);
     queryParams.append('limit', (params?.limit || 100).toString());
     if (params?.offset) queryParams.append('offset', params.offset.toString());
-    return apiRequest(`/products?${queryParams.toString()}`);
+    
+    // ✅ Cache products for 30 minutes (with query params as key)
+    const cacheKey = `products_${queryParams.toString()}`;
+    const cached = cache.get<any>(cacheKey);
+    if (cached) {
+      console.log('[CACHE] Products hit from localStorage');
+      return Promise.resolve(cached);
+    }
+    
+    return apiRequest(`/products?${queryParams.toString()}`).then(data => {
+      cache.set(cacheKey, data, 30);
+      return data;
+    });
   },
-  getById: (id: string) => apiRequest(`/products/${id}`),
+  getById: (id: string) => {
+    // ✅ Cache individual products for 30 minutes
+    const cacheKey = `product_${id}`;
+    const cached = cache.get<any>(cacheKey);
+    if (cached) {
+      console.log('[CACHE] Product hit from localStorage');
+      return Promise.resolve(cached);
+    }
+    
+    return apiRequest(`/products/${id}`).then(data => {
+      cache.set(cacheKey, data, 30);
+      return data;
+    });
+  },
   getPricing: (id: string) => apiRequest(`/products/${id}/pricing`),
-  create: (data: any) =>
-    apiRequest("/products", { method: "POST", body: JSON.stringify(data) }),
-  update: (id: string, data: any) =>
-    apiRequest(`/products/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-  delete: (id: string) => apiRequest(`/products/${id}`, { method: "DELETE" }),
+  create: (data: any) => {
+    // Clear products cache when creating
+    cache.clearAll();
+    return apiRequest("/products", { method: "POST", body: JSON.stringify(data) });
+  },
+  update: (id: string, data: any) => {
+    // Clear products cache when updating
+    cache.clearAll();
+    return apiRequest(`/products/${id}`, { method: "PUT", body: JSON.stringify(data) });
+  },
+  delete: (id: string) => {
+    // Clear products cache when deleting
+    cache.clearAll();
+    return apiRequest(`/products/${id}`, { method: "DELETE" });
+  },
 };
 
 // Cart API
@@ -174,22 +283,92 @@ export const reviewsAPI = {
 
 // Categories API
 export const categoriesAPI = {
-  getAll: () => apiRequest("/categories"),
-  create: (data: any) =>
-    apiRequest("/categories", { method: "POST", body: JSON.stringify(data) }),
-  update: (id: string, data: any) =>
-    apiRequest(`/categories/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-  delete: (id: string) => apiRequest(`/categories/${id}`, { method: "DELETE" }),
+  getAll: async () => {
+    // ✅ Check localStorage cache first (60 minute TTL)
+    const cached = cache.get<any>('categories');
+    if (cached) {
+      console.log('[CACHE] Categories hit from localStorage');
+      return cached;
+    }
+    
+    const data = await apiRequest("/categories");
+    // ✅ Cache for 60 minutes (categories rarely change)
+    cache.set('categories', data, 60);
+    return data;
+  },
+  create: (data: any) => {
+    // Clear cache when creating
+    cache.clear('categories');
+    return apiRequest("/categories", { method: "POST", body: JSON.stringify(data) });
+  },
+  update: (id: string, data: any) => {
+    // Clear cache when updating
+    cache.clear('categories');
+    return apiRequest(`/categories/${id}`, { method: "PUT", body: JSON.stringify(data) });
+  },
+  delete: (id: string) => {
+    // Clear cache when deleting
+    cache.clear('categories');
+    return apiRequest(`/categories/${id}`, { method: "DELETE" });
+  },
 };
 
 // Analytics API
 export const analyticsAPI = {
-  getDashboard: () => apiRequest("/admin/analytics/dashboard"),
-  getSalesTrend: (days?: number) =>
-    apiRequest(`/admin/analytics/sales-trend${days ? `?days=${days}` : ""}`),
-  getRevenueByCategory: () => apiRequest("/admin/analytics/revenue-by-category"),
-  getTopProducts: (limit?: number) =>
-    apiRequest(`/admin/analytics/top-products${limit ? `?limit=${limit}` : ""}`),
+  getDashboard: () => {
+    // ✅ Cache dashboard for 10 minutes (admin data changes frequently)
+    const cached = cache.get<any>('analytics_dashboard');
+    if (cached) {
+      console.log('[CACHE] Analytics dashboard hit from localStorage');
+      return Promise.resolve(cached);
+    }
+    
+    return apiRequest("/admin/analytics/dashboard").then(data => {
+      cache.set('analytics_dashboard', data, 10);
+      return data;
+    });
+  },
+  getSalesTrend: (days?: number) => {
+    // ✅ Cache sales trend for 15 minutes
+    const cacheKey = `sales_trend_${days || 30}`;
+    const cached = cache.get<any>(cacheKey);
+    if (cached) {
+      console.log('[CACHE] Sales trend hit from localStorage');
+      return Promise.resolve(cached);
+    }
+    
+    return apiRequest(`/admin/analytics/sales-trend${days ? `?days=${days}` : ""}`).then(data => {
+      cache.set(cacheKey, data, 15);
+      return data;
+    });
+  },
+  getRevenueByCategory: () => {
+    // ✅ Cache revenue by category for 15 minutes
+    const cached = cache.get<any>('revenue_by_category');
+    if (cached) {
+      console.log('[CACHE] Revenue by category hit from localStorage');
+      return Promise.resolve(cached);
+    }
+    
+    return apiRequest("/admin/analytics/revenue-by-category").then(data => {
+      cache.set('revenue_by_category', data, 15);
+      return data;
+    });
+  },
+  getTopProducts: (limit?: number) => {
+    // ✅ Cache top products for 15 minutes
+    const cacheKey = `top_products_${limit || 10}`;
+    const cached = cache.get<any>(cacheKey);
+    if (cached) {
+      console.log('[CACHE] Top products hit from localStorage');
+      return Promise.resolve(cached);
+    }
+    
+    return apiRequest(`/admin/analytics/top-products${limit ? `?limit=${limit}` : ""}`).then(data => {
+      cache.set(cacheKey, data, 15);
+      return data;
+    });
+  },
 };
 
 // Admin API

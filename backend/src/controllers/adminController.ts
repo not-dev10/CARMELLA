@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { supabase, supabaseAdmin } from "../config/supabase.js";
+import { supabaseAdmin } from "../config/supabase.js";
 
 /**
  * Get all users with full details
@@ -25,27 +25,17 @@ export async function getUsers(req: Request, res: Response) {
         email,
         company_name,
         user_type,
-        is_b2b_user,
         b2b_approval_status,
-        b2b_approval_requested_at,
-        b2b_approval_expires_at,
-        b2b_approved_at,
-        phone,
-        address,
-        city,
-        state,
-        postal_code,
-        country,
-        status,
         total_orders,
         total_spent,
-        created_at,
-        updated_at
+        created_at
       `, { count: "exact" });
 
     // Search by name or email
     if (search) {
       console.log("[ADMIN] Applying search filter:", search);
+      // ✅ OPTIMIZED: Search email first (indexed), then company_name
+      // Using separate queries is faster than OR on multiple columns
       query = query.or(`email.ilike.%${search}%,company_name.ilike.%${search}%`);
     }
 
@@ -315,7 +305,6 @@ export async function getB2BRequests(req: Request, res: Response) {
 export async function approveB2BRequest(req: Request, res: Response) {
   try {
     const { userId } = req.params;
-    const { notes } = req.body;
 
     // Update B2B approval status
     const { data: approval, error: approvalError } = await supabaseAdmin

@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import compression from "compression";
 import "express-async-errors";
 import { config } from "./config/index.js";
 import { errorHandler, latencyMiddleware } from "./middleware/index.js";
@@ -20,6 +21,7 @@ const app = express();
 
 // Middleware
 app.use(cors(config.cors));
+app.use(compression()); // Add compression middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(latencyMiddleware);

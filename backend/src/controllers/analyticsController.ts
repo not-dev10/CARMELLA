@@ -1,57 +1,80 @@
 import { Request, Response } from "express";
-import { supabase } from "../config/supabase.js";
+import { supabaseAdmin } from "../config/supabase.js";
+import { cache, CACHE_KEYS, CACHE_TTL } from "../utils/cache.js";
 
 export const getDashboardStats = async (req: Request, res: Response) => {
+  const startTime = Date.now();
   try {
-    // Total orders
-    const { count: totalOrders } = await supabase
-      .from("orders")
-      .select("*", { count: "exact", head: true });
+    // ✅ OPTIMIZED: Check cache first
+    const cachedStats = cache.get(CACHE_KEYS.DASHBOARD_STATS);
+    if (cachedStats) {
+      const latency = Date.now() - startTime;
+      console.log(`[ANALYTICS] getDashboardStats (CACHED) - ${latency}ms`);
+      return res.json(cachedStats);
+    }
 
-    // Total revenue
-    const { data: orders } = await supabase
-      .from("orders")
-      .select("total")
-      .eq("status", "delivered");
+    // ✅ OPTIMIZED: Reduce to just 4 essential count queries + 1 revenue query
+    const [
+      { count: totalOrders },
+      { count: totalUsers },
+      { count: totalProducts },
+      { count: pendingB2B },
+      { data: revenueData }
+    ] = await Promise.all([
+      supabaseAdmin
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "delivered"),
+      supabaseAdmin
+        .from("users")
+        .select("id", { count: "exact", head: true }),
+      supabaseAdmin
+        .from("products")
+        .select("id", { count: "exact", head: true }),
+      supabaseAdmin
+        .from("b2b_requests")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending"),
+      // ✅ OPTIMIZED: Fetch only total_amount field for delivered orders
+      supabaseAdmin
+        .from("orders")
+        .select("total_amount")
+        .eq("status", "delivered")
+    ]);
 
-    const totalRevenue = orders?.reduce((sum, order) => sum + order.total, 0) || 0;
-
-    // Total users
-    const { count: totalUsers } = await supabase
-      .from("users")
-      .select("*", { count: "exact", head: true });
-
-    // Total products
-    const { count: totalProducts } = await supabase
-      .from("products")
-      .select("*", { count: "exact", head: true });
-
-    // Pending B2B requests
-    const { count: pendingB2B } = await supabase
-      .from("b2b_requests")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "pending");
-
-    res.json({
+    // Sum revenue
+    const totalRevenue = revenueData?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
+    
+    const statsData = {
       totalOrders: totalOrders || 0,
       totalRevenue,
       totalUsers: totalUsers || 0,
       totalProducts: totalProducts || 0,
       pendingB2B: pendingB2B || 0,
-    });
+    };
+
+    // Cache the results
+    cache.set(CACHE_KEYS.DASHBOARD_STATS, statsData, CACHE_TTL.DASHBOARD_STATS);
+    
+    const latency = Date.now() - startTime;
+    console.log(`[ANALYTICS] getDashboardStats completed - ${latency}ms`);
+
+    res.json(statsData);
   } catch (error) {
+    console.error("[ANALYTICS] getDashboardStats error:", error);
     res.status(500).json({ error: "Failed to fetch dashboard stats" });
   }
 };
 
 export const getSalesTrend = async (req: Request, res: Response) => {
+  const startTime = Date.now();
   const { days = 30 } = req.query;
 
   try {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - parseInt(days as string));
 
-    const { data: orders, error } = await supabase
+    const { data: orders, error } = await supabaseAdmin
       .from("orders")
       .select("created_at, total")
       .gte("created_at", startDate.toISOString())
@@ -65,7 +88,7 @@ export const getSalesTrend = async (req: Request, res: Response) => {
     const trend: { [key: string]: number } = {};
     orders?.forEach((order) => {
       const date = new Date(order.created_at).toISOString().split("T")[0];
-      trend[date] = (trend[date] || 0) + order.total;
+      trend[date] = (trend[date] || 0) + (order.total || 0);
     });
 
     const data = Object.entries(trend).map(([date, total]) => ({
@@ -73,15 +96,21 @@ export const getSalesTrend = async (req: Request, res: Response) => {
       total,
     }));
 
+    const latency = Date.now() - startTime;
+    console.log(`[ANALYTICS] getSalesTrend completed - ${latency}ms`);
+
     res.json({ data });
   } catch (error) {
+    console.error("[ANALYTICS] getSalesTrend error:", error);
     res.status(500).json({ error: "Failed to fetch sales trend" });
   }
 };
 
 export const getRevenueByCategory = async (req: Request, res: Response) => {
+  const startTime = Date.now();
   try {
-    const { data: categories, error } = await supabase
+    // ✅ OPTIMIZED: Single query with aggregation instead of N+1
+    const { data: categories, error } = await supabaseAdmin
       .from("categories")
       .select("id, name");
 
@@ -89,40 +118,50 @@ export const getRevenueByCategory = async (req: Request, res: Response) => {
       return res.status(500).json({ error: "Failed to fetch categories" });
     }
 
-    const revenueData = await Promise.all(
-      categories.map(async (category) => {
-        const { data: orders } = await supabase
-          .from("orders")
-          .select("items")
-          .eq("status", "delivered");
+    // Fetch all delivered orders once
+    const { data: orders } = await supabaseAdmin
+      .from("orders")
+      .select("items")
+      .eq("status", "delivered");
 
-        let revenue = 0;
-        orders?.forEach((order) => {
-          if (Array.isArray(order.items)) {
-            order.items.forEach((item: any) => {
-              revenue += item.price * item.quantity;
-            });
+    // Process all orders in memory
+    const revenueByCategory: { [key: string]: number } = {};
+    categories.forEach(cat => {
+      revenueByCategory[cat.id] = 0;
+    });
+
+    orders?.forEach((order) => {
+      if (Array.isArray(order.items)) {
+        order.items.forEach((item: any) => {
+          const categoryId = item.category_id;
+          if (categoryId && revenueByCategory.hasOwnProperty(categoryId)) {
+            revenueByCategory[categoryId] += (item.price || 0) * (item.quantity || 0);
           }
         });
+      }
+    });
 
-        return {
-          category: category.name,
-          revenue,
-        };
-      })
-    );
+    const revenueData = categories.map(category => ({
+      category: category.name,
+      revenue: revenueByCategory[category.id] || 0,
+    }));
+
+    const latency = Date.now() - startTime;
+    console.log(`[ANALYTICS] getRevenueByCategory completed - ${latency}ms`);
 
     res.json({ data: revenueData });
   } catch (error) {
+    console.error("[ANALYTICS] getRevenueByCategory error:", error);
     res.status(500).json({ error: "Failed to fetch revenue by category" });
   }
 };
 
 export const getTopProducts = async (req: Request, res: Response) => {
+  const startTime = Date.now();
   const { limit = 10 } = req.query;
 
   try {
-    const { data: products, error } = await supabase
+    const { data: products, error } = await supabaseAdmin
       .from("products")
       .select("id, name, rating, reviews_count")
       .order("rating", { ascending: false })
@@ -132,8 +171,12 @@ export const getTopProducts = async (req: Request, res: Response) => {
       return res.status(500).json({ error: "Failed to fetch top products" });
     }
 
+    const latency = Date.now() - startTime;
+    console.log(`[ANALYTICS] getTopProducts completed - ${latency}ms`);
+
     res.json({ data: products || [] });
   } catch (error) {
+    console.error("[ANALYTICS] getTopProducts error:", error);
     res.status(500).json({ error: "Failed to fetch top products" });
   }
 };

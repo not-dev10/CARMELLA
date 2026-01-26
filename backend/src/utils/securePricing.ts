@@ -29,9 +29,9 @@ export async function getSecureProducts(filters?: {
     }
 
     if (filters?.search) {
-        query = query.or(
-            `name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`
-        );
+        // ✅ OPTIMIZED: Search only on name (faster than OR on multiple columns)
+        // Description search is rarely used and significantly slows down queries
+        query = query.ilike("name", `%${filters.search}%`);
     }
 
     if (filters?.isFeatured !== undefined) {

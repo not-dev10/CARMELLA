@@ -16,18 +16,20 @@ export const createOrder = async (req: Request, res: Response) => {
   }
 
   try {
-    // Check if user is approved for B2B (required to see pricing and place orders)
-    console.log("[ORDER] Checking B2B approval status for user:", userId);
-    const { data: user } = await supabaseAdmin
+    // ✅ OPTIMIZED: Get user B2B status first (fast)
+    const { data: user, error: userError } = await supabaseAdmin
       .from("users")
       .select("b2b_approval_status")
       .eq("id", userId)
       .single();
 
-    const userCheckTime = Date.now() - startTime;
-    console.log(`[ORDER] User B2B status checked after ${userCheckTime}ms:`, user?.b2b_approval_status);
+    if (userError || !user) {
+      const latency = Date.now() - startTime;
+      console.error(`[ORDER] User not found after ${latency}ms:`, userError);
+      return res.status(500).json({ error: "User not found" });
+    }
 
-    if (user?.b2b_approval_status !== "approved") {
+    if (user.b2b_approval_status !== "approved") {
       const latency = Date.now() - startTime;
       console.error(`[ORDER] B2B approval required after ${latency}ms`);
       return res.status(403).json({
@@ -36,74 +38,48 @@ export const createOrder = async (req: Request, res: Response) => {
       });
     }
 
-    // Get user's cart
-    console.log("[ORDER] Fetching cart for user:", userId);
-    const { data: cart, error: cartError } = await supabaseAdmin
+    // Get cart with nested items and products in single query
+    const { data: cartWithItems, error: cartError } = await supabaseAdmin
       .from("carts")
-      .select("*")
+      .select(`
+        id,
+        cart_items(
+          product_id,
+          quantity,
+          products(id, base_price, sale_price, b2b_price, moq, name)
+        )
+      `)
       .eq("user_id", userId)
       .single();
 
     const cartFetchTime = Date.now() - startTime;
+    console.log(`[ORDER] Cart fetched after ${cartFetchTime}ms`);
 
-    if (cartError || !cart) {
+    if (cartError || !cartWithItems) {
       console.error(`[ORDER] Cart not found after ${cartFetchTime}ms:`, cartError);
       return res.status(400).json({ error: "Cart not found" });
     }
 
-    console.log(`[ORDER] Cart found after ${cartFetchTime}ms:`, cart.id);
-
-    // Get cart items
-    console.log("[ORDER] Fetching cart items for cart:", cart.id);
-    const { data: cartItems, error: itemsError } = await supabaseAdmin
-      .from("cart_items")
-      .select("product_id, quantity")
-      .eq("cart_id", cart.id);
-
-    const itemsFetchTime = Date.now() - startTime;
-
-    if (itemsError || !cartItems || cartItems.length === 0) {
-      console.error(`[ORDER] Cart items error after ${itemsFetchTime}ms:`, itemsError, "Items:", cartItems);
+    const cartItems = cartWithItems.cart_items || [];
+    if (cartItems.length === 0) {
+      console.error(`[ORDER] Cart is empty after ${cartFetchTime}ms`);
       return res.status(400).json({ error: "Cart is empty" });
     }
 
-    console.log(`[ORDER] Cart items found after ${itemsFetchTime}ms:`, cartItems.length, cartItems);
-
-    // Fetch products with pricing
-    const productIds = cartItems.map(item => item.product_id);
-    console.log("[ORDER] Fetching products with IDs:", productIds);
-    
-    const { data: products, error: productsError } = await supabaseAdmin
-      .from("products")
-      .select("id, base_price, sale_price, b2b_price, moq, name")
-      .in("id", productIds);
-
-    const productsFetchTime = Date.now() - startTime;
-
-    if (productsError) {
-      console.error(`[ORDER] Failed to fetch products after ${productsFetchTime}ms - Query error:`, productsError);
-      return res.status(500).json({ error: "Failed to fetch product pricing", details: productsError.message });
-    }
-
-    if (!products || products.length === 0) {
-      console.error(`[ORDER] No products found after ${productsFetchTime}ms for IDs:`, productIds);
-      return res.status(500).json({ error: "Products not found in database" });
-    }
-
-    console.log(`[ORDER] Fetched products after ${productsFetchTime}ms:`, products);
+    console.log(`[ORDER] Cart items found after ${cartFetchTime}ms:`, cartItems.length);
 
     // Verify all cart items have corresponding products
-    const missingProducts = cartItems.filter(item => !products.find(p => p.id === item.product_id));
+    const missingProducts = cartItems.filter((item: any) => !item.products);
     if (missingProducts.length > 0) {
       const latency = Date.now() - startTime;
       console.error(`[ORDER] Missing products after ${latency}ms:`, missingProducts);
-      return res.status(500).json({ error: `Products not found: ${missingProducts.map(p => p.product_id).join(', ')}` });
+      return res.status(500).json({ error: "Some products are missing from cart" });
     }
 
     // Calculate total and prepare order items
     let total = 0;
     const orderItems = cartItems.map((item: any) => {
-      const product = products.find(p => p.id === item.product_id);
+      const product = item.products;
 
       if (!product) {
         const latency = Date.now() - startTime;
@@ -190,7 +166,7 @@ export const createOrder = async (req: Request, res: Response) => {
     console.log("[ORDER] Order items inserted successfully");
 
     // Clear cart
-    await supabaseAdmin.from("cart_items").delete().eq("cart_id", cart.id);
+    await supabaseAdmin.from("cart_items").delete().eq("cart_id", cartWithItems.id);
     console.log("[ORDER] Cart cleared");
 
     res.status(201).json({ success: true, order });
@@ -201,43 +177,93 @@ export const createOrder = async (req: Request, res: Response) => {
 };
 
 export const getOrders = async (req: Request, res: Response) => {
+  const startTime = Date.now();
   const userId = req.userId;
+  const { page = "1", limit = "20" } = req.query;
+  const pageNum = parseInt(page as string) || 1;
+  const limitNum = parseInt(limit as string) || 20;
+  const offset = (pageNum - 1) * limitNum;
 
   try {
-    const { data: orders, error } = await supabaseAdmin
+    // ✅ OPTIMIZED: Select only needed fields + pagination
+    const { data: orders, error, count } = await supabaseAdmin
       .from("orders")
-      .select("*")
+      .select(`
+        id,
+        order_number,
+        total_amount,
+        status,
+        items_count,
+        created_at
+      `, { count: "exact" })
       .eq("user_id", userId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limitNum - 1);
+
+    const queryTime = Date.now() - startTime;
 
     if (error) {
+      console.error(`[ORDERS] getOrders error after ${queryTime}ms:`, error);
       return res.status(500).json({ error: "Failed to fetch orders" });
     }
 
-    res.json({ orders });
+    console.log(`[ORDERS] getOrders completed - ${queryTime}ms, Items: ${orders?.length}`);
+
+    res.json({ 
+      orders,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limitNum),
+      }
+    });
   } catch (error) {
+    console.error("[ORDERS] getOrders unexpected error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
 
 export const getOrder = async (req: Request, res: Response) => {
+  const startTime = Date.now();
   const userId = req.userId;
   const { id } = req.params;
 
   try {
+    // ✅ OPTIMIZED: Select only needed fields
     const { data: order, error } = await supabaseAdmin
       .from("orders")
-      .select("*")
+      .select(`
+        id,
+        order_number,
+        total_amount,
+        status,
+        shipping_address,
+        items_count,
+        created_at,
+        updated_at,
+        order_items(
+          id,
+          product_id,
+          quantity,
+          price_at_purchase
+        )
+      `)
       .eq("id", id)
       .eq("user_id", userId)
       .single();
 
+    const queryTime = Date.now() - startTime;
+
     if (error || !order) {
+      console.error(`[ORDERS] getOrder error after ${queryTime}ms:`, error);
       return res.status(404).json({ error: "Order not found" });
     }
 
+    console.log(`[ORDERS] getOrder completed - ${queryTime}ms`);
     res.json({ order });
   } catch (error) {
+    console.error("[ORDERS] getOrder unexpected error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

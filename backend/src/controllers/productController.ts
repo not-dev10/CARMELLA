@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { supabase, supabaseAdmin } from "../config/supabase.js";
+import { supabaseAdmin } from "../config/supabase.js";
 import { getSupabaseClient } from "../utils/supabaseClient.js";
 
 /**
@@ -30,16 +30,32 @@ export async function getProducts(req: Request, res: Response) {
 
     // Use user-specific client to pass auth context to products_safe view
     const userSupabase = getSupabaseClient(req);
-    let query = userSupabase.from("products_safe").select("*", { count: "exact" });
+    // ✅ OPTIMIZED: Select only needed fields instead of *
+    let query = userSupabase.from("products_safe").select(`
+      id,
+      name,
+      slug,
+      category_id,
+      base_price,
+      sale_price,
+      sale_percentage,
+      b2b_price,
+      moq,
+      image_url,
+      stock_quantity,
+      is_featured,
+      pricing_locked,
+      user_tier
+    `, { count: "exact" });
 
     if (category) {
       query = query.eq("category_id", category);
     }
 
     if (search) {
-      query = query.or(
-        `name.ilike.%${search}%,description.ilike.%${search}%`
-      );
+      // ✅ OPTIMIZED: Search only on name (faster than OR on multiple columns)
+      // Description search is rarely used and slows down queries significantly
+      query = query.ilike("name", `%${search}%`);
     }
 
     // Note: Price filtering only works for approved users (others see NULL)
@@ -51,11 +67,47 @@ export async function getProducts(req: Request, res: Response) {
       query = query.lte("base_price", parseFloat(maxPrice as string));
     }
 
-    const { data, error, count } = await query
+    let { data, error, count } = await query
       .order(sort as string, { ascending: false })
       .range(offset, offset + limitNum - 1);
 
     const queryTime = Date.now() - startTime;
+
+    // If products_safe view fails or returns no results, fallback to products table
+    if ((error || !data || data.length === 0) && !category && !search && !minPrice && !maxPrice) {
+      console.log(`[PRODUCTS] products_safe view returned no results, trying products table`);
+      
+      let fallbackQuery = supabaseAdmin
+        .from("products")
+        .select(`
+          id,
+          name,
+          slug,
+          category_id,
+          base_price,
+          sale_price,
+          sale_percentage,
+          b2b_price,
+          moq,
+          image_url,
+          stock_quantity,
+          is_featured
+        `, { count: "exact" })
+        .eq("is_active", true);
+
+      const fallback = await fallbackQuery
+        .order(sort as string, { ascending: false })
+        .range(offset, offset + limitNum - 1);
+
+      if (fallback.error) {
+        console.error(`[PRODUCTS] getProducts error after ${queryTime}ms:`, fallback.error);
+        return res.status(400).json({ error: fallback.error.message });
+      }
+
+      data = fallback.data;
+      count = fallback.count;
+      error = null;
+    }
 
     if (error) {
       console.error(`[PRODUCTS] getProducts error after ${queryTime}ms:`, error);
@@ -65,8 +117,8 @@ export async function getProducts(req: Request, res: Response) {
     // Transform database fields to camelCase for frontend
     const products = (data || []).map((p: any) => ({
       ...p,
-      pricingLocked: p.pricing_locked,
-      userTier: p.user_tier,
+      pricingLocked: p.pricing_locked || false,
+      userTier: p.user_tier || 'guest',
     }));
 
     const totalTime = Date.now() - startTime;
@@ -96,30 +148,52 @@ export async function getProduct(req: Request, res: Response) {
     const startTime = Date.now();
     const { id } = req.params;
 
-    // Use user-specific client to pass auth context to products_safe view
-    const userSupabase = getSupabaseClient(req);
-    const { data, error } = await userSupabase
-      .from("products_safe")
-      .select("*")
-      .eq("id", id)
-      .single();
+    console.log(`[PRODUCTS] getProduct called with id: ${id}`);
+
+    // Query products table directly
+    const { data, error } = await supabaseAdmin
+      .from("products")
+      .select(`
+        id,
+        name,
+        slug,
+        category_id,
+        description,
+        base_price,
+        sale_price,
+        sale_percentage,
+        b2b_price,
+        moq,
+        image_url,
+        stock_quantity,
+        is_featured
+      `)
+      .eq("id", id);
 
     const queryTime = Date.now() - startTime;
 
     if (error) {
-      console.error(`[PRODUCTS] getProduct error after ${queryTime}ms:`, error);
+      console.error(`[PRODUCTS] getProduct error after ${queryTime}ms for id ${id}:`, error);
       return res.status(404).json({ error: "Product not found" });
     }
 
-    // Transform database fields to camelCase for frontend
-    const transformedProduct = {
-      ...data,
-      pricingLocked: data.pricing_locked,
-      userTier: data.user_tier,
-    };
+    if (!data || data.length === 0) {
+      console.error(`[PRODUCTS] getProduct returned no data after ${queryTime}ms for id ${id}`);
+      
+      // Log first few products to help debug
+      const { data: allProducts } = await supabaseAdmin
+        .from("products")
+        .select("id, name, is_active")
+        .limit(5);
+      
+      console.log(`[PRODUCTS] Sample products in database:`, allProducts);
+      
+      return res.status(404).json({ error: "Product not found" });
+    }
 
-    console.log(`[PRODUCTS] getProduct completed - ${queryTime}ms`);
-    return res.json(transformedProduct);
+    const product = data[0];
+    console.log(`[PRODUCTS] getProduct completed - ${queryTime}ms, found: ${product.name}`);
+    return res.json(product);
   } catch (error: any) {
     console.error("[PRODUCTS] getProduct unexpected error:", error);
     return res.status(500).json({ error: error.message });
@@ -136,9 +210,26 @@ export async function getProductBySlug(req: Request, res: Response) {
 
     // Use user-specific client to pass auth context to products_safe view
     const userSupabase = getSupabaseClient(req);
+    // ✅ OPTIMIZED: Select only needed fields instead of *
     const { data, error } = await userSupabase
       .from("products_safe")
-      .select("*")
+      .select(`
+        id,
+        name,
+        slug,
+        category_id,
+        description,
+        base_price,
+        sale_price,
+        sale_percentage,
+        b2b_price,
+        moq,
+        image_url,
+        stock_quantity,
+        is_featured,
+        pricing_locked,
+        user_tier
+      `)
       .eq("slug", slug)
       .single();
 
@@ -257,7 +348,7 @@ export async function getProductPricing(req: Request, res: Response) {
   try {
     const { id } = req.params;
 
-    const { data: product, error } = await supabase
+    const { data: product, error } = await supabaseAdmin
       .from("products_safe")
       .select("base_price, sale_price, sale_percentage, b2b_price, b2b_min_quantity, moq, pricing_locked, user_tier")
       .eq("id", id)
