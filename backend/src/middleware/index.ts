@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { supabase } from "../config/supabase.js";
 import { AppError } from "../utils/errors.js";
+import { performanceTracker } from "../utils/performanceTracker.js";
 
 declare global {
   namespace Express {
@@ -31,6 +32,9 @@ export function latencyMiddleware(
     const status = res.statusCode;
     
     console.log(`[LATENCY] ${method} ${path} - Status: ${status} - ${latency}ms`);
+    
+    // Track performance metric
+    performanceTracker.recordMetric(method, path, status, latency);
     
     // Call the original send function
     return originalSend.call(this, data);

@@ -315,49 +315,52 @@ export function Header() {
                                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
                                     onMouseEnter={handleMegaMenuEnter}
                                     onMouseLeave={handleMegaMenuLeave}
-                                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[900px] bg-card border border-border rounded-lg shadow-2xl p-8 grid grid-cols-3 gap-6 backdrop-blur-sm"
+                                    onWheel={(e) => e.stopPropagation()}
+                                    className="absolute top-full left-0 right-0 mt-2 mx-auto max-w-[900px] w-[calc(100vw-48px)] bg-card border border-border rounded-lg shadow-2xl backdrop-blur-sm max-h-[600px] overflow-y-auto"
                                 >
-                                    {categories.length > 0 ? (
-                                        categories.map((category: any, index) => (
-                                            <motion.div
-                                                key={category.id}
-                                                initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ delay: index * 0.05, duration: 0.3 }}
-                                            >
-                                                <Link
-                                                    href={`/category/${category.slug || category.name.toLowerCase().replace(/\s+/g, '-')}`}
-                                                    onClick={scrollToTop}
-                                                    className="group flex gap-4 p-3 rounded-lg hover:bg-muted transition-colors"
+                                    <div className="p-8 grid grid-cols-3 gap-6">
+                                        {categories.length > 0 ? (
+                                            categories.map((category: any, index) => (
+                                                <motion.div
+                                                    key={category.id}
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: index * 0.05, duration: 0.3 }}
                                                 >
-                                                    {category.image_url && (
-                                                        <div className="relative w-24 h-20 rounded overflow-hidden flex-shrink-0">
-                                                            <Image
-                                                                src={category.image_url}
-                                                                alt={category.name}
-                                                                fill
-                                                                className="object-cover group-hover:scale-110 transition-transform duration-300"
-                                                            />
-                                                        </div>
-                                                    )}
-                                                    <div>
-                                                        <h4 className="font-serif text-base font-semibold mb-1 group-hover:text-primary transition-colors">
-                                                            {category.name}
-                                                        </h4>
-                                                        {category.description && (
-                                                            <p className="text-xs text-muted-foreground">
-                                                                {category.description}
-                                                            </p>
+                                                    <Link
+                                                        href={`/category/${category.slug || category.name.toLowerCase().replace(/\s+/g, '-')}`}
+                                                        onClick={scrollToTop}
+                                                        className="group flex gap-4 p-3 rounded-lg hover:bg-muted transition-colors"
+                                                    >
+                                                        {category.image_url && (
+                                                            <div className="relative w-24 h-20 rounded overflow-hidden flex-shrink-0">
+                                                                <Image
+                                                                    src={category.image_url}
+                                                                    alt={category.name}
+                                                                    fill
+                                                                    className="object-cover group-hover:scale-110 transition-transform duration-300"
+                                                                />
+                                                            </div>
                                                         )}
-                                                    </div>
-                                                </Link>
-                                            </motion.div>
-                                        ))
-                                    ) : (
-                                        <div className="col-span-3 text-center py-4 text-muted-foreground">
-                                            No categories available
-                                        </div>
-                                    )}
+                                                        <div>
+                                                            <h4 className="font-serif text-base font-semibold mb-1 group-hover:text-primary transition-colors">
+                                                                {category.name}
+                                                            </h4>
+                                                            {category.description && (
+                                                                <p className="text-xs text-muted-foreground">
+                                                                    {category.description}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </Link>
+                                                </motion.div>
+                                            ))
+                                        ) : (
+                                            <div className="col-span-3 text-center py-4 text-muted-foreground">
+                                                No categories available
+                                            </div>
+                                        )}
+                                    </div>
                                 </motion.div>
                             )}
                         </div>

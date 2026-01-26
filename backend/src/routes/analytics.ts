@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  getDashboard,
   getDashboardStats,
   getSalesTrend,
   getRevenueByCategory,
@@ -11,7 +12,8 @@ const router = Router();
 
 router.use(authMiddleware, adminMiddleware);
 
-router.get("/dashboard", getDashboardStats);
+router.get("/dashboard", getDashboard);
+router.get("/stats", getDashboardStats);
 router.get("/sales-trend", getSalesTrend);
 router.get("/revenue-by-category", getRevenueByCategory);
 router.get("/top-products", getTopProducts);

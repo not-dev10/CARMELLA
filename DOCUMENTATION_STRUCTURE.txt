@@ -1,0 +1,59 @@
+CARMELLA DOCUMENTATION STRUCTURE
+================================
+
+📁 Root Level
+├── README.md                          ← Start here! Main project overview
+
+📁 docs/
+├── README.md                          ← Documentation index & navigation
+├── PROJECT_ARCHITECTURE.md            ← System design & architecture
+├── ADMIN_PANEL_GUIDE.md              ← Admin dashboard user guide
+├── ADMIN_PANEL_COMPLETE.md           ← Admin implementation details
+├── REVIEW_SYSTEM_IMPLEMENTATION.md   ← Product review system
+├── FRONTEND_BACKEND_ALIGNMENT.md     ← Integration guide
+│
+├── 📁 setup/                          ← Getting started & deployment
+│   ├── QUICK_START.md                ← Local development setup
+│   ├── SUPABASE_OTP_SETUP.md         ← Auth configuration
+│   └── SUPABASE_DEPLOYMENT_STEPS.md  ← Production deployment
+│
+├── 📁 api/                            ← API Reference
+│   └── API_ENDPOINTS.md              ← All endpoints & usage
+│
+└── 📁 guides/                         ← Implementation guides
+    ├── BACKEND_README.md             ← Backend architecture
+    ├── FRONTEND_README.md            ← Frontend architecture
+    └── OPTIMIZATION_COMPLETE.md      ← Performance optimization
+
+📁 REMINDERS/
+└── PRODUCTION_CHECKLIST.md           ← Pre-launch checklist
+
+QUICK NAVIGATION
+================
+
+🚀 Getting Started
+   → docs/setup/QUICK_START.md
+
+🔧 Setting Up Supabase
+   → docs/setup/SUPABASE_OTP_SETUP.md
+
+📤 Deploying to Production
+   → docs/setup/SUPABASE_DEPLOYMENT_STEPS.md
+
+📚 Understanding the System
+   → docs/PROJECT_ARCHITECTURE.md
+
+🔌 API Reference
+   → docs/api/API_ENDPOINTS.md
+
+👨‍💼 Admin Features
+   → docs/ADMIN_PANEL_GUIDE.md
+
+⭐ Product Reviews
+   → docs/REVIEW_SYSTEM_IMPLEMENTATION.md
+
+🎯 Integration Guide
+   → docs/FRONTEND_BACKEND_ALIGNMENT.md
+
+✅ Before Launch
+   → REMINDERS/PRODUCTION_CHECKLIST.md

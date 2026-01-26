@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { supabase } from "../config/supabase.js";
+import { supabase, supabaseAdmin } from "../config/supabase.js";
 import { signupSchema, loginSchema, googleAuthSchema } from "../types/validation.js";
 
 /**
@@ -36,13 +36,13 @@ export async function signup(req: Request, res: Response) {
 
     console.log("[SIGNUP] Auth user created:", authData.user.id);
 
-    // Create user profile in database
+    // Create or update user profile in database using admin client to bypass RLS
     console.log("[SIGNUP] Creating user profile in database...");
-    const { error: profileError } = await supabase.from("users").insert({
+    const { error: profileError } = await supabaseAdmin.from("users").upsert({
       id: authData.user.id,
       email,
       user_type: "user",
-    });
+    }, { onConflict: "id" });
 
     if (profileError) {
       console.error("[SIGNUP] Profile creation error:", profileError);
@@ -115,14 +115,14 @@ export async function googleAuth(req: Request, res: Response) {
     }
 
     // Check if user profile exists, if not create it
-    const { data: existingUser } = await supabase
+    const { data: existingUser } = await supabaseAdmin
       .from("users")
       .select()
       .eq("id", data.user!.id)
       .single();
 
     if (!existingUser) {
-      const { error: profileError } = await supabase.from("users").insert({
+      const { error: profileError } = await supabaseAdmin.from("users").upsert({
         id: data.user!.id,
         email: data.user!.email,
         google_id: data.user!.id,
@@ -130,7 +130,7 @@ export async function googleAuth(req: Request, res: Response) {
         google_email: data.user!.email,
         google_picture: data.user!.user_metadata?.picture,
         user_type: "user",
-      });
+      }, { onConflict: "id" });
 
       if (profileError) {
         console.error("Profile creation error:", profileError);

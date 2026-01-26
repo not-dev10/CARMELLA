@@ -326,7 +326,7 @@ export function ProductsSection() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
-                        <span className="font-bold text-sm text-foreground">${product.base_price.toFixed(2)}</span>
+                        <span className="font-bold text-sm text-foreground">${product.base_price ? product.base_price.toFixed(2) : "—"}</span>
                         {product.sale_price && (
                           <span className="text-xs text-green-600 dark:text-green-400">Sale: ${product.sale_price.toFixed(2)}</span>
                         )}

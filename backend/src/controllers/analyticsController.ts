@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { supabaseAdmin } from "../config/supabase.js";
 import { cache, CACHE_KEYS, CACHE_TTL } from "../utils/cache.js";
+import { performanceTracker } from "../utils/performanceTracker.js";
 
 export const getDashboardStats = async (req: Request, res: Response) => {
   const startTime = Date.now();
@@ -178,5 +179,99 @@ export const getTopProducts = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("[ANALYTICS] getTopProducts error:", error);
     res.status(500).json({ error: "Failed to fetch top products" });
+  }
+};
+
+
+/**
+ * Combined dashboard endpoint that returns all analytics data including performance metrics
+ */
+export const getDashboard = async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  try {
+    // Get dashboard stats
+    const cachedStats = cache.get(CACHE_KEYS.DASHBOARD_STATS);
+    let dashboardStats;
+
+    if (cachedStats) {
+      console.log("[ANALYTICS] Using cached dashboard stats");
+      dashboardStats = cachedStats;
+    } else {
+      console.log("[ANALYTICS] Fetching fresh dashboard stats from database");
+      const [
+        { count: totalOrders },
+        { count: totalUsers },
+        { count: totalProducts },
+        { count: pendingB2B },
+        { data: revenueData }
+      ] = await Promise.all([
+        supabaseAdmin
+          .from("orders")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "delivered"),
+        supabaseAdmin
+          .from("users")
+          .select("id", { count: "exact", head: true }),
+        supabaseAdmin
+          .from("products")
+          .select("id", { count: "exact", head: true }),
+        supabaseAdmin
+          .from("b2b_requests")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "pending"),
+        supabaseAdmin
+          .from("orders")
+          .select("total_amount")
+          .eq("status", "delivered")
+      ]);
+
+      const totalRevenue = revenueData?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
+      
+      dashboardStats = {
+        totalOrders: totalOrders || 0,
+        totalRevenue,
+        totalUsers: totalUsers || 0,
+        totalProducts: totalProducts || 0,
+        pendingB2B: pendingB2B || 0,
+      };
+
+      cache.set(CACHE_KEYS.DASHBOARD_STATS, dashboardStats, CACHE_TTL.DASHBOARD_STATS);
+    }
+
+    // Get performance metrics
+    const performanceSummary = performanceTracker.getSummary();
+    console.log("[ANALYTICS] Performance summary:", {
+      totalRequests: performanceSummary.totalRequests,
+      avgLatency: performanceSummary.avgLatency,
+      maxLatency: performanceSummary.maxLatency,
+      minLatency: performanceSummary.minLatency,
+      recentRequestsCount: performanceSummary.recentRequests.length,
+    });
+
+    const latency = Date.now() - startTime;
+    console.log(`[ANALYTICS] getDashboard completed - ${latency}ms`);
+
+    // Return combined response
+    const response = {
+      dashboardStats,
+      performance: {
+        avgLatency: performanceSummary.avgLatency,
+        maxLatency: performanceSummary.maxLatency,
+        minLatency: performanceSummary.minLatency,
+        totalRequests: performanceSummary.totalRequests,
+        recentRequests: performanceSummary.recentRequests,
+      },
+    };
+
+    console.log("[ANALYTICS] Sending response with performance data:", {
+      hasDashboardStats: !!response.dashboardStats,
+      hasPerformance: !!response.performance,
+      performanceKeys: Object.keys(response.performance),
+    });
+
+    res.json(response);
+  } catch (error) {
+    console.error("[ANALYTICS] getDashboard error:", error);
+    res.status(500).json({ error: "Failed to fetch dashboard" });
   }
 };

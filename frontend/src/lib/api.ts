@@ -316,17 +316,11 @@ export const categoriesAPI = {
 // Analytics API
 export const analyticsAPI = {
   getDashboard: () => {
-    // ✅ Cache dashboard for 10 minutes (admin data changes frequently)
-    const cached = cache.get<any>('analytics_dashboard');
-    if (cached) {
-      console.log('[CACHE] Analytics dashboard hit from localStorage');
-      return Promise.resolve(cached);
-    }
-    
-    return apiRequest("/admin/analytics/dashboard").then(data => {
-      cache.set('analytics_dashboard', data, 10);
-      return data;
-    });
+    // Don't cache dashboard - performance metrics change constantly
+    // Clear any old cached data to ensure fresh response
+    cache.clear('analytics_dashboard');
+    // Add timestamp to prevent HTTP caching
+    return apiRequest("/admin/analytics/dashboard?t=" + Date.now());
   },
   getSalesTrend: (days?: number) => {
     // ✅ Cache sales trend for 15 minutes
