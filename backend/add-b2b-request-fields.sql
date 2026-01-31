@@ -16,7 +16,7 @@ ADD COLUMN IF NOT EXISTS reason TEXT;
 
 -- Add comment to table
 COMMENT ON TABLE public.b2b_requests IS 'Stores B2B approval requests with comprehensive business information';
-
+ 
 -- Add comments to new columns
 COMMENT ON COLUMN public.b2b_requests.company_name IS 'Name of the requesting company';
 COMMENT ON COLUMN public.b2b_requests.tax_id IS 'Tax ID or business registration number';

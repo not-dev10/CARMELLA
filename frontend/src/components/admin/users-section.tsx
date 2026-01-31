@@ -278,7 +278,7 @@ export function UsersSection() {
                               : "bg-red-100 text-red-700"
                           )}
                         >
-                          {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                          {user.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : "Unknown"}
                         </Badge>
                         {(() => {
                           const approvalStatus = getApprovalStatus(user)

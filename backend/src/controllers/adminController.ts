@@ -25,7 +25,12 @@ export async function getUsers(req: Request, res: Response) {
         email,
         company_name,
         user_type,
+        is_b2b_user,
         b2b_approval_status,
+        b2b_approval_requested_at,
+        b2b_approval_expires_at,
+        b2b_approved_at,
+        status,
         total_orders,
         total_spent,
         created_at
