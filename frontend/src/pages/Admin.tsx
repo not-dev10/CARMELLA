@@ -180,7 +180,7 @@ export default function Admin() {
           <p className="text-white/70 dark:text-white/60 text-xs mt-1 uppercase tracking-widest font-medium">B2B Admin</p>
         </div>
 
-        <nav className="flex-1 px-4 py-4 flex flex-col gap-1">
+        <nav className="flex-1 px-4 py-4 flex flex-col gap-1 overflow-y-auto">
           {SIDEBAR_ITEMS.map((item) => {
             const Icon = item.icon
               return (
@@ -188,16 +188,16 @@ export default function Admin() {
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
+                    "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors whitespace-nowrap",
                     activeTab === item.id
                       ? "bg-white/10"
                       : "hover:bg-white/5"
                   )}
                 >
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-5 h-5 flex-shrink-0" />
                   <span className="text-sm font-medium">{item.label}</span>
                   {item.badge && (
-                    <span className="ml-auto bg-secondary text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+                    <span className="ml-auto bg-secondary text-white text-[10px] px-2 py-0.5 rounded-full font-bold flex-shrink-0">
                       {item.badge}
                     </span>
                   )}
