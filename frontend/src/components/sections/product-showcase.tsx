@@ -230,32 +230,34 @@ export function ProductShowcase() {
                                                             )}
                                                         </div>
 
-                                                        {/* B2B TIER: Bulk Pricing Message */}
-                                                        <div className="p-3 rounded-lg bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200">
-                                                            <div className="flex items-start gap-3">
-                                                                <Package className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                                                                <div className="flex-1">
-                                                                    <p className="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-1">B2B Pricing</p>
-                                                                    {product.b2b_price && product.b2b_price > 0 ? (
-                                                                        <p className="text-sm text-emerald-800 font-semibold">
-                                                                            Bulk: ${product.b2b_price.toFixed(2)} (50+ units)
-                                                                        </p>
-                                                                    ) : (
-                                                                        <button
-                                                                            onClick={(e) => {
-                                                                                e.preventDefault();
-                                                                                e.stopPropagation();
-                                                                                window.location.href = '/b2b-request';
-                                                                            }}
-                                                                            className="text-sm text-emerald-700 font-semibold hover:text-emerald-900 flex items-center gap-1 group"
-                                                                        >
-                                                                            📊 Request Bulk Pricing →
-                                                                            <span className="text-xs opacity-0 group-hover:opacity-100 transition-opacity">Get discount</span>
-                                                                        </button>
-                                                                    )}
+                                                        {/* B2B TIER: Bulk Pricing Message - ONLY for approved B2B users */}
+                                                        {product.userTier === 'b2b_approved' && (
+                                                            <div className="p-3 rounded-lg bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200">
+                                                                <div className="flex items-start gap-3">
+                                                                    <Package className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                                                                    <div className="flex-1">
+                                                                        <p className="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-1">B2B Pricing</p>
+                                                                        {product.b2b_price && product.b2b_price > 0 ? (
+                                                                            <p className="text-sm text-emerald-800 font-semibold">
+                                                                                Bulk: ${product.b2b_price.toFixed(2)} (50+ units)
+                                                                            </p>
+                                                                        ) : (
+                                                                            <button
+                                                                                onClick={(e) => {
+                                                                                    e.preventDefault();
+                                                                                    e.stopPropagation();
+                                                                                    window.location.href = '/b2b-request';
+                                                                                }}
+                                                                                className="text-sm text-emerald-700 font-semibold hover:text-emerald-900 flex items-center gap-1 group"
+                                                                            >
+                                                                                📊 Request Bulk Pricing →
+                                                                                <span className="text-xs opacity-0 group-hover:opacity-100 transition-opacity">Get discount</span>
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
+                                                        )}
                                                     </>
                                                 )}
                                             </div>

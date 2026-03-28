@@ -75,7 +75,7 @@ export async function getProducts(req: Request, res: Response) {
 
     // If products_safe view fails or returns no results, fallback to products table
     if ((error || !data || data.length === 0) && !category && !search && !minPrice && !maxPrice) {
-      console.log(`[PRODUCTS] products_safe view returned no results, trying products table`);
+      // Fallback logic
       
       let fallbackQuery = supabaseAdmin
         .from("products")
@@ -122,7 +122,9 @@ export async function getProducts(req: Request, res: Response) {
     }));
 
     const totalTime = Date.now() - startTime;
-    console.log(`[PRODUCTS] getProducts completed - Query: ${queryTime}ms, Total: ${totalTime}ms, Items: ${products.length}`);
+    if (process.env.DEBUG_PRODUCTS === 'true') {
+      console.log(`[PRODUCTS] getProducts completed - Query: ${queryTime}ms, Total: ${totalTime}ms, Items: ${products.length}`);
+    }
 
     return res.json({
       products,
@@ -147,8 +149,6 @@ export async function getProduct(req: Request, res: Response) {
   try {
     const startTime = Date.now();
     const { id } = req.params;
-
-    console.log(`[PRODUCTS] getProduct called with id: ${id}`);
 
     // Query products table directly
     const { data, error } = await supabaseAdmin
@@ -179,20 +179,10 @@ export async function getProduct(req: Request, res: Response) {
 
     if (!data || data.length === 0) {
       console.error(`[PRODUCTS] getProduct returned no data after ${queryTime}ms for id ${id}`);
-      
-      // Log first few products to help debug
-      const { data: allProducts } = await supabaseAdmin
-        .from("products")
-        .select("id, name, is_active")
-        .limit(5);
-      
-      console.log(`[PRODUCTS] Sample products in database:`, allProducts);
-      
       return res.status(404).json({ error: "Product not found" });
     }
 
     const product = data[0];
-    console.log(`[PRODUCTS] getProduct completed - ${queryTime}ms, found: ${product.name}`);
     return res.json(product);
   } catch (error: any) {
     console.error("[PRODUCTS] getProduct unexpected error:", error);

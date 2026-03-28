@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 import { productsAPI, categoriesAPI } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { ImageManager } from "./image-manager"
 
 interface Product {
   id: string
@@ -17,6 +18,7 @@ interface Product {
   b2b_price?: number
   category_id: string
   image_url?: string
+  gallery_urls?: string[]
   stock_quantity: number
   is_featured?: boolean
   is_active?: boolean
@@ -46,6 +48,7 @@ export function ProductsSection() {
     b2b_price: "",
     category_id: "",
     image_url: "",
+    gallery_urls: [] as string[],
     stock_quantity: "",
     is_featured: false,
     is_active: true,
@@ -97,6 +100,7 @@ export function ProductsSection() {
       b2b_price: "",
       category_id: "",
       image_url: "",
+      gallery_urls: [],
       stock_quantity: "",
       is_featured: false,
       is_active: true,
@@ -119,6 +123,7 @@ export function ProductsSection() {
       b2b_price: product.b2b_price?.toString() || "",
       category_id: product.category_id,
       image_url: product.image_url || "",
+      gallery_urls: product.gallery_urls || [],
       stock_quantity: product.stock_quantity.toString(),
       is_featured: product.is_featured || false,
       is_active: product.is_active !== false,
@@ -145,7 +150,8 @@ export function ProductsSection() {
         sale_price: formData.sale_price ? parseFloat(formData.sale_price) : undefined,
         b2b_price: formData.b2b_price ? parseFloat(formData.b2b_price) : undefined,
         category_id: formData.category_id,
-        image_url: formData.image_url || undefined,
+        image_url: formData.image_url || (formData.gallery_urls?.[0]) || undefined,
+        gallery_urls: formData.gallery_urls || [],
         stock_quantity: parseInt(formData.stock_quantity) || 0,
         is_featured: formData.is_featured,
         is_active: formData.is_active,
@@ -159,7 +165,7 @@ export function ProductsSection() {
         await productsAPI.create(productData)
       }
       setShowModal(false)
-      fetchProducts()
+      await fetchProducts()
     } catch (error: any) {
       console.error("Failed to save product:", error)
       const errorMsg = error.message || "Failed to save product. Please try again."
@@ -176,13 +182,21 @@ export function ProductsSection() {
 
     try {
       setDeleting(id)
+      console.log(`[PRODUCTS] Deleting product: ${id}`)
+      
+      // Delete from backend
       await productsAPI.delete(id)
-      fetchProducts()
+      console.log(`[PRODUCTS] Delete request succeeded`)
+      
+      // Wait for fetch to complete before clearing state
+      await fetchProducts()
+      console.log(`[PRODUCTS] Products refreshed after delete`)
     } catch (error: any) {
       console.error("Failed to delete product:", error)
       const errorMsg = error.message || "Failed to delete product. Please try again."
       alert(errorMsg)
     } finally {
+      // Now clear the deleting state after everything is done
       setDeleting(null)
     }
   }
@@ -521,31 +535,18 @@ export function ProductsSection() {
                     </div>
                   </div>
 
-                  {/* Image */}
-                  <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">
-                      Image URL
-                    </label>
-                    <input
-                      type="url"
-                      value={formData.image_url}
-                      onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                      placeholder="https://example.com/image.jpg"
-                      className="w-full px-4 py-3 border border-border dark:border-gray-700 bg-background dark:bg-gray-800 text-foreground rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-                    />
-                    {formData.image_url && (
-                      <div className="mt-2">
-                        <img 
-                          src={formData.image_url} 
-                          alt="Preview" 
-                          className="w-full h-32 object-cover rounded-lg"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none'
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
+                  {/* Images with drag-drop reordering */}
+                  <ImageManager
+                    images={formData.gallery_urls}
+                    onImagesChange={(images) => {
+                      setFormData({ ...formData, gallery_urls: images })
+                      // Auto-set first image as featured image if not set
+                      if (images.length > 0 && !formData.image_url) {
+                        setFormData(prev => ({ ...prev, image_url: images[0] }))
+                      }
+                    }}
+                    maxImages={5}
+                  />
 
                   {/* Toggles */}
                   <div className="flex gap-6">

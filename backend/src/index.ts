@@ -31,6 +31,39 @@ app.get("/health", (req, res) => {
   res.json({ status: "OK" });
 });
 
+// Detailed server checklist
+app.get("/api/checklist", (req, res) => {
+  const checklist = {
+    timestamp: new Date().toISOString(),
+    status: "OK",
+    checks: {
+      server: { status: "OK", message: "Server is running" },
+      database: {
+        status: process.env.SUPABASE_URL ? "OK" : "MISSING",
+        message: process.env.SUPABASE_URL ? "Supabase connected" : "Missing SUPABASE_URL"
+      },
+      cloudinary: {
+        status: process.env.CLOUDINARY_CLOUD_NAME ? "OK" : "MISSING",
+        message: process.env.CLOUDINARY_CLOUD_NAME 
+          ? `Cloud Name: ${process.env.CLOUDINARY_CLOUD_NAME}` 
+          : "Missing CLOUDINARY_CLOUD_NAME"
+      },
+      mail: {
+        status: process.env.MAIL_SERVICE ? "OK" : "NOT_CONFIGURED",
+        message: process.env.MAIL_SERVICE 
+          ? `Service: ${process.env.MAIL_SERVICE}` 
+          : "Mail service not configured"
+      },
+      environment: {
+        status: process.env.NODE_ENV ? "OK" : "MISSING",
+        message: `NODE_ENV: ${process.env.NODE_ENV || "not set"}`
+      }
+    }
+  };
+  
+  res.json(checklist);
+});
+
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);

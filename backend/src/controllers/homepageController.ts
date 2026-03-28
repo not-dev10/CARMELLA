@@ -114,6 +114,10 @@ export const getFeaturedProducts = async (req: Request, res: Response) => {
   try {
     // Use user-specific client to pass auth context to products_safe view
     const userSupabase = getSupabaseClient(req);
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    console.log(`[HOMEPAGE] getFeaturedProducts - Auth token present: ${!!token}`);
+    
     // ✅ OPTIMIZED: Select only needed fields instead of *
     const { data: products, error } = await userSupabase
       .from("products_safe")
@@ -126,15 +130,24 @@ export const getFeaturedProducts = async (req: Request, res: Response) => {
         sale_price,
         b2b_price,
         pricing_locked,
-        user_tier,
-        rating,
-        reviews_count
+        user_tier
       `)
       .eq("is_featured", true)
       .limit(6);
 
     if (error) {
+      console.error(`[HOMEPAGE] getFeaturedProducts error:`, error);
       return res.status(500).json({ error: "Failed to fetch featured products" });
+    }
+
+    console.log(`[HOMEPAGE] getFeaturedProducts - Returned ${products?.length || 0} products`);
+    if (products && products.length > 0) {
+      console.log(`[HOMEPAGE] First product pricing:`, {
+        id: products[0].id,
+        base_price: products[0].base_price,
+        pricing_locked: products[0].pricing_locked,
+        user_tier: products[0].user_tier
+      });
     }
 
     // Transform database fields to camelCase for frontend
@@ -151,6 +164,7 @@ export const getFeaturedProducts = async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
+    console.error(`[HOMEPAGE] getFeaturedProducts unexpected error:`, error);
     res.status(500).json({ error: "Internal server error" });
   }
 };

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 import { categoriesAPI } from "@/lib/api"
+import { ImageManager } from "./image-manager"
 
 interface Category {
   id: string
@@ -21,7 +22,8 @@ export function CategoriesSection() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    imageUrl: ""
+    imageUrl: "",
+    images: [] as string[]
   })
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
@@ -40,10 +42,10 @@ export function CategoriesSection() {
     return () => window.removeEventListener('focus', handleFocus)
   }, [])
 
-  const fetchCategories = async () => {
+  const fetchCategories = async (skipCache: boolean = false) => {
     try {
       setLoading(true)
-      const response = await categoriesAPI.getAll()
+      const response = await categoriesAPI.getAll(skipCache)
       console.log("[CATEGORIES] Fetched categories:", response.categories)
       setCategories(response.categories || [])
     } catch (error) {
@@ -56,7 +58,7 @@ export function CategoriesSection() {
 
   const handleCreate = () => {
     setEditingCategory(null)
-    setFormData({ name: "", description: "", imageUrl: "" })
+    setFormData({ name: "", description: "", imageUrl: "", images: [] })
     setShowModal(true)
   }
 
@@ -66,7 +68,8 @@ export function CategoriesSection() {
     setFormData({
       name: category.name,
       description: category.description || "",
-      imageUrl: category.image_url || ""
+      imageUrl: category.image_url || "",
+      images: category.image_url ? [category.image_url] : []
     })
     setShowModal(true)
   }
@@ -76,15 +79,22 @@ export function CategoriesSection() {
 
     try {
       setSaving(true)
+      const categoryData = {
+        name: formData.name,
+        description: formData.description || undefined,
+        imageUrl: formData.images?.[0] || formData.imageUrl || undefined
+      }
+      
       if (editingCategory) {
         // Update existing category
-        await categoriesAPI.update(editingCategory.id, formData)
+        await categoriesAPI.update(editingCategory.id, categoryData)
       } else {
         // Create new category
-        await categoriesAPI.create(formData)
+        await categoriesAPI.create(categoryData)
       }
       setShowModal(false)
-      fetchCategories()
+      // Skip cache to get fresh data immediately
+      await fetchCategories(true)
     } catch (error: any) {
       console.error("Failed to save category:", error)
       const errorMsg = error.message || "Failed to save category. Please try again."
@@ -101,13 +111,21 @@ export function CategoriesSection() {
 
     try {
       setDeleting(id)
+      console.log(`[CATEGORIES] Deleting category: ${id}`)
+      
+      // Delete from backend
       await categoriesAPI.delete(id)
-      fetchCategories()
+      console.log(`[CATEGORIES] Delete request succeeded`)
+      
+      // Wait for fetch to complete before clearing state, skip cache to get fresh data
+      await fetchCategories(true)
+      console.log(`[CATEGORIES] Categories refreshed after delete`)
     } catch (error: any) {
       console.error("Failed to delete category:", error)
       const errorMsg = error.message || "Failed to delete category. Please try again."
       alert(errorMsg)
     } finally {
+      // Now clear the deleting state after everything is done
       setDeleting(null)
     }
   }
@@ -281,27 +299,15 @@ export function CategoriesSection() {
 
                   <div>
                     <label className="block text-sm font-semibold text-foreground mb-2">
-                      Image URL
+                      Category Image
                     </label>
-                    <input
-                      type="url"
-                      value={formData.imageUrl}
-                      onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                      placeholder="https://example.com/image.jpg"
-                      className="w-full px-4 py-3 border border-border dark:border-gray-700 bg-background dark:bg-gray-800 text-foreground rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                    <ImageManager
+                      images={formData.images}
+                      onImagesChange={(images) => {
+                        setFormData({ ...formData, images, imageUrl: images[0] || "" })
+                      }}
+                      maxImages={1}
                     />
-                    {formData.imageUrl && (
-                      <div className="mt-2">
-                        <img 
-                          src={formData.imageUrl} 
-                          alt="Preview" 
-                          className="w-full h-32 object-cover rounded-lg"
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none'
-                          }}
-                        />
-                      </div>
-                    )}
                   </div>
                 </div>
 

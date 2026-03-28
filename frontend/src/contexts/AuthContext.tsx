@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { cache } from '@/lib/cache'
 
 interface AuthContextType {
   user: any
@@ -61,6 +62,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
         setSession(session)
+        // Clear pricing-dependent caches when auth state changes
+        cache.clear('featured_products');
+        cache.clear('products_');
+        
         if (session?.user?.id) {
           fetchUserProfile(session.user.id)
         } else {
@@ -79,9 +84,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error('Supabase not configured')
     }
     try {
-      // Check if user already exists with this email
-      const { data: { user: currentUser } } = await supabase.auth.getUser()
-      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -104,6 +106,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error
       setUser(null)
       setSession(null)
+      // Clear all caches on sign out
+      cache.clearAll()
       // Redirect to home page
       window.location.href = '/'
     } catch (error) {

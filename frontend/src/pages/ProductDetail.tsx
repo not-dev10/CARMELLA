@@ -20,6 +20,7 @@ interface Product {
     sale_price?: number
     b2b_price?: number
     image_url?: string
+    gallery_urls?: string[]
     images?: string[]
     badge?: string
     stock_status: string
@@ -114,12 +115,14 @@ export default function ProductDetail() {
         )
     }
 
-    // Prepare images array
-    const productImages = product.images && product.images.length > 0 
-        ? product.images 
-        : product.image_url 
-            ? [product.image_url]
-            : ['https://images.unsplash.com/photo-1581783342308-f792ca11df53?w=800&h=1000&fit=crop']
+    // Prepare images array - prioritize gallery_urls
+    const productImages = product.gallery_urls && product.gallery_urls.length > 0 
+        ? product.gallery_urls 
+        : product.images && product.images.length > 0 
+            ? product.images 
+            : product.image_url 
+                ? [product.image_url]
+                : ['https://images.unsplash.com/photo-1581783342308-f792ca11df53?w=800&h=1000&fit=crop']
 
     // Parse features if stored as JSON string
     const productFeatures = typeof product.features === 'string' 

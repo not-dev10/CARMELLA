@@ -126,17 +126,9 @@ export const homepageAPI = {
     });
   },
   getFeaturedProducts: () => {
-    // ✅ Cache featured products for 30 minutes
-    const cached = cache.get<any>('featured_products');
-    if (cached) {
-      console.log('[CACHE] Featured products hit from localStorage');
-      return Promise.resolve(cached);
-    }
-    
-    return apiRequest("/homepage/featured-products").then(data => {
-      cache.set('featured_products', data, 30);
-      return data;
-    });
+    // ❌ DON'T CACHE: Featured products pricing depends on user's B2B approval status
+    // Caching would show stale pricing to users after they log in or get approved
+    return apiRequest("/homepage/featured-products");
   },
   getCategories: () => {
     // ✅ Cache categories for 60 minutes
@@ -162,32 +154,14 @@ export const productsAPI = {
     queryParams.append('limit', (params?.limit || 100).toString());
     if (params?.offset) queryParams.append('offset', params.offset.toString());
     
-    // ✅ Cache products for 30 minutes (with query params as key)
-    const cacheKey = `products_${queryParams.toString()}`;
-    const cached = cache.get<any>(cacheKey);
-    if (cached) {
-      console.log('[CACHE] Products hit from localStorage');
-      return Promise.resolve(cached);
-    }
-    
-    return apiRequest(`/products?${queryParams.toString()}`).then(data => {
-      cache.set(cacheKey, data, 30);
-      return data;
-    });
+    // ❌ DON'T CACHE: Product pricing depends on user's B2B approval status
+    // Caching would show stale pricing to users after they log in or get approved
+    return apiRequest(`/products?${queryParams.toString()}`);
   },
   getById: (id: string) => {
-    // ✅ Cache individual products for 30 minutes
-    const cacheKey = `product_${id}`;
-    const cached = cache.get<any>(cacheKey);
-    if (cached) {
-      console.log('[CACHE] Product hit from localStorage');
-      return Promise.resolve(cached);
-    }
-    
-    return apiRequest(`/products/${id}`).then(data => {
-      cache.set(cacheKey, data, 30);
-      return data;
-    });
+    // ❌ DON'T CACHE: Product pricing depends on user's B2B approval status
+    // Caching would show stale pricing to users after they log in or get approved
+    return apiRequest(`/products/${id}`);
   },
   getPricing: (id: string) => apiRequest(`/products/${id}/pricing`),
   create: (data: any) => {
@@ -283,12 +257,14 @@ export const reviewsAPI = {
 
 // Categories API
 export const categoriesAPI = {
-  getAll: async () => {
-    // ✅ Check localStorage cache first (60 minute TTL)
-    const cached = cache.get<any>('categories');
-    if (cached) {
-      console.log('[CACHE] Categories hit from localStorage');
-      return cached;
+  getAll: async (skipCache: boolean = false) => {
+    // ✅ Check localStorage cache first (60 minute TTL) unless explicitly skipped
+    if (!skipCache) {
+      const cached = cache.get<any>('categories');
+      if (cached) {
+        console.log('[CACHE] Categories hit from localStorage');
+        return cached;
+      }
     }
     
     const data = await apiRequest("/categories");
