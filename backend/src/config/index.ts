@@ -22,7 +22,7 @@ export const config = {
   // Cloudinary
   cloudinary: {
     cloudName: process.env.CLOUDINARY_CLOUD_NAME || "",
-    uploadPreset: process.env.CLOUDINARY_UPLOAD_PRESET || "",
+    apiKey: process.env.CLOUDINARY_API_KEY || "",
     apiSecret: process.env.CLOUDINARY_API_SECRET || "",
   },
   
@@ -49,7 +49,7 @@ if (process.env.NODE_ENV === "development") {
   console.log("✓ SUPABASE_ANON_KEY:", config.supabase.anonKey ? "✓ Loaded" : "✗ Missing");
   console.log("✓ SUPABASE_SERVICE_KEY:", config.supabase.serviceKey ? "✓ Loaded" : "✗ Missing");
   console.log("☁️ CLOUDINARY_CLOUD_NAME:", config.cloudinary.cloudName ? "✓ Loaded" : "✗ Missing");
-  console.log("☁️ CLOUDINARY_UPLOAD_PRESET:", config.cloudinary.uploadPreset ? "✓ Loaded" : "✗ Missing");
+  console.log("☁️ CLOUDINARY_API_KEY:", config.cloudinary.apiKey ? "✓ Loaded" : "✗ Missing");
   console.log("📧 MAIL_SERVICE:", config.mail.service ? `✓ ${config.mail.service}` : "✗ Not configured");
   console.log("");
 }
