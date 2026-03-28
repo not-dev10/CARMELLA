@@ -1,14 +1,14 @@
 import { motion, AnimatePresence } from "framer-motion"
-import { Grid3x3, Plus, Edit2, Trash2, X, Save, RefreshCw } from "lucide-react"
+import { Grid3x3, Plus, Edit2, Trash2, X, Save, RefreshCw, Upload, Loader2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { categoriesAPI } from "@/lib/api"
-import { ImageManager } from "./image-manager"
 
 interface Category {
   id: string
   name: string
+  slug?: string
   description?: string
   image_url?: string
   created_at?: string
@@ -22,110 +22,178 @@ export function CategoriesSection() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    imageUrl: "",
-    images: [] as string[]
+    imageUrl: ""
   })
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    // Force fresh data on mount
     fetchCategories()
   }, [])
 
-  // Also refresh when returning to this tab
-  useEffect(() => {
-    const handleFocus = () => {
-      fetchCategories()
-    }
-    window.addEventListener('focus', handleFocus)
-    return () => window.removeEventListener('focus', handleFocus)
-  }, [])
-
-  const fetchCategories = async (skipCache: boolean = false) => {
+  const fetchCategories = async () => {
     try {
       setLoading(true)
-      const response = await categoriesAPI.getAll(skipCache)
-      console.log("[CATEGORIES] Fetched categories:", response.categories)
+      const response = await categoriesAPI.getAll(true) // Skip cache
+      console.log("[CATEGORIES] Fetched:", response.categories)
       setCategories(response.categories || [])
     } catch (error) {
-      console.error("Failed to fetch categories:", error)
+      console.error("[CATEGORIES] Fetch error:", error)
       setCategories([])
     } finally {
       setLoading(false)
     }
   }
 
+  const uploadToCloudinary = async (file: File): Promise<string | null> => {
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
+    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
+
+    console.log("[CLOUDINARY] Starting upload:", {
+      cloudName,
+      uploadPreset,
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type
+    })
+
+    if (!cloudName || !uploadPreset) {
+      const error = `Missing Cloudinary config: cloudName=${!!cloudName}, uploadPreset=${!!uploadPreset}`
+      console.error("[CLOUDINARY] Config error:", error)
+      alert(`Cloudinary not configured!\n\n${error}\n\nPlease check your .env file.`)
+      return null
+    }
+
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("upload_preset", uploadPreset)
+      
+      const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`
+      console.log("[CLOUDINARY] Upload URL:", uploadUrl)
+
+      const response = await fetch(uploadUrl, {
+        method: "POST",
+        body: formData,
+      })
+
+      console.log("[CLOUDINARY] Response status:", response.status)
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error("[CLOUDINARY] Upload error:", errorData)
+        throw new Error(errorData.error?.message || `Upload failed (${response.status})`)
+      }
+
+      const data = await response.json()
+      console.log("[CLOUDINARY] Upload success:", data.secure_url)
+      return data.secure_url
+    } catch (error: any) {
+      console.error("[CLOUDINARY] Upload exception:", error)
+      alert(`Upload failed: ${error.message}`)
+      return null
+    }
+  }
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file")
+      return
+    }
+
+    const MAX_SIZE = 10 * 1024 * 1024 // 10MB
+    if (file.size > MAX_SIZE) {
+      alert(`File too large. Maximum size is 10MB (${(file.size / 1024 / 1024).toFixed(2)}MB)`)
+      return
+    }
+
+    // Upload to Cloudinary
+    setUploading(true)
+    const url = await uploadToCloudinary(file)
+    setUploading(false)
+
+    if (url) {
+      setFormData({ ...formData, imageUrl: url })
+    }
+
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }
+
   const handleCreate = () => {
     setEditingCategory(null)
-    setFormData({ name: "", description: "", imageUrl: "", images: [] })
+    setFormData({ name: "", description: "", imageUrl: "" })
     setShowModal(true)
   }
 
   const handleEdit = (category: Category) => {
-    console.log("[CATEGORIES] Editing category:", category)
+    console.log("[CATEGORIES] Editing:", category)
     setEditingCategory(category)
     setFormData({
       name: category.name,
       description: category.description || "",
-      imageUrl: category.image_url || "",
-      images: category.image_url ? [category.image_url] : []
+      imageUrl: category.image_url || ""
     })
     setShowModal(true)
   }
 
   const handleSave = async () => {
-    if (!formData.name.trim()) return
+    if (!formData.name.trim()) {
+      alert("Category name is required")
+      return
+    }
 
     try {
       setSaving(true)
       const categoryData = {
-        name: formData.name,
-        description: formData.description || undefined,
-        imageUrl: formData.images?.[0] || formData.imageUrl || undefined
+        name: formData.name.trim(),
+        description: formData.description.trim() || undefined,
+        imageUrl: formData.imageUrl || undefined
       }
       
+      console.log("[CATEGORIES] Saving:", categoryData)
+      
       if (editingCategory) {
-        // Update existing category
         await categoriesAPI.update(editingCategory.id, categoryData)
+        console.log("[CATEGORIES] Updated successfully")
       } else {
-        // Create new category
         await categoriesAPI.create(categoryData)
+        console.log("[CATEGORIES] Created successfully")
       }
+      
       setShowModal(false)
-      // Skip cache to get fresh data immediately
-      await fetchCategories(true)
+      await fetchCategories()
     } catch (error: any) {
-      console.error("Failed to save category:", error)
-      const errorMsg = error.message || "Failed to save category. Please try again."
-      alert(errorMsg)
+      console.error("[CATEGORIES] Save error:", error)
+      alert(error.message || "Failed to save category")
     } finally {
       setSaving(false)
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this category? This action cannot be undone.")) {
+    if (!confirm("Are you sure you want to delete this category?")) {
       return
     }
 
     try {
       setDeleting(id)
-      console.log(`[CATEGORIES] Deleting category: ${id}`)
-      
-      // Delete from backend
+      console.log("[CATEGORIES] Deleting:", id)
       await categoriesAPI.delete(id)
-      console.log(`[CATEGORIES] Delete request succeeded`)
-      
-      // Wait for fetch to complete before clearing state, skip cache to get fresh data
-      await fetchCategories(true)
-      console.log(`[CATEGORIES] Categories refreshed after delete`)
+      console.log("[CATEGORIES] Deleted successfully")
+      await fetchCategories()
     } catch (error: any) {
-      console.error("Failed to delete category:", error)
-      const errorMsg = error.message || "Failed to delete category. Please try again."
-      alert(errorMsg)
+      console.error("[CATEGORIES] Delete error:", error)
+      alert(error.message || "Failed to delete category")
     } finally {
-      // Now clear the deleting state after everything is done
       setDeleting(null)
     }
   }
@@ -301,13 +369,53 @@ export function CategoriesSection() {
                     <label className="block text-sm font-semibold text-foreground mb-2">
                       Category Image
                     </label>
-                    <ImageManager
-                      images={formData.images}
-                      onImagesChange={(images) => {
-                        setFormData({ ...formData, images, imageUrl: images[0] || "" })
-                      }}
-                      maxImages={1}
+                    
+                    {/* Image Preview */}
+                    {formData.imageUrl && (
+                      <div className="mb-3 relative">
+                        <img 
+                          src={formData.imageUrl} 
+                          alt="Preview" 
+                          className="w-full h-48 object-cover rounded-lg border border-border"
+                        />
+                        <button
+                          onClick={() => setFormData({ ...formData, imageUrl: "" })}
+                          className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Upload Button */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
                     />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="w-full px-4 py-3 border-2 border-dashed border-border dark:border-gray-700 rounded-lg hover:border-primary transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground disabled:opacity-50"
+                    >
+                      {uploading ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-5 h-5" />
+                          {formData.imageUrl ? "Change Image" : "Upload Image"}
+                        </>
+                      )}
+                    </button>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      PNG, JPG, WebP up to 10MB
+                    </p>
                   </div>
                 </div>
 

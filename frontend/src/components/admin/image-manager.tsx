@@ -55,11 +55,18 @@ export function ImageManager({
         uploadPreset,
         fileName: file.name,
         fileSize: file.size,
-        fileType: file.type
+        fileType: file.type,
+        envVars: {
+          VITE_CLOUDINARY_CLOUD_NAME: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
+          VITE_CLOUDINARY_UPLOAD_PRESET: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
+        }
       })
 
       if (!cloudName || !uploadPreset) {
-        throw new Error(`Missing Cloudinary config: cloudName=${!!cloudName}, uploadPreset=${!!uploadPreset}`)
+        const error = `Missing Cloudinary config: cloudName=${!!cloudName}, uploadPreset=${!!uploadPreset}`;
+        console.error("[CLOUDINARY] Configuration error:", error);
+        alert(`Cloudinary not configured!\n\n${error}\n\nPlease check your .env file.`);
+        throw new Error(error);
       }
 
       const formData = new FormData()

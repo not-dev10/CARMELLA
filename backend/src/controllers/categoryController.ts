@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { supabase, supabaseAdmin } from "../config/supabase.js";
+import { deleteFromCloudinary } from "../utils/cloudinary.js";
 
 /**
  * Get all categories
@@ -56,10 +57,17 @@ export async function createCategory(req: Request, res: Response) {
   try {
     const { name, description, imageUrl } = req.body;
 
+    // Generate slug from name
+    const slug = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
     const { data, error } = await supabaseAdmin
       .from("categories")
       .insert({
         name,
+        slug,
         description,
         image_url: imageUrl,
       })
@@ -87,13 +95,24 @@ export async function updateCategory(req: Request, res: Response) {
     console.log("[UPDATE_CATEGORY] Attempting to update category:", id);
     console.log("[UPDATE_CATEGORY] Update data:", { name, description, imageUrl });
 
+    // Generate slug from name if name is being updated
+    const slug = name
+      ? name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+      : undefined;
+
+    const updateData: any = {
+      description,
+      image_url: imageUrl,
+    };
+
+    if (name) {
+      updateData.name = name;
+      updateData.slug = slug;
+    }
+
     const { data, error } = await supabaseAdmin
       .from("categories")
-      .update({
-        name,
-        description,
-        image_url: imageUrl,
-      })
+      .update(updateData)
       .eq("id", id)
       .select();
 
@@ -142,6 +161,18 @@ export async function deleteCategory(req: Request, res: Response) {
       });
     }
 
+    // Get category to retrieve image URL before deletion
+    const { data: category, error: fetchError } = await supabaseAdmin
+      .from("categories")
+      .select("image_url")
+      .eq("id", id)
+      .single();
+
+    if (fetchError) {
+      return res.status(404).json({ error: "Category not found" });
+    }
+
+    // Delete from database first
     const { error } = await supabaseAdmin
       .from("categories")
       .delete()
@@ -149,6 +180,13 @@ export async function deleteCategory(req: Request, res: Response) {
 
     if (error) {
       return res.status(400).json({ error: error.message });
+    }
+
+    // Delete image from Cloudinary (non-blocking, don't fail if this fails)
+    if (category.image_url) {
+      deleteFromCloudinary(category.image_url).catch(err => {
+        console.error("[CATEGORY] Failed to delete image from Cloudinary:", err);
+      });
     }
 
     return res.json({ message: "Category deleted successfully" });

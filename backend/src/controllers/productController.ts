@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { supabaseAdmin } from "../config/supabase.js";
 import { getSupabaseClient } from "../utils/supabaseClient.js";
+import { deleteFromCloudinary, deleteMultipleFromCloudinary } from "../utils/cloudinary.js";
 
 /**
  * SECURE PRICING IMPLEMENTATION
@@ -314,6 +315,18 @@ export async function deleteProduct(req: Request, res: Response) {
   try {
     const { id } = req.params;
 
+    // Get product to retrieve image URLs before deletion
+    const { data: product, error: fetchError } = await supabaseAdmin
+      .from("products")
+      .select("image_url, gallery_urls")
+      .eq("id", id)
+      .single();
+
+    if (fetchError) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    // Delete from database first
     const { error } = await supabaseAdmin
       .from("products")
       .delete()
@@ -321,6 +334,28 @@ export async function deleteProduct(req: Request, res: Response) {
 
     if (error) {
       return res.status(400).json({ error: error.message });
+    }
+
+    // Collect all image URLs to delete
+    const imagesToDelete: string[] = [];
+    
+    if (product.image_url) {
+      imagesToDelete.push(product.image_url);
+    }
+    
+    if (product.gallery_urls && Array.isArray(product.gallery_urls)) {
+      imagesToDelete.push(...product.gallery_urls);
+    }
+
+    // Delete images from Cloudinary (non-blocking, don't fail if this fails)
+    if (imagesToDelete.length > 0) {
+      deleteMultipleFromCloudinary(imagesToDelete)
+        .then(result => {
+          console.log(`[PRODUCT] Cloudinary cleanup: ${result.success}/${result.total} images deleted`);
+        })
+        .catch(err => {
+          console.error("[PRODUCT] Failed to delete images from Cloudinary:", err);
+        });
     }
 
     return res.json({ message: "Product deleted successfully" });

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cloudinary Upload Test</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    .config {
+      background: #f0f0f0;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .config div {
+      margin: 5px 0;
+    }
+    .success {
+      color: green;
+    }
+    .error {
+      color: red;
+    }
+    input[type="file"] {
+      margin: 20px 0;
+      padding: 10px;
+      border: 2px dashed #ccc;
+      border-radius: 5px;
+      width: 100%;
+      cursor: pointer;
+    }
+    button {
+      background: #ff6b35;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      width: 100%;
+    }
+    button:hover {
+      background: #ff5722;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 5px;
+      display: none;
+    }
+    #result.success {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+    }
+    #result.error {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+    }
+    #preview {
+      margin-top: 20px;
+      max-width: 100%;
+      border-radius: 5px;
+      display: none;
+    }
+    .log {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 20px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .log div {
+      margin: 3px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🖼️ Cloudinary Upload Test</h1>
+    
+    <div class="config">
+      <div><strong>Configuration:</strong></div>
+      <div>Cloud Name: <span id="cloudName" class="error">Not Set</span></div>
+      <div>Upload Preset: <span id="uploadPreset" class="error">Not Set</span></div>
+    </div>
+
+    <input type="file" id="fileInput" accept="image/*">
+    <button id="uploadBtn" onclick="uploadImage()">Upload to Cloudinary</button>
+
+    <div id="result"></div>
+    <img id="preview" alt="Uploaded image">
+
+    <div class="log" id="log"></div>
+  </div>
+
+  <script>
+    // Configuration - UPDATE THESE VALUES
+    const CLOUDINARY_CLOUD_NAME = 'dwis8ote1'
+    const CLOUDINARY_UPLOAD_PRESET = 'carmella_products'
+
+    // Display config
+    document.getElementById('cloudName').textContent = CLOUDINARY_CLOUD_NAME
+    document.getElementById('cloudName').className = CLOUDINARY_CLOUD_NAME ? 'success' : 'error'
+    document.getElementById('uploadPreset').textContent = CLOUDINARY_UPLOAD_PRESET
+    document.getElementById('uploadPreset').className = CLOUDINARY_UPLOAD_PRESET ? 'success' : 'error'
+
+    const logDiv = document.getElementById('log')
+    function log(message, type = 'info') {
+      const div = document.createElement('div')
+      const timestamp = new Date().toLocaleTimeString()
+      div.textContent = `[${timestamp}] ${message}`
+      if (type === 'error') div.style.color = '#ff6b6b'
+      if (type === 'success') div.style.color = '#51cf66'
+      logDiv.appendChild(div)
+      logDiv.scrollTop = logDiv.scrollHeight
+    }
+
+    async function uploadImage() {
+      const fileInput = document.getElementById('fileInput')
+      const file = fileInput.files[0]
+      const resultDiv = document.getElementById('result')
+      const previewImg = document.getElementById('preview')
+      const uploadBtn = document.getElementById('uploadBtn')
+
+      if (!file) {
+        alert('Please select a file first')
+        return
+      }
+
+      log(`Starting upload: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`)
+
+      if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
+        log('ERROR: Missing Cloudinary configuration', 'error')
+        resultDiv.textContent = 'Configuration error: Missing cloud name or upload preset'
+        resultDiv.className = 'error'
+        resultDiv.style.display = 'block'
+        return
+      }
+
+      uploadBtn.disabled = true
+      uploadBtn.textContent = 'Uploading...'
+      resultDiv.style.display = 'none'
+      previewImg.style.display = 'none'
+
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET)
+
+        const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`
+        log(`Upload URL: ${uploadUrl}`)
+
+        const response = await fetch(uploadUrl, {
+          method: 'POST',
+          body: formData
+        })
+
+        log(`Response status: ${response.status} ${response.statusText}`)
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          log(`Error response: ${JSON.stringify(errorData)}`, 'error')
+          throw new Error(errorData.error?.message || `Upload failed (${response.status})`)
+        }
+
+        const data = await response.json()
+        log(`Upload successful!`, 'success')
+        log(`URL: ${data.secure_url}`, 'success')
+
+        resultDiv.textContent = `✅ Upload successful! URL: ${data.secure_url}`
+        resultDiv.className = 'success'
+        resultDiv.style.display = 'block'
+
+        previewImg.src = data.secure_url
+        previewImg.style.display = 'block'
+
+      } catch (error) {
+        log(`Upload failed: ${error.message}`, 'error')
+        resultDiv.textContent = `❌ Upload failed: ${error.message}`
+        resultDiv.className = 'error'
+        resultDiv.style.display = 'block'
+      } finally {
+        uploadBtn.disabled = false
+        uploadBtn.textContent = 'Upload to Cloudinary'
+      }
+    }
+
+    log('Test page loaded')
+    log(`Cloud Name: ${CLOUDINARY_CLOUD_NAME}`)
+    log(`Upload Preset: ${CLOUDINARY_UPLOAD_PRESET}`)
+  </script>
+</body>
+</html>
