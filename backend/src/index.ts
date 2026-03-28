@@ -1,9 +1,10 @@
 import express from "express";
 import cors from "cors";
-import compression from "compression";
 import "express-async-errors";
 import { config } from "./config/index.js";
 import { errorHandler, latencyMiddleware } from "./middleware/index.js";
+import { compressionMiddleware } from "./middleware/compression.js";
+import { apiLimiter, authLimiter, adminLimiter } from "./middleware/rateLimiter.js";
 import authRoutes from "./routes/auth.js";
 import productRoutes from "./routes/products.js";
 import userRoutes from "./routes/users.js";
@@ -19,12 +20,15 @@ import inventoryRoutes from "./routes/inventory.js";
 
 const app = express();
 
-// Middleware
+// Security & Performance Middleware
 app.use(cors(config.cors));
-app.use(compression()); // Add compression middleware
+app.use(compressionMiddleware); // Gzip compression
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(latencyMiddleware);
+
+// Apply rate limiting to all API routes
+app.use("/api/", apiLimiter);
 
 // Health check
 app.get("/health", (req, res) => {
@@ -65,17 +69,17 @@ app.get("/api/checklist", (req, res) => {
 });
 
 // Routes
-app.use("/api/auth", authRoutes);
+app.use("/api/auth", authLimiter, authRoutes); // Strict rate limit for auth
 app.use("/api/products", productRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/categories", categoryRoutes);
-app.use("/api/admin", adminRoutes);
-app.use("/api/admin/inventory", inventoryRoutes);
+app.use("/api/admin", adminLimiter, adminRoutes); // Higher limit for admin
+app.use("/api/admin/inventory", adminLimiter, inventoryRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/reviews", reviewRoutes);
-app.use("/api/admin/analytics", analyticsRoutes);
+app.use("/api/admin/analytics", adminLimiter, analyticsRoutes);
 app.use("/api/homepage", homepageRoutes);
 
 // 404
