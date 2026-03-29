@@ -209,7 +209,6 @@ export function ImageManager({
             <>
               <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
               <p className="text-sm text-muted-foreground">Uploading...</p>
-              {uploadProgress > 0 && <p className="text-xs text-muted-foreground">{uploadProgress}%</p>}
             </>
           ) : (
             <>

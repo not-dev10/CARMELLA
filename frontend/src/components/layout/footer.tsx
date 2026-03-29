@@ -126,7 +126,7 @@ export function Footer() {
                                 { label: "Tableware", href: "/catalog?category=tableware" },
                                 { label: "Home Decor", href: "/catalog?category=decor" },
                                 { label: "Holiday Collection", href: "/catalog?category=holiday" },
-                            ].map((item, i) => (
+                            ].map((item) => (
                                 <motion.li
                                     key={item.label}
                                     whileHover={{ x: 5 }}
