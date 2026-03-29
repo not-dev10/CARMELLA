@@ -11,3 +11,5 @@ dist/
 *.swo
 *~
 .cache/
+.vercel
+.env*.local

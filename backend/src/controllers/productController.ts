@@ -105,7 +105,12 @@ export async function getProducts(req: Request, res: Response) {
         return res.status(400).json({ error: fallback.error.message });
       }
 
-      data = fallback.data;
+      // Add missing fields for type compatibility
+      data = fallback.data.map((p: any) => ({
+        ...p,
+        pricing_locked: false,
+        user_tier: 'guest'
+      }));
       count = fallback.count;
       error = null;
     }
