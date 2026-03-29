@@ -2,7 +2,7 @@
 
 import { FadeIn } from "@/components/animations/fade-in"
 import { Button } from "@/components/ui/button"
-import { Lock, Heart, ShoppingCart, TrendingUp, Leaf, Sparkles, Star, Plus } from "lucide-react"
+import { Lock, Heart, ShoppingCart, TrendingUp, Star, Plus } from "lucide-react"
 import Link from "@/components/ui/link-shim"
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect } from "react"

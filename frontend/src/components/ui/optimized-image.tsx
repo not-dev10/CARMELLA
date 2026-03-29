@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { ImagePresets, generateSrcSet, optimizeCloudinaryUrl } from '@/lib/imageOptimization'
 import { cn } from '@/lib/utils'
 

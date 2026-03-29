@@ -27,9 +27,9 @@ export function Footer() {
             <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl" />
             
             {/* Water droplets */}
-            {[...Array(15)].map((_, i) => (
+            {[...Array(15)].map((_, index) => (
                 <motion.div
-                    key={i}
+                    key={index}
                     className="absolute w-2 h-2 bg-white/30 rounded-full backdrop-blur-sm"
                     style={{
                         left: `${Math.random() * 100}%`,
@@ -49,9 +49,9 @@ export function Footer() {
             ))}
             
             {/* Floating golden particles */}
-            {[...Array(10)].map((_, i) => (
+            {[...Array(10)].map((_, index) => (
                 <motion.div
-                    key={`gold-${i}`}
+                    key={`gold-${index}`}
                     className="absolute w-1 h-1 bg-amber-300/40 rounded-full"
                     style={{
                         left: `${Math.random() * 100}%`,

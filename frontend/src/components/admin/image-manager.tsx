@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence, Reorder } from "framer-motion"
 import { Upload, X, GripVertical, Image as ImageIcon, Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 interface ImageManagerProps {
@@ -28,7 +27,6 @@ export function ImageManager({
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [localImages, setLocalImages] = useState(images)
-  const [uploadProgress, setUploadProgress] = useState<number>(0)
 
   useEffect(() => {
     setLocalImages(images)

@@ -64,12 +64,12 @@ export default function Category() {
                 ])
 
                 // Find the category by slug
-                const foundCategory = categoriesData.categories?.find(c => c.slug === slug)
+                const foundCategory = categoriesData.categories?.find((c: Category) => c.slug === slug)
                 setCategory(foundCategory || null)
 
                 // Filter products by category
                 if (foundCategory) {
-                    const categoryProducts = productsData.products?.filter(p => p.category_id === foundCategory.id) || []
+                    const categoryProducts = productsData.products?.filter((p: Product) => p.category_id === foundCategory.id) || []
                     setProducts(categoryProducts)
                 }
             } catch (error) {

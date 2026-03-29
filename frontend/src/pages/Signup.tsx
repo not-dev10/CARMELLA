@@ -65,7 +65,7 @@ export default function Signup() {
       setError(null)
 
       // Try to verify OTP
-      const { data, error: err } = await supabase.auth.verifyOtp({
+      const { error: err } = await supabase.auth.verifyOtp({
         email: email,
         token: verificationCode,
         type: 'email',

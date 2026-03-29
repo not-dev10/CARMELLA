@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from "framer-motion"
-import { AlertTriangle, AlertCircle, Package, Loader, Edit2, Plus, Minus } from "lucide-react"
+import { Loader, Edit2, Plus, Minus } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"

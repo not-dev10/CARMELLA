@@ -1,5 +1,4 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
 import Link from "@/components/ui/link-shim"
 import { Button } from "@/components/ui/button"
 import { useCart } from "@/contexts/CartContext"
@@ -13,7 +12,6 @@ import { motion } from "framer-motion"
 type CheckoutStep = 'cart' | 'details' | 'review' | 'payment' | 'confirmation'
 
 export default function Checkout() {
-  const navigate = useNavigate()
   const { items, getSubtotal, clearCart } = useCart()
   const { user } = useAuth()
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('cart')
