@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { useCart } from "@/contexts/CartContext"
 import { useAuth } from "@/contexts/AuthContext"
 import { ArrowLeft, AlertCircle, CheckCircle, ShoppingCart, User, ClipboardList, CreditCard, Loader } from "lucide-react"
-import Image from "@/components/ui/image-shim"
+import { OptimizedImage } from "@/components/ui/optimized-image"
 import { cn } from "@/lib/utils"
 import { ordersAPI } from "@/lib/api"
 import { motion } from "framer-motion"
@@ -217,20 +217,25 @@ export default function Checkout() {
                 <h2 className="font-serif text-2xl font-semibold">Your Order</h2>
                 <div className="space-y-4">
                   {items.map((item) => (
-                    <div key={item.id} className="flex gap-4 p-4 border border-border rounded-lg">
+                    <div key={item.id} className="flex gap-4 p-4 border border-border rounded-lg hover:shadow-md transition-shadow">
                       {item.image && (
-                        <div className="relative w-24 h-24 flex-shrink-0 rounded overflow-hidden">
-                          <Image src={item.image} alt={item.name} fill className="object-cover" />
+                        <div className="relative w-24 h-24 flex-shrink-0 rounded overflow-hidden bg-gray-50 dark:bg-gray-800">
+                          <OptimizedImage 
+                            src={item.image} 
+                            alt={item.name} 
+                            preset="thumbnail"
+                            className="w-full h-full"
+                          />
                         </div>
                       )}
                       <div className="flex-1 flex flex-col justify-between">
                         <div>
-                          <h3 className="font-semibold">{item.name}</h3>
+                          <h3 className="font-semibold text-gray-900 dark:text-white">{item.name}</h3>
                           <p className="text-sm text-muted-foreground">{item.sku}</p>
                         </div>
                         <div className="flex justify-between items-end">
-                          <span className="text-sm">Qty: {item.quantity}</span>
-                          <span className="font-semibold">${(item.price * item.quantity).toFixed(2)}</span>
+                          <span className="text-sm text-muted-foreground">Qty: {item.quantity}</span>
+                          <span className="font-semibold text-primary">${((item.discountPrice || item.price) * item.quantity).toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
@@ -348,7 +353,7 @@ export default function Checkout() {
                     {items.map((item) => (
                       <div key={item.id} className="flex justify-between text-sm">
                         <span>{item.name} x {item.quantity}</span>
-                        <span className="font-medium">${(item.price * item.quantity).toFixed(2)}</span>
+                        <span className="font-medium">${((item.discountPrice || item.price) * item.quantity).toFixed(2)}</span>
                       </div>
                     ))}
                   </div>
@@ -484,7 +489,7 @@ export default function Checkout() {
                 {items.map((item) => (
                   <div key={item.id} className="flex justify-between text-sm">
                     <span className="text-muted-foreground">{item.name}</span>
-                    <span className="font-medium">${(item.price * item.quantity).toFixed(2)}</span>
+                    <span className="font-medium">${((item.discountPrice || item.price) * item.quantity).toFixed(2)}</span>
                   </div>
                 ))}
               </div>

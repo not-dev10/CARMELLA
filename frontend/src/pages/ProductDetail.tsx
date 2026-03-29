@@ -5,7 +5,7 @@ import { useParams, useNavigate } from "react-router-dom"
 import { Heart, ShoppingCart, Package, Shield, Truck, ChevronLeft, ChevronRight, Star, AlertCircle, Loader2, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import Image from "@/components/ui/image-shim"
+import { OptimizedImage } from "@/components/ui/optimized-image"
 import Link from "@/components/ui/link-shim"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/AuthContext"
@@ -44,6 +44,7 @@ export default function ProductDetail() {
     const [addedToCart, setAddedToCart] = useState(false)
     const [addingToCart, setAddingToCart] = useState(false)
     const [showCartOptions, setShowCartOptions] = useState(false)
+    const [buyMode, setBuyMode] = useState<'retail' | 'bulk'>('bulk') // Default to bulk for B2B users
     const { addItem } = useCart()
     const { user } = useAuth()
     const navigateTo = useNavigate()
@@ -73,7 +74,14 @@ export default function ProductDetail() {
                 }
                 
                 setProduct(product)
-                setQuantity(product.moq || 12)
+                // Set initial quantity based on user role and buy mode
+                const userApprovalStatus = (user as any)?.b2b_approval_status || 'none'
+                const isB2BApproved = userApprovalStatus === 'approved'
+                setQuantity(isB2BApproved ? (product.moq || 12) : 1)
+                // Default to bulk mode for B2B users
+                if (isB2BApproved) {
+                    setBuyMode('bulk')
+                }
             } catch (err: any) {
                 console.error('Error fetching product:', err)
                 setError(err.message || 'Failed to load product')
@@ -129,13 +137,20 @@ export default function ProductDetail() {
         ? JSON.parse(product.features) 
         : product.features || []
 
-    // Calculate current price based on tier pricing
-    const currentPrice = product.tier_pricing?.find(tier => {
+    // Calculate display price based on user role
+    const displayPrice = product.sale_price || product.base_price
+    const hasRetailDiscount = product.sale_price && product.sale_price < product.base_price
+    const retailDiscountPercent = hasRetailDiscount 
+        ? Math.round(((product.base_price - product.sale_price!) / product.base_price) * 100)
+        : 0
+
+    // Calculate B2B price based on tier pricing (for approved users)
+    const currentB2BPrice = product.tier_pricing?.find(tier => {
         if (tier.max_qty) {
             return quantity >= tier.min_qty && quantity <= tier.max_qty
         }
         return quantity >= tier.min_qty
-    })?.price || product.b2b_price || product.sale_price || product.base_price
+    })?.price || product.b2b_price
 
     // Format tier pricing for display
     const tieredPricing = product.tier_pricing?.map(tier => ({
@@ -143,6 +158,22 @@ export default function ProductDetail() {
         price: tier.price,
         discount: `${tier.discount_percent}%`
     })) || []
+
+    // Final price for cart (depends on user role and buy mode)
+    const finalPrice = isApproved 
+        ? (buyMode === 'bulk' ? (currentB2BPrice || displayPrice) : displayPrice)
+        : displayPrice
+
+    // Handle buy mode toggle
+    const handleBuyModeChange = (mode: 'retail' | 'bulk') => {
+        setBuyMode(mode)
+        // Adjust quantity based on mode
+        if (mode === 'bulk') {
+            setQuantity(product.moq || 12)
+        } else {
+            setQuantity(1)
+        }
+    }
 
     const nextImage = () => {
         setCurrentImage((prev) => (prev + 1) % productImages.length)
@@ -163,10 +194,11 @@ export default function ProductDetail() {
                 image: productImages[0],
                 price: product.base_price,
                 quantity: quantity,
-                discountPrice: currentPrice !== product.base_price ? currentPrice : undefined,
-                discountPercentage: currentPrice !== product.base_price 
-                    ? Math.round(((product.base_price - currentPrice) / product.base_price) * 100)
+                discountPrice: finalPrice !== product.base_price ? finalPrice : undefined,
+                discountPercentage: finalPrice !== product.base_price 
+                    ? Math.round(((product.base_price - finalPrice) / product.base_price) * 100)
                     : undefined,
+                buyMode // ✅ Include buy mode
             }
 
             // Add to local cart
@@ -271,79 +303,92 @@ export default function ProductDetail() {
                 </div>
             </div>
 
-            <div className="container mx-auto px-6 py-12">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                    {/* Image Gallery */}
-                    <div className="space-y-4">
-                        {/* Main Image */}
-                        <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-muted">
-                            <Image
+            <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+                    {/* Image Gallery - Compact */}
+                    <div className="lg:col-span-5 space-y-3">
+                        {/* Main Image - Smaller */}
+                        <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-900">
+                            <OptimizedImage
                                 src={productImages[currentImage]}
                                 alt={product.name}
-                                fill
-                                className="object-cover"
+                                preset="productMain"
+                                className="w-full h-full"
                             />
                             {product.badge && (
-                                <Badge className="absolute top-4 left-4 z-10">
+                                <Badge className="absolute top-3 left-3 z-10 text-xs">
                                     {product.badge}
                                 </Badge>
                             )}
 
-                            {/* Navigation Arrows */}
-                            <button
-                                onClick={prevImage}
-                                className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-colors"
-                            >
-                                <ChevronLeft className="w-5 h-5" />
-                            </button>
-                            <button
-                                onClick={nextImage}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-colors"
-                            >
-                                <ChevronRight className="w-5 h-5" />
-                            </button>
+                            {/* Navigation Arrows - Smaller */}
+                            {productImages.length > 1 && (
+                                <>
+                                    <button
+                                        onClick={prevImage}
+                                        className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-900 transition-colors shadow-md"
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={nextImage}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-900 transition-colors shadow-md"
+                                    >
+                                        <ChevronRight className="w-4 h-4" />
+                                    </button>
+                                </>
+                            )}
 
-                            {/* Image Indicators */}
-                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                                {productImages.map((_, idx) => (
+                            {/* Image Indicators - Smaller */}
+                            {productImages.length > 1 && (
+                                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                                    {productImages.map((_, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => setCurrentImage(idx)}
+                                            className={cn(
+                                                "w-1.5 h-1.5 rounded-full transition-all",
+                                                idx === currentImage
+                                                    ? "bg-white w-6"
+                                                    : "bg-white/50 hover:bg-white/70"
+                                            )}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Thumbnail Grid - Compact */}
+                        {productImages.length > 1 && (
+                            <div className="grid grid-cols-5 gap-2">
+                                {productImages.map((image, idx) => (
                                     <button
                                         key={idx}
                                         onClick={() => setCurrentImage(idx)}
                                         className={cn(
-                                            "w-2 h-2 rounded-full transition-all",
+                                            "relative aspect-square rounded-md overflow-hidden border-2 transition-all",
                                             idx === currentImage
-                                                ? "bg-white w-8"
-                                                : "bg-white/50 hover:bg-white/70"
+                                                ? "border-primary ring-2 ring-primary/20"
+                                                : "border-gray-200 dark:border-gray-700 hover:border-primary/50"
                                         )}
-                                    />
+                                    >
+                                        <OptimizedImage 
+                                            src={image} 
+                                            alt={`${product.name} ${idx + 1}`} 
+                                            preset="thumbnail"
+                                            className="w-full h-full"
+                                        />
+                                    </button>
                                 ))}
                             </div>
-                        </div>
-
-                        {/* Thumbnail Grid */}
-                        <div className="grid grid-cols-4 gap-4">
-                            {productImages.map((image, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={() => setCurrentImage(idx)}
-                                    className={cn(
-                                        "relative aspect-square rounded-lg overflow-hidden border-2 transition-all",
-                                        idx === currentImage
-                                            ? "border-primary"
-                                            : "border-transparent hover:border-muted-foreground/20"
-                                    )}
-                                >
-                                    <Image src={image} alt={`${product.name} ${idx + 1}`} fill className="object-cover" />
-                                </button>
-                            ))}
-                        </div>
+                        )}
                     </div>
 
-                    {/* Product Info */}
-                    <div className="space-y-6">
+                    {/* Product Info - Compact */}
+                    <div className="lg:col-span-7 space-y-4">
                         <div>
-                            <div className="flex items-center gap-3 mb-2">
-                                <Badge variant="outline">{product.category}</Badge>
+                            <div className="flex items-center gap-2 mb-2">
+                                <Badge variant="outline" className="text-xs">{product.category}</Badge>
                                 {product.rating && product.review_count && (
                                     <div className="flex items-center gap-1">
                                         <div className="flex">
@@ -351,103 +396,287 @@ export default function ProductDetail() {
                                                 <Star
                                                     key={i}
                                                     className={cn(
-                                                        "w-4 h-4 fill-current",
-                                                        i < Math.floor(product.rating!) ? "text-secondary" : "text-gray-300"
+                                                        "w-3.5 h-3.5 fill-current",
+                                                        i < Math.floor(product.rating!) ? "text-yellow-400" : "text-gray-300"
                                                     )}
                                                 />
                                             ))}
                                         </div>
-                                        <span className="text-sm text-muted-foreground">
-                                            {product.rating} ({product.review_count} reviews)
+                                        <span className="text-xs text-muted-foreground">
+                                            {product.rating} ({product.review_count})
                                         </span>
                                     </div>
                                 )}
                             </div>
-                            <h1 className="font-serif text-4xl md:text-5xl font-medium mb-4">{product.name}</h1>
-                            <p className="text-lg text-muted-foreground leading-relaxed">{product.description}</p>
+                            <h1 className="font-serif text-2xl sm:text-3xl font-semibold mb-2">{product.name}</h1>
+                            <p className="text-sm text-muted-foreground leading-relaxed">{product.description}</p>
                         </div>
 
-                        {/* Pricing */}
+                        {/* Pricing - Compact */}
                         {isApproved ? (
-                            <div className="bg-muted/30 rounded-xl p-6">
-                                <div className="flex items-baseline gap-3 mb-4">
-                                    <span className="text-4xl font-bold">${currentPrice}</span>
-                                    <span className="text-muted-foreground">per unit</span>
-                                </div>
-
-                                {/* Tiered Pricing Table */}
-                                <div className="space-y-2">
-                                    <p className="text-sm font-semibold mb-2">Volume Discounts:</p>
-                                    {tieredPricing.map((tier, idx) => (
-                                        <div
-                                            key={idx}
+                            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-800">
+                                {/* Buy Mode Toggle */}
+                                <div className="mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                                            Purchase Mode:
+                                        </span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => handleBuyModeChange('retail')}
                                             className={cn(
-                                                "flex justify-between items-center p-2 rounded-lg text-sm",
-                                                tier.price === currentPrice ? "bg-primary/10 border border-primary/20" : "bg-background"
+                                                "flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all",
+                                                buyMode === 'retail'
+                                                    ? "bg-primary text-white shadow-sm"
+                                                    : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
                                             )}
                                         >
-                                            <span className="font-medium">{tier.qty} units</span>
-                                            <div className="flex items-center gap-3">
-                                                <span className="text-primary font-semibold">{tier.discount} off</span>
-                                                <span className="font-bold">${tier.price}/unit</span>
+                                            🛒 Retail Buy
+                                        </button>
+                                        <button
+                                            onClick={() => handleBuyModeChange('bulk')}
+                                            className={cn(
+                                                "flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all",
+                                                buyMode === 'bulk'
+                                                    ? "bg-emerald-600 text-white shadow-sm"
+                                                    : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
+                                            )}
+                                        >
+                                            📦 Bulk Buy
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Show pricing based on buy mode */}
+                                {buyMode === 'retail' ? (
+                                    /* Retail Mode Pricing */
+                                    <div className="space-y-2">
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+                                            Retail Pricing (Single/Small Quantities):
+                                        </p>
+                                        {hasRetailDiscount ? (
+                                            /* Show both prices when there's a discount */
+                                            <>
+                                                <div className="flex items-baseline gap-2 mb-1">
+                                                    <span className="text-3xl font-bold text-primary">
+                                                        ${product.sale_price}
+                                                    </span>
+                                                    <span className="text-sm text-muted-foreground">per unit</span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-base text-muted-foreground line-through">
+                                                        ${product.base_price}
+                                                    </span>
+                                                    <span className="text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-2 py-0.5 rounded">
+                                                        {retailDiscountPercent}% OFF
+                                                    </span>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            /* No discount - show only base price */
+                                            <div className="flex items-baseline gap-2 mb-1">
+                                                <span className="text-3xl font-bold text-primary">
+                                                    ${product.base_price}
+                                                </span>
+                                                <span className="text-sm text-muted-foreground">per unit</span>
+                                            </div>
+                                        )}
+                                        <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded border border-blue-200 dark:border-blue-900">
+                                            <p className="text-xs text-blue-900 dark:text-blue-100 font-medium">
+                                                💡 Switch to Bulk Buy for better pricing (MOQ: {product.moq} units)
+                                            </p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    /* Bulk Mode Pricing */
+                                    <div className="space-y-3">
+                                        {/* Retail Pricing Section */}
+                                        <div className="pb-3 border-b border-gray-200 dark:border-gray-700">
+                                            <p className="text-xs text-muted-foreground mb-1.5">Retail Pricing:</p>
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <span className="text-sm text-muted-foreground line-through">
+                                                    ${product.base_price}
+                                                </span>
+                                                {hasRetailDiscount && (
+                                                    <>
+                                                        <span className="text-base font-semibold text-gray-700 dark:text-gray-300">
+                                                            ${product.sale_price}
+                                                        </span>
+                                                        <span className="text-xs font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-2 py-0.5 rounded">
+                                                            {retailDiscountPercent}% OFF
+                                                        </span>
+                                                    </>
+                                                )}
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
+
+                                        {/* B2B Pricing Section */}
+                                        <div>
+                                            <p className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold mb-1.5">
+                                                💼 Your B2B Price:
+                                            </p>
+                                            {tieredPricing.length > 0 ? (
+                                                <>
+                                                    <div className="flex items-baseline gap-2 mb-2">
+                                                        <span className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+                                                            ${currentB2BPrice}
+                                                        </span>
+                                                        <span className="text-sm text-muted-foreground">per unit</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 mb-3">
+                                                        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-1 rounded">
+                                                            Save ${(displayPrice - currentB2BPrice!).toFixed(2)} per unit ({Math.round(((displayPrice - currentB2BPrice!) / displayPrice) * 100)}% off retail)
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Tiered Pricing Table - Compact */}
+                                                    <div className="space-y-1.5">
+                                                        <p className="text-xs font-semibold mb-1.5">Volume Discounts:</p>
+                                                        {tieredPricing.map((tier, idx) => (
+                                                            <div
+                                                                key={idx}
+                                                                className={cn(
+                                                                    "flex justify-between items-center p-2 rounded text-xs",
+                                                                    tier.price === currentB2BPrice 
+                                                                        ? "bg-emerald-100 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800" 
+                                                                        : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
+                                                                )}
+                                                            >
+                                                                <span className="font-medium">{tier.qty} units</span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{tier.discount} off</span>
+                                                                    <span className="font-bold">${tier.price}/unit</span>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    {/* Simple B2B pricing without tiers */}
+                                                    <div className="flex items-baseline gap-2 mb-2">
+                                                        <span className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+                                                            ${product.b2b_price}
+                                                        </span>
+                                                        <span className="text-sm text-muted-foreground">per unit</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-1 rounded">
+                                                            Save ${(displayPrice - product.b2b_price!).toFixed(2)} per unit ({Math.round(((displayPrice - product.b2b_price!) / displayPrice) * 100)}% off retail)
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                        ) : needsApproval ? (
-                            <div className="bg-blue-50 dark:bg-blue-950/20 rounded-xl p-8 border border-blue-200 dark:border-blue-900/50">
-                                <div className="text-center space-y-4">
+                        ) : user && approvalStatus === 'pending' ? (
+                            <div className="bg-yellow-50 dark:bg-yellow-950/20 rounded-lg p-5 border border-yellow-200 dark:border-yellow-900/50">
+                                <div className="text-center space-y-3">
+                                    <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                                        <svg className="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
                                     <div>
-                                        <h3 className="text-xl font-serif font-semibold mb-2">B2B Approval Required</h3>
-                                        <p className="text-muted-foreground">
-                                            Request B2B approval to view pricing and place bulk orders.
+                                        <h3 className="text-lg font-serif font-semibold mb-1 text-yellow-900 dark:text-yellow-100">
+                                            Approval Pending
+                                        </h3>
+                                        <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                                            Your B2B approval request is under review. You'll be notified once approved.
                                         </p>
                                     </div>
-                                    <Link href="/b2b-request">
-                                        <Button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
-                                            Request B2B Approval
-                                        </Button>
-                                    </Link>
                                 </div>
                             </div>
-                        ) : (
-                            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-950/30 dark:to-orange-950/30 rounded-xl p-8 border border-yellow-200 dark:border-yellow-900/50">
-                                <div className="text-center space-y-4">
-                                    <div>
-                                        <h3 className="text-xl font-serif font-semibold mb-2">Pricing Available for Registered Buyers</h3>
-                                        <p className="text-muted-foreground">
-                                            Sign in or create an account to view pricing and place orders.
-                                        </p>
+                        ) : user && approvalStatus === 'rejected' ? (
+                            <div className="bg-red-50 dark:bg-red-950/20 rounded-lg p-5 border border-red-200 dark:border-red-900/50">
+                                <div className="text-center space-y-3">
+                                    <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                                        <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
                                     </div>
-                                    <div className="flex gap-3 justify-center">
-                                        <Link href="/login">
-                                            <Button variant="outline">Sign In</Button>
-                                        </Link>
-                                        <Link href="/signup">
-                                            <Button className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
-                                                Create Account
+                                    <div>
+                                        <h3 className="text-lg font-serif font-semibold mb-1 text-red-900 dark:text-red-100">
+                                            Access Restricted
+                                        </h3>
+                                        <p className="text-sm text-red-800 dark:text-red-200 mb-3">
+                                            Your account access has been restricted. Please contact our support team.
+                                        </p>
+                                        <Link href="/contact">
+                                            <Button variant="outline" size="sm" className="border-red-300 hover:bg-red-100 dark:hover:bg-red-900">
+                                                Contact Support
                                             </Button>
                                         </Link>
                                     </div>
-                                    <p className="text-xs text-muted-foreground pt-4">
-                                        Need wholesale pricing? <Link href="/contact" className="text-primary hover:underline">Contact our sales team</Link>
-                                    </p>
+                                </div>
+                            </div>
+                        ) : user ? (
+                            <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-5 border border-blue-200 dark:border-blue-900/50">
+                                <div className="text-center space-y-3">
+                                    <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                                        <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-serif font-semibold mb-1 text-blue-900 dark:text-blue-100">
+                                            B2B Approval Required
+                                        </h3>
+                                        <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
+                                            Request B2B approval to view pricing and place bulk orders.
+                                        </p>
+                                        <Link href="/b2b-request">
+                                            <Button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold">
+                                                Request B2B Approval
+                                            </Button>
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-950/30 dark:to-orange-950/30 rounded-lg p-5 border border-yellow-200 dark:border-yellow-900/50">
+                                <div className="text-center space-y-3">
+                                    <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                                        <svg className="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-serif font-semibold mb-1 text-yellow-900 dark:text-yellow-100">
+                                            Pricing Available for Registered Buyers
+                                        </h3>
+                                        <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-3">
+                                            Sign in or create an account to request access to our B2B pricing.
+                                        </p>
+                                        <div className="flex gap-2 justify-center">
+                                            <Link href="/login">
+                                                <Button variant="outline" size="sm">Sign In</Button>
+                                            </Link>
+                                            <Link href="/signup">
+                                                <Button size="sm" className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
+                                                    Create Account
+                                                </Button>
+                                            </Link>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* Quantity Selector - Only for approved users */}
+                        {/* Quantity Selector - Only for Approved Users */}
                         {isApproved && (
                             <div>
-                                <label className="block text-sm font-semibold mb-2">
+                                <label className="block text-xs font-semibold mb-1.5">
                                     Quantity (MOQ: {product.moq} units)
                                 </label>
-                                <div className="flex items-center gap-4">
-                                    <div className="flex items-center border border-border rounded-lg">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex items-center border border-gray-300 dark:border-gray-700 rounded-lg">
                                         <button
                                             onClick={() => setQuantity(Math.max(product.moq, quantity - product.moq))}
-                                            className="px-4 py-3 hover:bg-muted transition-colors"
+                                            className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm"
                                         >
                                             -
                                         </button>
@@ -455,80 +684,82 @@ export default function ProductDetail() {
                                             type="number"
                                             value={quantity}
                                             onChange={(e) => setQuantity(Math.max(product.moq, parseInt(e.target.value) || product.moq))}
-                                            className="w-24 text-center bg-transparent border-x border-border py-3"
+                                            className="w-20 text-center bg-transparent border-x border-gray-300 dark:border-gray-700 py-2 text-sm"
                                             min={product.moq}
                                             step={product.moq}
                                         />
                                         <button
                                             onClick={() => setQuantity(quantity + product.moq)}
-                                            className="px-4 py-3 hover:bg-muted transition-colors"
+                                            className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm"
                                         >
                                             +
                                         </button>
                                     </div>
-                                    <span className="text-sm text-muted-foreground">
-                                        Total: ${(currentPrice * quantity).toFixed(2)}
+                                    <span className="text-xs text-muted-foreground">
+                                        Total: <span className="font-semibold text-foreground">${(finalPrice * quantity).toFixed(2)}</span>
                                     </span>
                                 </div>
                             </div>
                         )}
 
-                        {/* Actions */}
+                        {/* Actions - Only for Approved Users */}
                         {isApproved ? (
                             <>
-                                <div className="flex gap-3">
+                                <div className="flex gap-2">
                                     <Button 
-                                        size="lg" 
+                                        size="default" 
                                         className="flex-1"
                                         onClick={handleAddToCart}
                                         disabled={addingToCart}
                                     >
                                         {addingToCart ? (
                                             <>
-                                                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                                                 Adding...
                                             </>
                                         ) : addedToCart ? (
                                             <>
-                                                <Check className="w-5 h-5 mr-2" />
+                                                <Check className="w-4 h-4 mr-2" />
                                                 Added to Cart!
                                             </>
                                         ) : (
                                             <>
-                                                <ShoppingCart className="w-5 h-5 mr-2" />
+                                                <ShoppingCart className="w-4 h-4 mr-2" />
                                                 Add to Cart
                                             </>
                                         )}
                                     </Button>
                                     <Button
-                                        size="lg"
+                                        size="default"
                                         variant={isWishlisted ? "default" : "outline"}
                                         onClick={() => setIsWishlisted(!isWishlisted)}
                                     >
-                                        <Heart className={cn("w-5 h-5", isWishlisted && "fill-current")} />
+                                        <Heart className={cn("w-4 h-4", isWishlisted && "fill-current")} />
                                     </Button>
                                 </div>
 
                                 {/* Cart Options Modal */}
                                 {showCartOptions && addedToCart && (
                                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                                        <div className="bg-background rounded-lg p-6 max-w-sm w-full shadow-lg">
-                                            <div className="flex items-center gap-3 mb-4">
-                                                <Check className="w-6 h-6 text-green-500" />
-                                                <h3 className="text-lg font-semibold">Added to Cart!</h3>
+                                        <div className="bg-background rounded-lg p-5 max-w-sm w-full shadow-lg">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <Check className="w-5 h-5 text-green-500" />
+                                                <h3 className="text-base font-semibold">Added to Cart!</h3>
                                             </div>
-                                            <p className="text-muted-foreground mb-6">
+                                            <p className="text-sm text-muted-foreground mb-4">
                                                 {product.name} has been added to your cart.
                                             </p>
-                                            <div className="flex gap-3">
+                                            <div className="flex gap-2">
                                                 <Button
                                                     variant="outline"
+                                                    size="sm"
                                                     className="flex-1"
                                                     onClick={handleContinueShopping}
                                                 >
                                                     Continue Shopping
                                                 </Button>
                                                 <Button
+                                                    size="sm"
                                                     className="flex-1"
                                                     onClick={handleViewCart}
                                                 >
@@ -539,44 +770,37 @@ export default function ProductDetail() {
                                     </div>
                                 )}
                             </>
-                        ) : (
-                            <Link href="/login" className="block">
-                                <Button size="lg" className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
-                                    <ShoppingCart className="w-5 h-5 mr-2" />
-                                    Sign In to Order
-                                </Button>
-                            </Link>
-                        )}
+                        ) : null}
 
-                        {/* Features */}
+                        {/* Features - Compact */}
                         {productFeatures.length > 0 && (
-                            <div className="border-t border-border pt-6">
-                                <h3 className="font-semibold mb-4">Product Features</h3>
-                                <ul className="space-y-2">
+                            <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
+                                <h3 className="font-semibold text-sm mb-2">Product Features</h3>
+                                <ul className="space-y-1.5">
                                     {productFeatures.map((feature: string, idx: number) => (
-                                        <li key={idx} className="flex items-start gap-2 text-sm">
-                                            <span className="text-primary mt-1">✓</span>
-                                            <span>{feature}</span>
+                                        <li key={idx} className="flex items-start gap-2 text-xs">
+                                            <span className="text-primary mt-0.5">✓</span>
+                                            <span className="text-muted-foreground">{feature}</span>
                                         </li>
                                     ))}
                                 </ul>
                             </div>
                         )}
 
-                        {/* Trust Badges */}
-                        <div className="grid grid-cols-3 gap-4 pt-6 border-t border-border">
+                        {/* Trust Badges - Compact */}
+                        <div className="grid grid-cols-3 gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
                             <div className="text-center">
-                                <Truck className="w-8 h-8 mx-auto mb-2 text-primary" />
+                                <Truck className="w-6 h-6 mx-auto mb-1.5 text-primary" />
                                 <p className="text-xs font-medium">Free Shipping</p>
                                 <p className="text-xs text-muted-foreground">Orders $500+</p>
                             </div>
                             <div className="text-center">
-                                <Shield className="w-8 h-8 mx-auto mb-2 text-primary" />
+                                <Shield className="w-6 h-6 mx-auto mb-1.5 text-primary" />
                                 <p className="text-xs font-medium">Quality Guarantee</p>
                                 <p className="text-xs text-muted-foreground">100% Certified</p>
                             </div>
                             <div className="text-center">
-                                <Package className="w-8 h-8 mx-auto mb-2 text-primary" />
+                                <Package className="w-6 h-6 mx-auto mb-1.5 text-primary" />
                                 <p className="text-xs font-medium">Bulk Orders</p>
                                 <p className="text-xs text-muted-foreground">Volume Pricing</p>
                             </div>

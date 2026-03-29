@@ -129,6 +129,7 @@ export const getFeaturedProducts = async (req: Request, res: Response) => {
         base_price,
         sale_price,
         b2b_price,
+        moq,
         pricing_locked,
         user_tier
       `)

@@ -184,10 +184,10 @@ export const productsAPI = {
 // Cart API
 export const cartAPI = {
   get: () => apiRequest("/cart"),
-  add: (productId: string, quantity: number) =>
+  add: (productId: string, quantity: number, buyMode?: 'retail' | 'bulk') =>
     apiRequest("/cart", {
       method: "POST",
-      body: JSON.stringify({ productId, quantity }),
+      body: JSON.stringify({ productId, quantity, buyMode: buyMode || 'retail' }),
     }),
   update: (itemId: string, quantity: number) =>
     apiRequest(`/cart/${itemId}`, {

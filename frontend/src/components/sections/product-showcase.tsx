@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect } from "react"
 import { homepageAPI } from "@/lib/api"
 import { OptimizedImage } from "@/components/ui/optimized-image"
+import { AddToCartModal } from "@/components/product/add-to-cart-modal"
 import { cn } from "@/lib/utils"
 
 interface Product {
@@ -28,178 +29,190 @@ interface Product {
     userTier?: 'guest' | 'user' | 'b2b_approved' | 'b2b_pending' | 'b2b_rejected'
 }
 
-// Product Card Component
-function ProductCard({ product, index, onToggleWishlist, isWishlisted }: {
+// Compact Product Card Component
+function ProductCard({ product, index, onToggleWishlist, isWishlisted, onAddToCart }: {
     product: Product
     index: number
     onToggleWishlist: (id: string, e: React.MouseEvent) => void
     isWishlisted: boolean
+    onAddToCart?: (productId: string, quantity: number, buyMode: 'retail' | 'bulk') => void
 }) {
     const [isHovered, setIsHovered] = useState(false)
+    const [showAddToCartModal, setShowAddToCartModal] = useState(false)
 
     const displayPrice = product.sale_price || product.base_price
     const hasDiscount = product.sale_price && product.base_price && product.sale_price < product.base_price
+    const isApproved = product.userTier === 'b2b_approved'
+
+    const handleQuickAdd = (e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setShowAddToCartModal(true)
+    }
+
+    const handleAddToCartConfirm = (quantity: number, buyMode: 'retail' | 'bulk') => {
+        if (onAddToCart) {
+            onAddToCart(product.id, quantity, buyMode)
+        }
+    }
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
+            transition={{ delay: index * 0.05 }}
             onHoverStart={() => setIsHovered(true)}
             onHoverEnd={() => setIsHovered(false)}
             className="group relative"
         >
             <Link href={`/product/${product.id}`}>
-                <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-800">
-                    {/* Image Container */}
+                <div className="bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 dark:border-gray-800 h-full flex flex-col">
+                    {/* Compact Image Container */}
                     <div className="relative aspect-square overflow-hidden bg-gray-50 dark:bg-gray-800">
                         <OptimizedImage
                             src={product.image_url}
                             alt={product.name}
                             preset="thumbnail"
-                            className="w-full h-full group-hover:scale-110 transition-transform duration-500"
+                            className="w-full h-full group-hover:scale-105 transition-transform duration-300"
                         />
 
-                        {/* Badges */}
-                        <div className="absolute top-3 left-3 flex flex-col gap-2">
+                        {/* Compact Badges */}
+                        <div className="absolute top-2 left-2 flex flex-col gap-1">
                             {hasDiscount && (
-                                <motion.div
-                                    initial={{ scale: 0, rotate: -180 }}
-                                    animate={{ scale: 1, rotate: 0 }}
-                                    transition={{ delay: index * 0.1 + 0.2 }}
-                                    className="bg-red-500 text-white px-2.5 py-1 rounded-lg text-xs font-bold shadow-lg"
-                                >
+                                <span className="bg-red-500 text-white px-2 py-0.5 rounded text-xs font-bold">
                                     -{product.sale_percentage?.toFixed(0)}%
-                                </motion.div>
+                                </span>
                             )}
                             {product.badge && (
-                                <motion.div
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    transition={{ delay: index * 0.1 + 0.3 }}
-                                    className="bg-primary text-white px-2.5 py-1 rounded-lg text-xs font-semibold shadow-lg flex items-center gap-1"
-                                >
-                                    {product.badge === 'new' && <Sparkles className="w-3 h-3" />}
-                                    {product.badge === 'bestseller' && <TrendingUp className="w-3 h-3" />}
-                                    {product.badge === 'eco' && <Leaf className="w-3 h-3" />}
+                                <span className="bg-primary text-white px-2 py-0.5 rounded text-xs font-semibold capitalize">
                                     {product.badge}
-                                </motion.div>
+                                </span>
                             )}
                         </div>
 
-                        {/* Wishlist Button */}
+                        {/* Compact Wishlist Button */}
                         <motion.button
                             onClick={(e) => onToggleWishlist(product.id, e)}
                             className={cn(
-                                "absolute top-3 right-3 p-2.5 rounded-full backdrop-blur-md shadow-lg transition-all z-10",
+                                "absolute top-2 right-2 p-1.5 rounded-full backdrop-blur-sm shadow transition-all z-10",
                                 isWishlisted
                                     ? "bg-red-500 text-white"
-                                    : "bg-white/90 dark:bg-gray-900/90 text-gray-700 dark:text-gray-300 hover:bg-red-500 hover:text-white"
+                                    : "bg-white/80 dark:bg-gray-900/80 text-gray-600 dark:text-gray-400 hover:bg-red-500 hover:text-white"
                             )}
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
                         >
-                            <Heart className={cn("w-4 h-4", isWishlisted && "fill-current")} />
+                            <Heart className={cn("w-3.5 h-3.5", isWishlisted && "fill-current")} />
                         </motion.button>
 
-                        {/* Quick Actions - Show on hover */}
+                        {/* Quick Add Button - Show on hover */}
                         <AnimatePresence>
-                            {isHovered && (
-                                <motion.div
-                                    initial={{ y: 20, opacity: 0 }}
+                            {isHovered && product.stock_quantity > 0 && !product.pricingLocked && (
+                                <motion.button
+                                    initial={{ y: 10, opacity: 0 }}
                                     animate={{ y: 0, opacity: 1 }}
-                                    exit={{ y: 20, opacity: 0 }}
+                                    exit={{ y: 10, opacity: 0 }}
                                     transition={{ duration: 0.2 }}
-                                    className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 to-transparent"
+                                    onClick={handleQuickAdd}
+                                    className="absolute inset-x-2 bottom-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white py-2 rounded-lg font-semibold text-sm shadow-lg hover:bg-primary hover:text-white transition-colors flex items-center justify-center gap-1.5"
                                 >
-                                    <Button
-                                        size="sm"
-                                        className="w-full bg-white text-gray-900 hover:bg-gray-100 font-semibold shadow-lg"
-                                        onClick={(e) => {
-                                            e.preventDefault()
-                                            // Add to cart logic
-                                        }}
-                                    >
-                                        <ShoppingCart className="w-4 h-4 mr-2" />
-                                        Add to Cart
-                                    </Button>
-                                </motion.div>
+                                    <ShoppingCart className="w-4 h-4" />
+                                    Add
+                                </motion.button>
                             )}
                         </AnimatePresence>
 
                         {/* Stock indicator */}
-                        {product.stock_quantity < 10 && product.stock_quantity > 0 && (
-                            <div className="absolute bottom-3 left-3 bg-orange-500 text-white px-2.5 py-1 rounded-lg text-xs font-semibold shadow-lg">
-                                Only {product.stock_quantity} left!
-                            </div>
-                        )}
                         {product.stock_quantity === 0 && (
-                            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
-                                <span className="bg-gray-900 text-white px-4 py-2 rounded-lg font-semibold">
+                            <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center">
+                                <span className="bg-gray-900 text-white px-3 py-1.5 rounded-lg font-semibold text-sm">
                                     Out of Stock
                                 </span>
                             </div>
                         )}
                     </div>
 
-                    {/* Content */}
-                    <div className="p-4">
+                    {/* Compact Content */}
+                    <div className="p-3 flex-1 flex flex-col">
                         {/* Product Name */}
-                        <h3 className="font-semibold text-base text-gray-900 dark:text-white mb-1 line-clamp-2 group-hover:text-primary transition-colors">
+                        <h3 className="font-medium text-sm text-gray-900 dark:text-white mb-1 line-clamp-2 group-hover:text-primary transition-colors leading-tight">
                             {product.name}
                         </h3>
 
-                        {/* Rating */}
-                        <div className="flex items-center gap-1 mb-2">
+                        {/* Compact Rating */}
+                        <div className="flex items-center gap-0.5 mb-2">
                             {[...Array(5)].map((_, i) => (
-                                <Star key={i} className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                                <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                             ))}
                             <span className="text-xs text-gray-500 ml-1">(4.5)</span>
                         </div>
 
-                        {/* Pricing */}
-                        {product.pricingLocked ? (
-                            <div className="flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                                <Lock className="w-4 h-4 text-gray-500" />
-                                <span className="text-xs text-gray-600 dark:text-gray-400">
-                                    {product.userTier === 'guest' ? 'Login to view' : 'Approval required'}
-                                </span>
-                            </div>
-                        ) : (
-                            <div className="space-y-2">
-                                {/* Main Price */}
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-2xl font-bold text-primary">
-                                        ${displayPrice?.toFixed(2)}
+                        {/* Pricing - Compact */}
+                        <div className="mt-auto">
+                            {product.pricingLocked ? (
+                                <div className="flex items-center gap-1.5 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs">
+                                    <Lock className="w-3 h-3 text-gray-500 flex-shrink-0" />
+                                    <span className="text-gray-600 dark:text-gray-400 truncate">
+                                        {product.userTier === 'guest' ? 'Login' : 'Approval needed'}
                                     </span>
-                                    {hasDiscount && (
-                                        <span className="text-sm text-gray-400 line-through">
-                                            ${product.base_price?.toFixed(2)}
+                                </div>
+                            ) : (
+                                <div>
+                                    {/* Main Price */}
+                                    <div className="flex items-baseline gap-1.5 mb-1">
+                                        <span className="text-lg font-bold text-primary">
+                                            ${displayPrice?.toFixed(2)}
                                         </span>
+                                        {hasDiscount && (
+                                            <span className="text-xs text-gray-400 line-through">
+                                                ${product.base_price?.toFixed(2)}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* B2B Price - Compact */}
+                                    {product.userTier === 'b2b_approved' && product.b2b_price && (
+                                        <div className="flex items-center justify-between p-1.5 bg-emerald-50 dark:bg-emerald-950/30 rounded text-xs border border-emerald-200 dark:border-emerald-900">
+                                            <span className="text-emerald-700 dark:text-emerald-400 font-semibold">
+                                                Bulk: ${product.b2b_price.toFixed(2)}
+                                            </span>
+                                            <span className="text-emerald-600 dark:text-emerald-500">
+                                                {product.moq}+
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    {/* Low Stock Warning */}
+                                    {product.stock_quantity > 0 && product.stock_quantity < 10 && (
+                                        <div className="mt-1 text-xs text-orange-600 dark:text-orange-400 font-medium">
+                                            Only {product.stock_quantity} left
+                                        </div>
                                     )}
                                 </div>
-
-                                {/* B2B Price */}
-                                {product.userTier === 'b2b_approved' && product.b2b_price && (
-                                    <div className="flex items-center gap-2 p-2 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg border border-emerald-200 dark:border-emerald-900">
-                                        <div className="flex-1">
-                                            <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-                                                Bulk Price
-                                            </p>
-                                            <p className="text-sm font-bold text-emerald-900 dark:text-emerald-300">
-                                                ${product.b2b_price.toFixed(2)}
-                                            </p>
-                                        </div>
-                                        <span className="text-xs text-emerald-600 dark:text-emerald-500">
-                                            {product.moq}+ units
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </div>
             </Link>
+
+            {/* Add to Cart Modal */}
+            {showAddToCartModal && (
+                <AddToCartModal
+                    product={{
+                        id: product.id,
+                        name: product.name,
+                        image_url: product.image_url,
+                        base_price: product.base_price || 0,
+                        sale_price: product.sale_price || undefined,
+                        b2b_price: product.b2b_price || undefined,
+                        moq: product.moq || 12
+                    }}
+                    isOpen={showAddToCartModal}
+                    onClose={() => setShowAddToCartModal(false)}
+                    onAddToCart={handleAddToCartConfirm}
+                    isApproved={isApproved}
+                />
+            )}
         </motion.div>
     )
 }

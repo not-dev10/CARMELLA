@@ -60,11 +60,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
 
     try {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any, session: any) => {
         setSession(session)
-        // Clear pricing-dependent caches when auth state changes
-        cache.clear('featured_products');
-        cache.clear('products_');
+        
+        // ✅ Only clear pricing caches on actual login/logout, not token refresh
+        if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+          console.log('[AUTH] Auth event:', event, '- Clearing pricing caches');
+          cache.clear('featured_products');
+          cache.clear('products_');
+        } else {
+          console.log('[AUTH] Auth event:', event, '- Skipping cache clear (token refresh)');
+        }
         
         if (session?.user?.id) {
           fetchUserProfile(session.user.id)

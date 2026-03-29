@@ -6,7 +6,7 @@ export const getCart = async (req: Request, res: Response) => {
   const userId = req.userId;
   
   try {
-    // ✅ OPTIMIZED: Single nested query instead of 2 sequential queries
+    // ✅ OPTIMIZED: Single nested query with all product details + buy_mode
     const { data: cart, error: cartError } = await supabaseAdmin
       .from("carts")
       .select(`
@@ -14,7 +14,20 @@ export const getCart = async (req: Request, res: Response) => {
         cart_items(
           id,
           quantity,
-          products(id, name, slug, image_url, base_price, category_id)
+          buy_mode,
+          products(
+            id, 
+            name, 
+            slug, 
+            image_url, 
+            gallery_urls,
+            base_price, 
+            sale_price,
+            b2b_price,
+            moq,
+            stock_quantity,
+            category_id
+          )
         )
       `)
       .eq("user_id", userId)
@@ -34,8 +47,25 @@ export const getCart = async (req: Request, res: Response) => {
 
     const latency = Date.now() - startTime;
     const items = cart.cart_items || [];
-    console.log(`[CART] getCart completed - ${latency}ms, Items: ${items.length}`);
-    res.json({ items, total: 0 });
+    
+    // ✅ Calculate total based on buy_mode
+    const total = items.reduce((sum, item: any) => {
+      const buyMode = item.buy_mode || 'retail';
+      let price = 0;
+      
+      if (buyMode === 'bulk' && item.products?.b2b_price) {
+        price = item.products.b2b_price;
+      } else if (item.products?.sale_price) {
+        price = item.products.sale_price;
+      } else {
+        price = item.products?.base_price || 0;
+      }
+      
+      return sum + (price * item.quantity);
+    }, 0);
+    
+    console.log(`[CART] getCart completed - ${latency}ms, Items: ${items.length}, Total: $${total.toFixed(2)}`);
+    res.json({ items, total });
   } catch (error: any) {
     const latency = Date.now() - startTime;
     console.error(`[CART] getCart error after ${latency}ms:`, error);
@@ -46,9 +76,9 @@ export const getCart = async (req: Request, res: Response) => {
 export const addToCart = async (req: Request, res: Response) => {
   const startTime = Date.now();
   const userId = req.userId;
-  const { productId, quantity } = req.body;
+  const { productId, quantity, buyMode } = req.body; // ✅ Extract buyMode
 
-  console.log("[CART] Add to cart request:", { userId, productId, quantity });
+  console.log("[CART] Add to cart request:", { userId, productId, quantity, buyMode });
 
   if (!userId) {
     const latency = Date.now() - startTime;
@@ -61,6 +91,9 @@ export const addToCart = async (req: Request, res: Response) => {
     console.error(`[CART] Invalid product or quantity after ${latency}ms:`, { productId, quantity });
     return res.status(400).json({ error: "Invalid product or quantity" });
   }
+
+  // Validate buyMode
+  const validBuyMode = buyMode === 'bulk' || buyMode === 'retail' ? buyMode : 'retail';
 
   try {
     let { data: cart, error: cartError } = await supabaseAdmin
@@ -100,7 +133,7 @@ export const addToCart = async (req: Request, res: Response) => {
       return res.status(500).json({ error: "Failed to get or create cart" });
     }
 
-    console.log("[CART] Adding item to cart:", { cartId: cart.id, productId, quantity });
+    console.log("[CART] Adding item to cart:", { cartId: cart.id, productId, quantity, buyMode: validBuyMode });
 
     // First try to find existing item
     const { data: existingItem } = await supabaseAdmin
@@ -114,22 +147,27 @@ export const addToCart = async (req: Request, res: Response) => {
     let itemError;
 
     if (existingItem) {
-      // Update existing item
-      console.log("[CART] Item exists, updating quantity");
+      // Update existing item - update both quantity and buy_mode
+      console.log("[CART] Item exists, updating quantity and buy_mode");
       const result = await supabaseAdmin
         .from("cart_items")
-        .update({ quantity })
+        .update({ quantity, buy_mode: validBuyMode }) // ✅ Update buy_mode
         .eq("id", existingItem.id)
         .select()
         .single();
       item = result.data;
       itemError = result.error;
     } else {
-      // Insert new item
+      // Insert new item with buy_mode
       console.log("[CART] Item doesn't exist, creating new");
       const result = await supabaseAdmin
         .from("cart_items")
-        .insert([{ cart_id: cart.id, product_id: productId, quantity }])
+        .insert([{ 
+          cart_id: cart.id, 
+          product_id: productId, 
+          quantity,
+          buy_mode: validBuyMode // ✅ Include buy_mode
+        }])
         .select()
         .single();
       item = result.data;

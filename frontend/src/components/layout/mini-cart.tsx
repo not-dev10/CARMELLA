@@ -178,7 +178,19 @@ export function MiniCart({ open, onOpenChange }: MiniCartProps) {
                           {item.name}
                         </h4>
                       </Link>
-                      <p className="text-xs text-muted-foreground mt-1">SKU: {item.sku}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs text-muted-foreground">SKU: {item.sku}</p>
+                        {item.buyMode && (
+                          <span className={cn(
+                            "inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold",
+                            item.buyMode === 'bulk' 
+                              ? "bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400"
+                              : "bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400"
+                          )}>
+                            {item.buyMode === 'bulk' ? '📦 Bulk' : '🛒 Retail'}
+                          </span>
+                        )}
+                      </div>
 
                       {/* Price */}
                       <div className="flex items-center gap-2 mt-2">
@@ -200,7 +212,18 @@ export function MiniCart({ open, onOpenChange }: MiniCartProps) {
                       {/* Quantity Selector */}
                       <div className="flex items-center gap-2 mt-3">
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          onClick={() => {
+                            const newQuantity = item.quantity - 1
+                            // Check MOQ for bulk items
+                            if (item.buyMode === 'bulk' && item.moq && newQuantity < item.moq) {
+                              // Don't allow going below MOQ, just remove the item
+                              if (confirm(`Bulk items require a minimum order of ${item.moq}. Remove this item?`)) {
+                                removeItem(item.id)
+                              }
+                              return
+                            }
+                            updateQuantity(item.id, newQuantity)
+                          }}
                           className="w-6 h-6 rounded flex items-center justify-center bg-muted hover:bg-muted/80 transition-colors"
                         >
                           <Minus className="w-3 h-3" />

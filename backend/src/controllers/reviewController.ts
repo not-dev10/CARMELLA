@@ -3,24 +3,48 @@ import { supabase } from "../config/supabase.js";
 
 export const getProductReviews = async (req: Request, res: Response) => {
   const { productId } = req.params;
+  const { page = '1', limit = '10' } = req.query; // ✅ Add pagination params
 
   if (!productId) {
     return res.status(400).json({ error: "Product ID is required" });
   }
 
   try {
+    const pageNum = parseInt(page as string) || 1;
+    const limitNum = Math.min(parseInt(limit as string) || 10, 50); // Max 50 per page
+    const offset = (pageNum - 1) * limitNum;
+
+    // ✅ Get total count for pagination
+    const { count } = await supabase
+      .from("reviews")
+      .select("id", { count: "exact", head: true })
+      .eq("product_id", productId)
+      .eq("status", "approved");
+
+    // ✅ Get paginated reviews
     const { data: reviews, error } = await supabase
       .from("reviews")
       .select("*, users(first_name, last_name, google_id)")
       .eq("product_id", productId)
       .eq("status", "approved")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limitNum - 1); // ✅ Add pagination
 
     if (error) {
       return res.status(500).json({ error: "Failed to fetch reviews" });
     }
 
-    res.json({ reviews: reviews || [] });
+    // ✅ Return with pagination metadata
+    res.json({ 
+      reviews: reviews || [],
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / limitNum),
+        hasMore: offset + limitNum < (count || 0)
+      }
+    });
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
   }
@@ -58,6 +82,29 @@ export const createReview = async (req: Request, res: Response) => {
 
     if (productError || !product) {
       return res.status(404).json({ error: "Product not found" });
+    }
+
+    // ✅ NEW: Verify user purchased this product
+    const { data: purchase, error: purchaseError } = await supabase
+      .from("order_items")
+      .select(`
+        id,
+        orders!inner(
+          id,
+          user_id,
+          status
+        )
+      `)
+      .eq("product_id", productId)
+      .eq("orders.user_id", userId)
+      .eq("orders.status", "delivered")
+      .limit(1)
+      .single();
+
+    if (purchaseError || !purchase) {
+      return res.status(403).json({ 
+        error: "You can only review products you've purchased and received" 
+      });
     }
 
     // Check if user already reviewed this product
@@ -209,18 +256,32 @@ export const markHelpful = async (req: Request, res: Response) => {
       return res.status(500).json({ error: "Failed to mark as helpful" });
     }
 
-    // Increment helpful count
-    const { data: review, error: updateError } = await supabase
-      .from("reviews")
-      .select("helpful_count")
-      .eq("id", id)
-      .single();
+    // ✅ Use atomic increment to avoid race condition
+    // This uses PostgreSQL's atomic increment: helpful_count = helpful_count + 1
+    const { error: updateError } = await supabase.rpc('increment_review_helpful', {
+      review_id: id
+    });
 
-    if (!updateError && review) {
-      await supabase
+    // If RPC doesn't exist, fall back to manual increment
+    // (This is a temporary fallback - the RPC should be created)
+    if (updateError && updateError.message?.includes('function')) {
+      console.warn('[REVIEW] RPC function not found, using fallback increment');
+      // Fallback: Read current count and increment
+      // Note: This still has race condition but is better than nothing
+      const { data: review } = await supabase
         .from("reviews")
-        .update({ helpful_count: (review.helpful_count || 0) + 1 })
-        .eq("id", id);
+        .select("helpful_count")
+        .eq("id", id)
+        .single();
+
+      if (review) {
+        await supabase
+          .from("reviews")
+          .update({ helpful_count: (review.helpful_count || 0) + 1 })
+          .eq("id", id);
+      }
+    } else if (updateError) {
+      console.error('[REVIEW] Error incrementing helpful count:', updateError);
     }
 
     res.json({ success: true });

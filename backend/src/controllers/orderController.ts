@@ -38,7 +38,7 @@ export const createOrder = async (req: Request, res: Response) => {
       });
     }
 
-    // Get cart with nested items and products in single query
+    // Get cart with nested items and products in single query (include buy_mode)
     const { data: cartWithItems, error: cartError } = await supabaseAdmin
       .from("carts")
       .select(`
@@ -46,6 +46,7 @@ export const createOrder = async (req: Request, res: Response) => {
         cart_items(
           product_id,
           quantity,
+          buy_mode,
           products(id, base_price, sale_price, b2b_price, moq, name)
         )
       `)
@@ -80,6 +81,7 @@ export const createOrder = async (req: Request, res: Response) => {
     let total = 0;
     const orderItems = cartItems.map((item: any) => {
       const product = item.products;
+      const buyMode = item.buy_mode || 'retail'; // ✅ Get buy_mode from cart item
 
       if (!product) {
         const latency = Date.now() - startTime;
@@ -91,23 +93,32 @@ export const createOrder = async (req: Request, res: Response) => {
         productId: product.id, 
         productName: product.name,
         prices: { base: product.base_price, sale: product.sale_price, b2b: product.b2b_price },
-        quantity: item.quantity
+        quantity: item.quantity,
+        buyMode // ✅ Log buy_mode
       });
 
-      // Use B2B price if available, otherwise sale price, otherwise base price
-      const price = product.b2b_price !== null && product.b2b_price !== undefined 
-        ? product.b2b_price 
-        : product.sale_price !== null && product.sale_price !== undefined
-        ? product.sale_price 
-        : product.base_price;
+      // ✅ Use correct price based on buy_mode
+      let price: number;
+      if (buyMode === 'bulk' && product.b2b_price !== null && product.b2b_price !== undefined) {
+        price = product.b2b_price;
+      } else if (product.sale_price !== null && product.sale_price !== undefined) {
+        price = product.sale_price;
+      } else {
+        price = product.base_price;
+      }
 
       if (price === null || price === undefined) {
-        console.error("[ORDER] No valid price found for product:", { productId: product.id, productName: product.name, prices: { base: product.base_price, sale: product.sale_price, b2b: product.b2b_price } });
+        console.error("[ORDER] No valid price found for product:", { 
+          productId: product.id, 
+          productName: product.name, 
+          prices: { base: product.base_price, sale: product.sale_price, b2b: product.b2b_price },
+          buyMode 
+        });
         throw new Error(`No pricing available for product: ${product.name}`);
       }
 
-      // Check MOQ
-      if (product.moq && item.quantity < product.moq) {
+      // ✅ Check MOQ only for bulk orders
+      if (buyMode === 'bulk' && product.moq && item.quantity < product.moq) {
         throw new Error(`Minimum order quantity for ${product.name} is ${product.moq} units (you ordered ${item.quantity})`);
       }
 
@@ -115,10 +126,36 @@ export const createOrder = async (req: Request, res: Response) => {
 
       return {
         product_id: item.product_id,
+        product_name: product.name, // Store for error messages
         quantity: item.quantity,
         price_at_purchase: price,
       };
     });
+
+    // ✅ NEW: Verify inventory availability for all items
+    console.log("[ORDER] Verifying inventory availability...");
+    for (const item of orderItems) {
+      const { data: inventory, error: invError } = await supabaseAdmin
+        .from("inventory")
+        .select("quantity_available, warehouse_location")
+        .eq("product_id", item.product_id)
+        .single();
+
+      if (invError) {
+        console.warn(`[ORDER] No inventory record for product ${item.product_id}, skipping check`);
+        // Continue - some products may not have inventory tracking
+        continue;
+      }
+
+      if (inventory && inventory.quantity_available < item.quantity) {
+        throw new Error(
+          `Insufficient stock for ${item.product_name}. ` +
+          `Available: ${inventory.quantity_available}, Requested: ${item.quantity}`
+        );
+      }
+
+      console.log(`[ORDER] Inventory check passed for ${item.product_name}: ${inventory.quantity_available} available`);
+    }
 
     // Create order with systematic order number
     const orderNumber = generateOrderId();

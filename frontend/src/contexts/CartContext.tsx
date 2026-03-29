@@ -12,6 +12,8 @@ export interface CartItem {
   quantity: number
   discountPrice?: number
   discountPercentage?: number
+  buyMode?: 'retail' | 'bulk' // Track purchase mode
+  moq?: number // Minimum order quantity for bulk items
 }
 
 export interface CartContextType {
@@ -48,6 +50,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         // Convert database cart items to CartItem format
         const dbItems: CartItem[] = response.items.map((item: any) => {
           console.log('[Cart] Processing item:', item)
+          
+          // ✅ Determine correct price based on buy_mode
+          const buyMode = item.buy_mode || 'retail'
+          let discountPrice: number | undefined
+          
+          // Correct logic: respect buy_mode when selecting price
+          if (buyMode === 'bulk' && item.products?.b2b_price) {
+            discountPrice = item.products.b2b_price
+          } else if (buyMode === 'retail' && item.products?.sale_price) {
+            discountPrice = item.products.sale_price
+          } else {
+            // Fallback to base_price if no discount available
+            discountPrice = item.products?.base_price
+          }
+          
           return {
             id: item.id,
             productId: item.product_id,
@@ -56,7 +73,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             image: item.products?.image_url || item.product?.image_url,
             price: item.products?.base_price || item.product?.base_price || 0,
             quantity: item.quantity,
-            discountPrice: item.products?.sale_price || item.products?.b2b_price || item.product?.sale_price || item.product?.b2b_price,
+            discountPrice,
+            buyMode,
+            moq: item.products?.moq || item.product?.moq
           }
         })
         console.log('[Cart] Converted items:', dbItems)
@@ -70,11 +89,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // Load cart from localStorage and sync with database on mount
   useEffect(() => {
     const loadCart = async () => {
-      // Set a timeout to prevent infinite loading
+      // ✅ Set a timeout to prevent infinite loading (increased from 5s to 10s)
       loadingTimeoutRef.current = setTimeout(() => {
         console.warn('[Cart] Loading timeout - forcing loading to false')
         setLoading(false)
-      }, 5000) as unknown as number
+      }, 10000) as unknown as number // ✅ Increased from 5000 to 10000
 
       try {
         // First load from localStorage for immediate display
@@ -117,14 +136,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items])
 
   const addItem = async (productId: string, quantity: number, item: CartItem) => {
-    console.log('[Cart] Adding item:', { productId, quantity, user: !!user })
+    console.log('[Cart] Adding item:', { productId, quantity, buyMode: item.buyMode, user: !!user })
     
     // Update local state immediately for better UX
     setItems((prevItems) => {
       const existingItem = prevItems.find((i) => i.productId === productId)
       if (existingItem) {
         return prevItems.map((i) =>
-          i.productId === productId ? { ...i, quantity: i.quantity + quantity } : i
+          i.productId === productId ? { ...i, quantity: i.quantity + quantity, buyMode: item.buyMode } : i
         )
       }
       return [...prevItems, { ...item, quantity }]
@@ -133,8 +152,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     // Sync to database if user is logged in
     if (user) {
       try {
-        console.log('[Cart] Syncing to database...', { productId, quantity })
-        const response = await cartAPI.add(productId, quantity)
+        console.log('[Cart] Syncing to database...', { productId, quantity, buyMode: item.buyMode })
+        const response = await cartAPI.add(productId, quantity, item.buyMode)
         console.log('[Cart] Database sync successful:', response)
       } catch (error) {
         console.error('[Cart] Error adding item to database cart:', error)

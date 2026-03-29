@@ -91,20 +91,42 @@ export async function authMiddleware(
   }
 }
 
-export function adminMiddleware(
+export async function adminMiddleware(
   req: Request,
   res: Response,
   next: NextFunction
 ) {
   console.log("[ADMIN_MIDDLEWARE] Checking admin access for user:", req.userId, "Type:", req.userType);
   
-  if (req.userType !== "admin") {
-    console.warn("[ADMIN_MIDDLEWARE] Access denied. User type is:", req.userType);
-    return res.status(403).json({ error: "Admin access required" });
+  // ✅ Re-verify admin status from database (not just JWT claims)
+  try {
+    const { data: user, error } = await supabase
+      .from("users")
+      .select("user_type, status")
+      .eq("id", req.userId)
+      .single();
+
+    if (error || !user) {
+      console.warn("[ADMIN_MIDDLEWARE] User not found in database:", req.userId);
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    if (user.user_type !== "admin") {
+      console.warn("[ADMIN_MIDDLEWARE] Access denied. User type is:", user.user_type);
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    if (user.status !== "active") {
+      console.warn("[ADMIN_MIDDLEWARE] Access denied. User status is:", user.status);
+      return res.status(403).json({ error: "Account is not active" });
+    }
+    
+    console.log("[ADMIN_MIDDLEWARE] Admin access granted");
+    next();
+  } catch (error) {
+    console.error("[ADMIN_MIDDLEWARE] Error verifying admin status:", error);
+    return res.status(500).json({ error: "Failed to verify admin access" });
   }
-  
-  console.log("[ADMIN_MIDDLEWARE] Admin access granted");
-  next();
 }
 
 export function b2bMiddleware(

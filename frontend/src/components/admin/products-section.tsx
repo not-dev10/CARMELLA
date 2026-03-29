@@ -535,6 +535,51 @@ export function ProductsSection() {
                     </div>
                   </div>
 
+                  {/* MOQ and B2B Min Quantity */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-foreground mb-2">
+                        MOQ (Bulk) *
+                        <span className="text-xs font-normal text-muted-foreground ml-1">
+                          Minimum Order Quantity
+                        </span>
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.moq}
+                        onChange={(e) => setFormData({ ...formData, moq: e.target.value })}
+                        placeholder="12"
+                        min="1"
+                        step="1"
+                        className="w-full px-4 py-3 border border-border dark:border-gray-700 bg-background dark:bg-gray-800 text-foreground rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Minimum units required for bulk/B2B orders
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-foreground mb-2">
+                        B2B Min Quantity
+                        <span className="text-xs font-normal text-muted-foreground ml-1">
+                          Optional tier threshold
+                        </span>
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.b2b_min_quantity}
+                        onChange={(e) => setFormData({ ...formData, b2b_min_quantity: e.target.value })}
+                        placeholder="1"
+                        min="1"
+                        step="1"
+                        className="w-full px-4 py-3 border border-border dark:border-gray-700 bg-background dark:bg-gray-800 text-foreground rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Additional B2B tier minimum (if applicable)
+                      </p>
+                    </div>
+                  </div>
+
                   {/* Images with drag-drop reordering */}
                   <ImageManager
                     images={formData.gallery_urls}
