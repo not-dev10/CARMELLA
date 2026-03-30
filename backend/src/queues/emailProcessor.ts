@@ -1,8 +1,6 @@
 import { emailQueue } from '../config/queues';
+import { supabase } from '../config/supabase';
 import { createTransport } from 'nodemailer';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 const transporter = createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
@@ -38,13 +36,11 @@ export async function initEmailProcessor() {
 
       if (jobData.type === 'order_confirmation') {
         // Get user email from database
-        const { data: user, error: userError } = await import('../config/supabase').then(
-          (m) => m.supabase
-            .from('profiles')
-            .select('email')
-            .eq('id', jobData.userId)
-            .single()
-        );
+        const { data: user, error: userError } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('id', jobData.userId)
+          .single();
 
         if (userError || !user) {
           throw new Error(`Could not find user email for order ${jobData.orderId}`);
