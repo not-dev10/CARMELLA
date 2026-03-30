@@ -102,13 +102,14 @@ export async function initOrderProcessor() {
 
       // 7. Queue email notification (non-blocking)
       await emailQueue.add(
+        'order_confirmation',
         {
           type: 'order_confirmation',
           orderId: order.id,
           userId,
           orderNumber,
         },
-        { attempts: 3, backoff: 'exponential' }
+        { attempts: 3, backoff: { type: 'exponential', delay: 2000 } }
       );
 
       // 8. Clear cart

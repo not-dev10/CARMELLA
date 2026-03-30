@@ -81,10 +81,10 @@ export async function initEmailProcessor() {
         `;
       } else if (jobData.type === 'low_stock_alert') {
         subject = 'Low Stock Alert - Inventory Action Required';
-        htmlContent = jobData.htmlContent;
+        htmlContent = jobData.htmlContent || '';
       } else if (jobData.type === 'b2b_confirmation') {
         subject = 'B2B Request Submitted';
-        htmlContent = jobData.htmlContent;
+        htmlContent = jobData.htmlContent || '';
       }
 
       if (!toEmail) {
