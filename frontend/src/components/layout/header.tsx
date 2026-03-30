@@ -243,7 +243,7 @@ export function Header() {
                             onMouseEnter={() => setLogoHovered(true)}
                             onMouseLeave={() => setLogoHovered(false)}
                         >
-                            <img src="/assets/CARMELLA LOGO .svg" alt="Carmella" className="h-20 w-auto relative z-10" />
+                            <img src="/carmella.png" alt="Carmella" className="h-20 w-auto relative z-10" />
                             
                             {/* Sliding glass shine effect */}
                             {logoHovered && (
