@@ -5,6 +5,7 @@ import { config } from "./config/index.js";
 import { errorHandler, latencyMiddleware } from "./middleware/index.js";
 import { compressionMiddleware } from "./middleware/compression.js";
 import { apiLimiter, authLimiter, adminLimiter } from "./middleware/rateLimiter.js";
+import { initializeAllProcessors } from "./queues/index.js";
 import authRoutes from "./routes/auth.js";
 import productRoutes from "./routes/products.js";
 import userRoutes from "./routes/users.js";
@@ -91,10 +92,20 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 // Start server
-const server = app.listen(config.port, () => {
+const server = app.listen(config.port, async () => {
   console.log(`✅ Server running on http://localhost:${config.port}`);
   console.log(`📝 Environment: ${config.nodeEnv}`);
   console.log(`📊 Ready to accept connections...`);
+  
+  // Initialize queue processors
+  try {
+    await initializeAllProcessors();
+    console.log(`✅ Queue processors initialized successfully`);
+  } catch (error) {
+    console.error(`❌ Failed to initialize queue processors:`, error);
+    // Don't exit - server can still handle requests, just no async processing
+    console.warn(`⚠️  Continuing without queue processors...`);
+  }
 });
 
 // Handle graceful shutdown
