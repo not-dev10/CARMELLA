@@ -152,13 +152,6 @@ export default function Category() {
 
         return sorted
     }, [filteredProducts, sortBy])
-            case "featured":
-                sorted = sorted.sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0))
-                break
-        }
-
-        return sorted
-    }, [filteredProducts, sortBy])
 
     const toggleWishlist = (id: string) => {
         setWishlist(prev =>
