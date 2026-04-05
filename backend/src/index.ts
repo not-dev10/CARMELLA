@@ -23,6 +23,9 @@ import inventoryRoutes from "./routes/inventory.js";
 
 const app = express();
 
+// Trust proxy - required for Cloudflare Tunnel and rate limiting
+app.set('trust proxy', true);
+
 // Security & Performance Middleware
 app.use(cors(config.cors));
 app.use(compressionMiddleware); // Gzip compression
