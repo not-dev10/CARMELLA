@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { supabaseAdmin } from "../config/supabase.js";
 import { getSupabaseClient } from "../utils/supabaseClient.js";
-import { deleteFromCloudinary, deleteMultipleFromCloudinary } from "../utils/cloudinary.js";
+import { deleteFromS3, deleteMultipleFromS3 } from "../utils/s3.js";
 
 /**
  * SECURE PRICING IMPLEMENTATION
@@ -352,14 +352,14 @@ export async function deleteProduct(req: Request, res: Response) {
       imagesToDelete.push(...product.gallery_urls);
     }
 
-    // Delete images from Cloudinary (non-blocking, don't fail if this fails)
+    // Delete images from S3 (non-blocking, don't fail if this fails)
     if (imagesToDelete.length > 0) {
-      deleteMultipleFromCloudinary(imagesToDelete)
+      deleteMultipleFromS3(imagesToDelete)
         .then(result => {
-          console.log(`[PRODUCT] Cloudinary cleanup: ${result.success}/${result.total} images deleted`);
+          console.log(`[PRODUCT] S3 cleanup: ${result.success}/${result.total} images deleted`);
         })
         .catch(err => {
-          console.error("[PRODUCT] Failed to delete images from Cloudinary:", err);
+          console.error("[PRODUCT] Failed to delete images from S3:", err);
         });
     }
 

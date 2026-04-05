@@ -1,6 +1,6 @@
 /**
- * Cloudinary Image Optimization Utilities
- * Automatically adds transformations to Cloudinary URLs for optimal performance
+ * Image Optimization Utilities - S3 Compatible
+ * Handles both Cloudinary URLs (legacy) and S3 URLs (current)
  */
 
 export interface ImageTransformOptions {
@@ -14,20 +14,31 @@ export interface ImageTransformOptions {
 }
 
 /**
- * Optimize Cloudinary URL with transformations
- * Example: https://res.cloudinary.com/cloud/image/upload/v123/path.jpg
- * Becomes: https://res.cloudinary.com/cloud/image/upload/w_800,q_auto,f_auto/v123/path.jpg
+ * Optimize image URL
+ * - For Cloudinary URLs: Adds transformations for optimal performance
+ * - For S3 URLs: Returns URL as-is (no transformation needed)
+ * - For other URLs: Returns URL as-is
  */
 export function optimizeCloudinaryUrl(
   url: string,
   options: ImageTransformOptions = {}
 ): string {
-  // Return original URL if not a Cloudinary URL
-  if (!url || !url.includes('cloudinary.com')) {
+  // Return original URL if empty
+  if (!url) {
     return url
   }
 
-  // Default options for optimal performance
+  // S3 URLs don't need optimization - return as-is
+  if (url.includes('.s3.') || url.includes('amazonaws.com')) {
+    return url
+  }
+
+  // If it's not a Cloudinary URL, return as-is
+  if (!url.includes('cloudinary.com')) {
+    return url
+  }
+
+  // Apply Cloudinary transformations (legacy for any remaining Cloudinary URLs)
   const {
     width,
     height,

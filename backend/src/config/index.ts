@@ -19,11 +19,12 @@ export const config = {
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
   },
   
-  // Cloudinary
-  cloudinary: {
-    cloudName: process.env.CLOUDINARY_CLOUD_NAME || "",
-    apiKey: process.env.CLOUDINARY_API_KEY || "",
-    apiSecret: process.env.CLOUDINARY_API_SECRET || "",
+  // AWS S3
+  aws: {
+    region: process.env.AWS_REGION || "us-east-1",
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
+    bucketName: process.env.AWS_S3_BUCKET_NAME || "",
   },
   
   // Mail Configuration
@@ -54,8 +55,8 @@ if (process.env.NODE_ENV === "development") {
   console.log("✓ SUPABASE_URL:", config.supabase.url ? "✓ Loaded" : "✗ Missing");
   console.log("✓ SUPABASE_ANON_KEY:", config.supabase.anonKey ? "✓ Loaded" : "✗ Missing");
   console.log("✓ SUPABASE_SERVICE_KEY:", config.supabase.serviceKey ? "✓ Loaded" : "✗ Missing");
-  console.log("☁️ CLOUDINARY_CLOUD_NAME:", config.cloudinary.cloudName ? "✓ Loaded" : "✗ Missing");
-  console.log("☁️ CLOUDINARY_API_KEY:", config.cloudinary.apiKey ? "✓ Loaded" : "✗ Missing");
+  console.log("☁️ AWS_REGION:", config.aws.region ? "✓ Loaded" : "✗ Missing");
+  console.log("☁️ AWS_S3_BUCKET_NAME:", config.aws.bucketName ? "✓ Loaded" : "✗ Missing");
   console.log("📧 MAIL_SERVICE:", config.mail.service ? `✓ ${config.mail.service}` : "✗ Not configured");
   console.log("");
 }

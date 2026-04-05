@@ -21,7 +21,6 @@ import { SettingsSection } from "@/components/admin/settings-section"
 import { ProductsSection } from "@/components/admin/products-section"
 import { OrdersSection } from "@/components/admin/orders-section"
 import { PerformanceSection } from "@/components/admin/performance-section"
-import { CloudinaryDebug } from "@/components/admin/cloudinary-debug"
 import { useAuth } from "@/contexts/AuthContext"
 import { adminAPI } from "@/lib/api"
 
@@ -941,9 +940,6 @@ export default function Admin() {
             </motion.div>
           )}
         </AnimatePresence>
-        
-        {/* Cloudinary Debug Info */}
-        <CloudinaryDebug />
       </div>
   )
 }

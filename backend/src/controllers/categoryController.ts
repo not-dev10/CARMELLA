@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { supabase, supabaseAdmin } from "../config/supabase.js";
-import { deleteFromCloudinary } from "../utils/cloudinary.js";
+import { deleteFromS3 } from "../utils/s3.js";
 
 /**
  * Get all categories
@@ -182,10 +182,10 @@ export async function deleteCategory(req: Request, res: Response) {
       return res.status(400).json({ error: error.message });
     }
 
-    // Delete image from Cloudinary (non-blocking, don't fail if this fails)
+    // Delete image from S3 (non-blocking, don't fail if this fails)
     if (category.image_url) {
-      deleteFromCloudinary(category.image_url).catch(err => {
-        console.error("[CATEGORY] Failed to delete image from Cloudinary:", err);
+      deleteFromS3(category.image_url).catch(err => {
+        console.error("[CATEGORY] Failed to delete image from S3:", err);
       });
     }
 

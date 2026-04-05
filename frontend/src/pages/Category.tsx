@@ -222,7 +222,7 @@ export default function Category() {
                 ) : (
                     <div className={cn(
                         viewMode === "grid"
-                            ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+                            ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4"
                             : "flex flex-col gap-4"
                     )}>
                         <AnimatePresence mode="popLayout">
@@ -265,19 +265,19 @@ function ProductCard({
 }) {
     if (viewMode === "list") {
         return (
-            <div className="flex gap-6 bg-card border border-border rounded-lg p-4 hover:shadow-lg transition-shadow card-gradient-hover">
-                <div className="relative w-48 h-48 flex-shrink-0 rounded-lg overflow-hidden">
+            <div className="flex gap-3 sm:gap-6 bg-card border border-border rounded-lg p-2 sm:p-4 hover:shadow-lg transition-shadow card-gradient-hover">
+                <div className="relative w-24 h-24 sm:w-32 sm:h-32 md:w-48 md:h-48 flex-shrink-0 rounded-lg overflow-hidden">
                     <Image src={product.image_url} alt={product.name} fill className="object-cover" />
                 </div>
                 <div className="flex-1 flex flex-col justify-between">
                     <div>
-                        <h3 className="font-serif text-2xl font-semibold mb-2 text-gradient">{product.name}</h3>
-                        <p className="text-muted-foreground mb-4">{product.description}</p>
-                        <div className="flex items-center gap-4 mb-4">
-                            <Badge variant="outline" className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/30">
+                        <h3 className="font-serif text-base sm:text-lg md:text-2xl font-semibold mb-1 sm:mb-2 text-gradient line-clamp-2">{product.name}</h3>
+                        <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-4 line-clamp-2">{product.description}</p>
+                        <div className="flex items-center gap-2 sm:gap-4 mb-2 sm:mb-4 flex-wrap">
+                            <Badge variant="outline" className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/30 text-xs">
                                 {product.stock_quantity > 0 ? "In Stock" : "Out of Stock"}
                             </Badge>
-                            <span className="text-sm text-muted-foreground">Stock: {product.stock_quantity}</span>
+                            <span className="text-xs sm:text-sm text-muted-foreground">Stock: {product.stock_quantity}</span>
                         </div>
                     </div>
                     <div className="space-y-3">
@@ -368,7 +368,7 @@ function ProductCard({
                 transition={{ type: "spring", stiffness: 400, damping: 25 }}
                 className="group relative bg-card border border-border rounded-lg overflow-hidden hover:shadow-xl transition-shadow card-gradient-hover flex flex-col h-full"
             >
-                <div className="relative aspect-[3/4] overflow-hidden">
+                <div className="relative aspect-square overflow-hidden">
                     <Image
                         src={product.image_url}
                         alt={product.name}
@@ -395,9 +395,9 @@ function ProductCard({
                         <Heart className={cn("w-4 h-4", isWishlisted && "fill-current")} />
                     </button>
                 </div>
-                <div className="p-4 flex-1 flex flex-col">
-                    <h3 className="font-serif text-lg font-semibold mb-1 text-gradient line-clamp-2">{product.name}</h3>
-                    <p className="text-xs text-muted-foreground mb-3">
+                <div className="p-2 sm:p-3 flex-1 flex flex-col">
+                    <h3 className="font-serif text-sm sm:text-base font-semibold mb-1 text-gradient line-clamp-2">{product.name}</h3>
+                    <p className="text-xs text-muted-foreground mb-2">
                         {product.stock_quantity > 0 ? "In Stock" : "Out of Stock"}
                     </p>
                     <div className="space-y-2 flex-1">
@@ -419,7 +419,7 @@ function ProductCard({
                             <>
                                 <div className="p-2 rounded-lg bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200">
                                     <div className="flex items-baseline justify-between gap-1">
-                                        <span className="text-xl font-bold bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent truncate">
+                                        <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent truncate">
                                             {product.sale_price !== null && product.sale_price !== undefined
                                                 ? `${product.sale_price.toFixed(2)}`
                                                 : product.base_price !== null && product.base_price !== undefined

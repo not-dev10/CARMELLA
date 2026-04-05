@@ -4,6 +4,9 @@ import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence, Reorder } from "framer-motion"
 import { Upload, X, GripVertical, Image as ImageIcon, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { supabase } from "@/lib/supabase"
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api"
 
 interface ImageManagerProps {
   images: string[]
@@ -12,9 +15,10 @@ interface ImageManagerProps {
   disabled?: boolean
 }
 
-interface CloudinaryResponse {
-  secure_url: string
-  public_id: string
+interface S3UploadResponse {
+  signedUrl: string
+  publicUrl: string
+  key: string
 }
 
 export function ImageManager({
@@ -43,55 +47,66 @@ export function ImageManager({
     setDraggedOver(false)
   }
 
-  const uploadToCloudinary = async (file: File): Promise<string | null> => {
+  const uploadToS3 = async (file: File): Promise<string | null> => {
     try {
-      const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
-      const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
-
-      console.log("[CLOUDINARY] Upload starting:", {
-        cloudName,
-        uploadPreset,
+      console.log("[S3] Upload starting:", {
         fileName: file.name,
         fileSize: file.size,
         fileType: file.type,
-        envVars: {
-          VITE_CLOUDINARY_CLOUD_NAME: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
-          VITE_CLOUDINARY_UPLOAD_PRESET: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
-        }
       })
 
-      if (!cloudName || !uploadPreset) {
-        const error = `Missing Cloudinary config: cloudName=${!!cloudName}, uploadPreset=${!!uploadPreset}`;
-        console.error("[CLOUDINARY] Configuration error:", error);
-        alert(`Cloudinary not configured!\n\n${error}\n\nPlease check your .env file.`);
-        throw new Error(error);
-      }
-
-      const formData = new FormData()
-      formData.append("file", file)
-      formData.append("upload_preset", uploadPreset)
+      // Get auth token
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
       
-      const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`
-      console.log("[CLOUDINARY] Upload URL:", uploadUrl)
-
-      const response = await fetch(uploadUrl, {
+      if (!token) {
+        throw new Error("Not authenticated - please log in first")
+      }
+      
+      // Step 1: Get signed URL from backend
+      console.log("[S3] Requesting signed upload URL...")
+      const signedUrlResponse = await fetch(`${API_BASE_URL}/upload/get-signed-url`, {
         method: "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          filename: file.name,
+          fileType: "product", // Can be "product" or "category"
+        }),
       })
 
-      console.log("[CLOUDINARY] Response status:", response.status, response.statusText)
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.error("[CLOUDINARY] Upload error response:", errorData)
-        throw new Error(errorData.error?.message || `Upload failed (${response.status})`)
+      if (!signedUrlResponse.ok) {
+        const errorData = await signedUrlResponse.json()
+        console.error("[S3] Failed to get signed URL:", errorData)
+        throw new Error(errorData.error || `Failed to get upload URL (${signedUrlResponse.status})`)
       }
 
-      const data: CloudinaryResponse = await response.json()
-      console.log("[CLOUDINARY] Upload success:", data.secure_url)
-      return data.secure_url
+      const { signedUrl, publicUrl }: S3UploadResponse = await signedUrlResponse.json()
+      console.log("[S3] Got signed URL, uploading file...")
+
+      // Step 2: Upload file to S3 using signed URL
+      const uploadResponse = await fetch(signedUrl, {
+        method: "PUT",
+        body: file,
+        headers: {
+          "Content-Type": file.type || "image/jpeg",
+        },
+      })
+
+      console.log("[S3] Upload response status:", uploadResponse.status, uploadResponse.statusText)
+
+      if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text()
+        console.error("[S3] Upload error response:", errorText)
+        throw new Error(`Upload failed (${uploadResponse.status})`)
+      }
+
+      console.log("[S3] Upload success:", publicUrl)
+      return publicUrl
     } catch (error: any) {
-      console.error("[CLOUDINARY] Upload error:", error.message || error)
+      console.error("[S3] Upload error:", error.message || error)
       return null
     }
   }
@@ -131,7 +146,7 @@ export function ImageManager({
 
     for (const file of validFiles) {
       try {
-        const url = await uploadToCloudinary(file)
+        const url = await uploadToS3(file)
         if (url) {
           uploadedUrls.push(url)
         } else {

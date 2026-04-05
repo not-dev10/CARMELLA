@@ -16,7 +16,7 @@ interface OptimizedImageProps {
 
 /**
  * Optimized Image Component
- * Automatically applies Cloudinary transformations for optimal performance
+ * Handles Cloudinary (legacy) and S3 (current) URLs
  */
 export function OptimizedImage({
   src,

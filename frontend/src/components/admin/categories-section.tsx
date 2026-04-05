@@ -4,6 +4,9 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect, useRef } from "react"
 import { categoriesAPI } from "@/lib/api"
+import { supabase } from "@/lib/supabase"
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api"
 
 interface Category {
   id: string
@@ -47,52 +50,66 @@ export function CategoriesSection() {
     }
   }
 
-  const uploadToCloudinary = async (file: File): Promise<string | null> => {
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
-    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
-
-    console.log("[CLOUDINARY] Starting upload:", {
-      cloudName,
-      uploadPreset,
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type
-    })
-
-    if (!cloudName || !uploadPreset) {
-      const error = `Missing Cloudinary config: cloudName=${!!cloudName}, uploadPreset=${!!uploadPreset}`
-      console.error("[CLOUDINARY] Config error:", error)
-      alert(`Cloudinary not configured!\n\n${error}\n\nPlease check your .env file.`)
-      return null
-    }
-
+  const uploadToS3 = async (file: File): Promise<string | null> => {
     try {
-      const formData = new FormData()
-      formData.append("file", file)
-      formData.append("upload_preset", uploadPreset)
-      
-      const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`
-      console.log("[CLOUDINARY] Upload URL:", uploadUrl)
-
-      const response = await fetch(uploadUrl, {
-        method: "POST",
-        body: formData,
+      console.log("[S3] Upload starting:", {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
       })
 
-      console.log("[CLOUDINARY] Response status:", response.status)
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        console.error("[CLOUDINARY] Upload error:", errorData)
-        throw new Error(errorData.error?.message || `Upload failed (${response.status})`)
+      // Get auth token
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      
+      if (!token) {
+        throw new Error("Not authenticated - please log in first")
       }
 
-      const data = await response.json()
-      console.log("[CLOUDINARY] Upload success:", data.secure_url)
-      return data.secure_url
+      // Step 1: Get signed URL from backend
+      console.log("[S3] Requesting signed upload URL...")
+      const signedUrlResponse = await fetch(`${API_BASE_URL}/upload/get-signed-url`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          filename: file.name,
+          fileType: "category",
+        }),
+      })
+
+      if (!signedUrlResponse.ok) {
+        const errorData = await signedUrlResponse.json()
+        console.error("[S3] Failed to get signed URL:", errorData)
+        throw new Error(errorData.error || `Failed to get upload URL (${signedUrlResponse.status})`)
+      }
+
+      const { signedUrl, publicUrl } = await signedUrlResponse.json()
+      console.log("[S3] Got signed URL, uploading file...")
+
+      // Step 2: Upload file to S3 using signed URL
+      const uploadResponse = await fetch(signedUrl, {
+        method: "PUT",
+        body: file,
+        headers: {
+          "Content-Type": file.type || "image/jpeg",
+        },
+      })
+
+      console.log("[S3] Upload response status:", uploadResponse.status, uploadResponse.statusText)
+
+      if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text()
+        console.error("[S3] Upload error response:", errorText)
+        throw new Error(`Upload failed (${uploadResponse.status})`)
+      }
+
+      console.log("[S3] Upload success:", publicUrl)
+      return publicUrl
     } catch (error: any) {
-      console.error("[CLOUDINARY] Upload exception:", error)
-      alert(`Upload failed: ${error.message}`)
+      console.error("[S3] Upload error:", error.message || error)
       return null
     }
   }
@@ -113,9 +130,9 @@ export function CategoriesSection() {
       return
     }
 
-    // Upload to Cloudinary
+    // Upload to S3
     setUploading(true)
-    const url = await uploadToCloudinary(file)
+    const url = await uploadToS3(file)
     setUploading(false)
 
     if (url) {

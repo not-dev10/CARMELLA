@@ -6,11 +6,13 @@ import { errorHandler, latencyMiddleware } from "./middleware/index.js";
 import { compressionMiddleware } from "./middleware/compression.js";
 import { apiLimiter, authLimiter, adminLimiter } from "./middleware/rateLimiter.js";
 import { initializeAllProcessors } from "./queues/index.js";
+import { S3Client, HeadBucketCommand } from "@aws-sdk/client-s3";
 import authRoutes from "./routes/auth.js";
 import productRoutes from "./routes/products.js";
 import userRoutes from "./routes/users.js";
 import categoryRoutes from "./routes/categories.js";
 import adminRoutes from "./routes/admin.js";
+import uploadRoutes from "./routes/uploads.js";
 import cartRoutes from "./routes/cart.js";
 import orderRoutes from "./routes/orders.js";
 import wishlistRoutes from "./routes/wishlist.js";
@@ -47,11 +49,11 @@ app.get("/api/checklist", (req, res) => {
         status: process.env.SUPABASE_URL ? "OK" : "MISSING",
         message: process.env.SUPABASE_URL ? "Supabase connected" : "Missing SUPABASE_URL"
       },
-      cloudinary: {
-        status: process.env.CLOUDINARY_CLOUD_NAME ? "OK" : "MISSING",
-        message: process.env.CLOUDINARY_CLOUD_NAME 
-          ? `Cloud Name: ${process.env.CLOUDINARY_CLOUD_NAME}` 
-          : "Missing CLOUDINARY_CLOUD_NAME"
+      s3: {
+        status: process.env.AWS_S3_BUCKET_NAME ? "OK" : "MISSING",
+        message: process.env.AWS_S3_BUCKET_NAME 
+          ? `Bucket: ${process.env.AWS_S3_BUCKET_NAME}` 
+          : "Missing AWS_S3_BUCKET_NAME"
       },
       mail: {
         status: process.env.MAIL_SERVICE ? "OK" : "NOT_CONFIGURED",
@@ -71,6 +73,7 @@ app.get("/api/checklist", (req, res) => {
 
 // Routes
 app.use("/api/auth", authLimiter, authRoutes); // Strict rate limit for auth
+app.use("/api/upload", uploadRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/categories", categoryRoutes);
@@ -91,11 +94,48 @@ app.use((req, res) => {
 // Error handler (must be last)
 app.use(errorHandler);
 
+// Test S3 connectivity
+async function testS3Connection(): Promise<boolean> {
+  try {
+    const s3Client = new S3Client({
+      region: config.aws.region,
+      credentials: {
+        accessKeyId: config.aws.accessKeyId,
+        secretAccessKey: config.aws.secretAccessKey,
+      },
+    });
+
+    const command = new HeadBucketCommand({ Bucket: config.aws.bucketName });
+    await s3Client.send(command);
+    return true;
+  } catch (error) {
+    console.error(`❌ S3 Connection Failed:`, error instanceof Error ? error.message : String(error));
+    return false;
+  }
+}
+
 // Start server
 const server = app.listen(config.port, async () => {
+  console.log(`\n${'='.repeat(50)}`);
   console.log(`✅ Server running on http://localhost:${config.port}`);
   console.log(`📝 Environment: ${config.nodeEnv}`);
-  console.log(`📊 Ready to accept connections...`);
+  console.log(`🌍 AWS Region: ${config.aws.region}`);
+  
+  // Test S3 connectivity
+  if (config.aws.bucketName && config.aws.accessKeyId) {
+    console.log(`\n☁️  Testing S3 Connection...`);
+    const s3Status = await testS3Connection();
+    if (s3Status) {
+      console.log(`✅ S3 Connected: ${config.aws.bucketName} (${config.aws.region})`);
+    } else {
+      console.log(`⚠️  S3 Connection Failed - Check credentials and bucket name`);
+    }
+  } else {
+    console.log(`⚠️  S3 Configuration Missing - Some features may not work`);
+  }
+  
+  console.log(`\n📊 Ready to accept connections...`);
+  console.log(`${'='.repeat(50)}\n`);
   
   // Initialize queue processors
   try {
