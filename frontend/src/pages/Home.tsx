@@ -1,6 +1,5 @@
 import { HeroSection } from "@/components/sections/hero"
 import { CategoriesSection } from "@/components/sections/categories"
-import { FeatureShowcase3D } from "@/components/sections/scroll-3d-section"
 import { BrandQuote } from "@/components/sections/brand-quote"
 import { CollectionSplit } from "@/components/sections/collection-split"
 import { ProductShowcase } from "@/components/sections/product-showcase"
@@ -13,7 +12,6 @@ export default function Home() {
         <div className="flex flex-col gap-0">
             <HeroSection />
             <CategoriesSection />
-            <FeatureShowcase3D />
             <BrandQuote />
             <CollectionSplit />
             <ProductShowcase />

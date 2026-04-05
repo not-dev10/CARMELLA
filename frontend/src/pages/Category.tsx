@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react"
 import { useParams } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
-import { SlidersHorizontal, Grid3x3, List, Heart, Lock, Package, ArrowLeft } from "lucide-react"
+import { SlidersHorizontal, Grid3x3, List, Heart, Lock, Package, ArrowLeft, X, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Image from "@/components/ui/image-shim"
@@ -37,6 +37,12 @@ interface Category {
     description?: string
 }
 
+interface Filters {
+    priceRange: [number, number]
+    inStock: boolean | null
+    featured: boolean | null
+}
+
 const SORT_OPTIONS = [
     { value: "featured", label: "Featured" },
     { value: "price-low", label: "Price: Low to High" },
@@ -53,6 +59,11 @@ export default function Category() {
     const [showFilters, setShowFilters] = useState(false)
     const [wishlist, setWishlist] = useState<string[]>([])
     const [loading, setLoading] = useState(true)
+    const [filters, setFilters] = useState<Filters>({
+        priceRange: [0, 10000],
+        inStock: null,
+        featured: null
+    })
 
     // Fetch products and category
     useEffect(() => {
@@ -71,6 +82,15 @@ export default function Category() {
                 if (foundCategory) {
                     const categoryProducts = productsData.products?.filter((p: Product) => p.category_id === foundCategory.id) || []
                     setProducts(categoryProducts)
+                    
+                    // Calculate max price for price range
+                    if (categoryProducts.length > 0) {
+                        const maxPrice = Math.max(...categoryProducts.map(p => p.base_price || p.sale_price || 0))
+                        setFilters(prev => ({
+                            ...prev,
+                            priceRange: [0, Math.ceil(maxPrice * 1.1)]
+                        }))
+                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch data:", error)
@@ -84,9 +104,36 @@ export default function Category() {
         fetchData()
     }, [slug])
 
+    // Apply filters to products
+    const filteredProducts = useMemo(() => {
+        return products.filter(product => {
+            const price = product.sale_price || product.base_price || 0
+            
+            // Price filter
+            if (price < filters.priceRange[0] || price > filters.priceRange[1]) {
+                return false
+            }
+            
+            // Stock filter
+            if (filters.inStock === true && product.stock_quantity === 0) {
+                return false
+            }
+            if (filters.inStock === false && product.stock_quantity > 0) {
+                return false
+            }
+            
+            // Featured filter
+            if (filters.featured === true && !product.is_featured) {
+                return false
+            }
+            
+            return true
+        })
+    }, [products, filters])
+
     // Sort products
     const sortedProducts = useMemo(() => {
-        let sorted = [...products]
+        let sorted = [...filteredProducts]
 
         switch (sortBy) {
             case "price-low":
@@ -104,7 +151,14 @@ export default function Category() {
         }
 
         return sorted
-    }, [products, sortBy])
+    }, [filteredProducts, sortBy])
+            case "featured":
+                sorted = sorted.sort((a, b) => (b.is_featured ? 1 : 0) - (a.is_featured ? 1 : 0))
+                break
+        }
+
+        return sorted
+    }, [filteredProducts, sortBy])
 
     const toggleWishlist = (id: string) => {
         setWishlist(prev =>
@@ -154,98 +208,248 @@ export default function Category() {
             </div>
 
             <div className="container mx-auto px-6 py-12">
-                {/* Toolbar */}
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-                    <div className="flex items-center gap-4">
-                        {/* Mobile Filter Toggle */}
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="lg:hidden"
-                            onClick={() => setShowFilters(!showFilters)}
-                        >
-                            <SlidersHorizontal className="w-4 h-4 mr-2" />
-                            Filters
-                        </Button>
+                {/* Main Layout: Sidebar + Content */}
+                <div className="flex flex-col lg:flex-row gap-8">
+                    {/* Sidebar Filters */}
+                    <aside className={cn(
+                        "lg:w-64 flex-shrink-0",
+                        showFilters ? "block" : "hidden lg:block"
+                    )}>
+                        <div className="sticky top-24 bg-card border border-border rounded-lg p-6 space-y-6">
+                            {/* Header */}
+                            <div className="flex items-center justify-between lg:block">
+                                <h3 className="text-lg font-semibold flex items-center gap-2">
+                                    <SlidersHorizontal className="w-5 h-5" />
+                                    Filters
+                                </h3>
+                                <button
+                                    onClick={() => setShowFilters(false)}
+                                    className="lg:hidden p-2 hover:bg-muted rounded-lg"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
 
-                        <p className="text-sm text-muted-foreground">
-                            {sortedProducts.length} products
-                        </p>
-                    </div>
+                            {/* Price Filter */}
+                            <div className="space-y-3">
+                                <label className="font-semibold text-sm block">Price Range</label>
+                                <div className="space-y-2">
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="number"
+                                            placeholder="Min"
+                                            value={filters.priceRange[0]}
+                                            onChange={(e) => setFilters({
+                                                ...filters,
+                                                priceRange: [Math.max(0, Number(e.target.value)), filters.priceRange[1]]
+                                            })}
+                                            className="flex-1 px-3 py-2 border border-border rounded-lg text-sm bg-background"
+                                        />
+                                        <input
+                                            type="number"
+                                            placeholder="Max"
+                                            value={filters.priceRange[1]}
+                                            onChange={(e) => setFilters({
+                                                ...filters,
+                                                priceRange: [filters.priceRange[0], Math.max(filters.priceRange[0], Number(e.target.value))]
+                                            })}
+                                            className="flex-1 px-3 py-2 border border-border rounded-lg text-sm bg-background"
+                                        />
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max={filters.priceRange[1] * 2}
+                                        value={filters.priceRange[1]}
+                                        onChange={(e) => setFilters({
+                                            ...filters,
+                                            priceRange: [filters.priceRange[0], Number(e.target.value)]
+                                        })}
+                                        className="w-full cursor-pointer"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        ${filters.priceRange[0]} - ${filters.priceRange[1]}
+                                    </p>
+                                </div>
+                            </div>
 
-                    <div className="flex items-center gap-4">
-                        {/* Sort */}
-                        <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value)}
-                            className="px-4 py-2 rounded-lg border border-border bg-background text-sm"
-                        >
-                            {SORT_OPTIONS.map(option => (
-                                <option key={option.value} value={option.value}>
-                                    {option.label}
-                                </option>
-                            ))}
-                        </select>
+                            {/* Stock Status */}
+                            <div className="space-y-3 border-t border-border pt-6">
+                                <label className="font-semibold text-sm block">Stock Status</label>
+                                <div className="space-y-2">
+                                    <label className="flex items-center gap-2 cursor-pointer hover:bg-muted p-2 rounded-lg transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            checked={filters.inStock === null}
+                                            onChange={() => setFilters({ ...filters, inStock: null })}
+                                            className="w-4 h-4 cursor-pointer"
+                                        />
+                                        <span className="text-sm">All Items</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer hover:bg-muted p-2 rounded-lg transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            checked={filters.inStock === true}
+                                            onChange={() => setFilters({ ...filters, inStock: true })}
+                                            className="w-4 h-4 cursor-pointer"
+                                        />
+                                        <span className="text-sm">In Stock Only</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer hover:bg-muted p-2 rounded-lg transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            checked={filters.inStock === false}
+                                            onChange={() => setFilters({ ...filters, inStock: false })}
+                                            className="w-4 h-4 cursor-pointer"
+                                        />
+                                        <span className="text-sm">Out of Stock</span>
+                                    </label>
+                                </div>
+                            </div>
 
-                        {/* View Mode */}
-                        <div className="flex gap-1 border border-border rounded-lg p-1">
-                            <button
-                                onClick={() => setViewMode("grid")}
-                                className={cn(
-                                    "p-2 rounded",
-                                    viewMode === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
-                                )}
+                            {/* Featured Filter */}
+                            <div className="space-y-3 border-t border-border pt-6">
+                                <label className="font-semibold text-sm block">Featured</label>
+                                <div className="space-y-2">
+                                    <label className="flex items-center gap-2 cursor-pointer hover:bg-muted p-2 rounded-lg transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            checked={filters.featured === null}
+                                            onChange={() => setFilters({ ...filters, featured: null })}
+                                            className="w-4 h-4 cursor-pointer"
+                                        />
+                                        <span className="text-sm">All Products</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer hover:bg-muted p-2 rounded-lg transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            checked={filters.featured === true}
+                                            onChange={() => setFilters({ ...filters, featured: true })}
+                                            className="w-4 h-4 cursor-pointer"
+                                        />
+                                        <span className="text-sm">Featured Only</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* Reset Filters */}
+                            <Button
+                                variant="outline"
+                                className="w-full"
+                                onClick={() => setFilters({
+                                    priceRange: [0, 10000],
+                                    inStock: null,
+                                    featured: null
+                                })}
                             >
-                                <Grid3x3 className="w-4 h-4" />
-                            </button>
-                            <button
-                                onClick={() => setViewMode("list")}
-                                className={cn(
-                                    "p-2 rounded",
-                                    viewMode === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
-                                )}
-                            >
-                                <List className="w-4 h-4" />
-                            </button>
+                                Reset Filters
+                            </Button>
                         </div>
+                    </aside>
+
+                    {/* Main Content */}
+                    <div className="flex-1">
+                        {/* Toolbar */}
+                        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+                            <div className="flex items-center gap-4">
+                                {/* Mobile Filter Toggle */}
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="lg:hidden"
+                                    onClick={() => setShowFilters(!showFilters)}
+                                >
+                                    <SlidersHorizontal className="w-4 h-4 mr-2" />
+                                    Filters
+                                </Button>
+
+                                <p className="text-sm text-muted-foreground">
+                                    {sortedProducts.length} of {products.length} products
+                                </p>
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                                {/* Sort */}
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value)}
+                                    className="px-4 py-2 rounded-lg border border-border bg-background text-sm font-medium hover:bg-muted transition-colors"
+                                >
+                                    {SORT_OPTIONS.map(option => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                {/* View Mode */}
+                                <div className="flex gap-1 border border-border rounded-lg p-1 bg-background">
+                                    <button
+                                        onClick={() => setViewMode("grid")}
+                                        className={cn(
+                                            "p-2 rounded transition-colors",
+                                            viewMode === "grid" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                                        )}
+                                    >
+                                        <Grid3x3 className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode("list")}
+                                        className={cn(
+                                            "p-2 rounded transition-colors",
+                                            viewMode === "list" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                                        )}
+                                    >
+                                        <List className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Products Grid/List */}
+                        {sortedProducts.length === 0 ? (
+                            <div className="text-center py-12">
+                                <p className="text-muted-foreground mb-4">No products match your filters</p>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setFilters({
+                                        priceRange: [0, 10000],
+                                        inStock: null,
+                                        featured: null
+                                    })}
+                                >
+                                    Clear Filters
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className={cn(
+                                viewMode === "grid"
+                                    ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+                                    : "flex flex-col gap-4"
+                            )}>
+                                <AnimatePresence mode="popLayout">
+                                    {sortedProducts.map((product, index) => (
+                                        <motion.div
+                                            key={product.id}
+                                            layout
+                                            initial={{ opacity: 0, scale: 0.9 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            exit={{ opacity: 0, scale: 0.9 }}
+                                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                                        >
+                                            <ProductCard
+                                                product={product}
+                                                viewMode={viewMode}
+                                                isWishlisted={wishlist.includes(product.id)}
+                                                onToggleWishlist={() => toggleWishlist(product.id)}
+                                            />
+                                        </motion.div>
+                                    ))}
+                                </AnimatePresence>
+                            </div>
+                        )}
                     </div>
                 </div>
-
-                {/* Products Grid/List */}
-                {sortedProducts.length === 0 ? (
-                    <div className="text-center py-12">
-                        <p className="text-muted-foreground mb-4">No products found in this category</p>
-                        <Link href="/catalog">
-                            <Button>Browse All Products</Button>
-                        </Link>
-                    </div>
-                ) : (
-                    <div className={cn(
-                        viewMode === "grid"
-                            ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4"
-                            : "flex flex-col gap-4"
-                    )}>
-                        <AnimatePresence mode="popLayout">
-                            {sortedProducts.map((product, index) => (
-                                <motion.div
-                                    key={product.id}
-                                    layout
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.9 }}
-                                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                                >
-                                    <ProductCard
-                                        product={product}
-                                        viewMode={viewMode}
-                                        isWishlisted={wishlist.includes(product.id)}
-                                        onToggleWishlist={() => toggleWishlist(product.id)}
-                                    />
-                                </motion.div>
-                            ))}
-                        </AnimatePresence>
-                    </div>
-                )}
             </div>
         </div>
     )
