@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button'
 import { FadeIn } from '@/components/animations/fade-in'
 import Link from '@/components/ui/link-shim'
 import { supabase } from '@/lib/supabase'
-import { apiRequest } from '@/lib/api'
 
 export default function Signup() {
   const { signInWithGoogle, loading: authLoading } = useAuth()
