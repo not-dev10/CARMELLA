@@ -1,6 +1,39 @@
 # Carmella Backend - AWS EC2 Deployment Guide
 
-## Step 1: Launch EC2 Instance
+## Architecture Overview
+
+```
+┌─────────────────────────────────┐
+│    AWS EC2 Instance (Ubuntu)    │
+├─────────────────────────────────┤
+│  Port 80/443 - Nginx (Reverse   │
+│               Proxy)             │
+│       ↓                          │
+│  Port 5000 - Node.js Backend    │
+│  (PM2 Process Manager)          │
+│       ↓                          │
+│  Port 6379 - Redis (Docker)     │
+│                                 │
+│  External:                      │
+│  - Supabase (Database)          │
+│  - AWS S3 (Storage)             │
+│  - Google OAuth (Auth)          │
+└─────────────────────────────────┘
+```
+
+**Technology Stack:**
+- **Frontend**: React + Vite (deployed separately)
+- **Backend**: Node.js 18+ (PM2 process manager)
+- **Database**: Supabase (PostgreSQL)
+- **Cache/Queue**: Redis 7 (Docker container)
+- **Storage**: AWS S3 (eu-north-1)
+- **Web Server**: Nginx (reverse proxy)
+- **Auth**: Supabase + Google OAuth
+- **Containerization**: Docker (for Redis)
+
+---
+
+
 
 ### Instance Configuration
 - **AMI**: Ubuntu 22.04 LTS or 24.04 LTS
@@ -57,9 +90,9 @@ npm --version
 # Install Git
 sudo apt install git -y
 
-# Clone your repository
-cd /home/ec2-user
-git clone https://github.com/not-dev10/CARMELLA.git
+# Clone your repository using Personal Access Token
+cd /home/ubuntu
+git clone https://YOUR_PERSONAL_TOKEN@github.com/not-dev10/CARMELLA.git
 cd CARMELLA/backend
 
 # Install dependencies
@@ -67,6 +100,57 @@ npm install
 
 # Install PM2 globally
 npm install -g pm2
+```
+
+---
+
+## Step 4b: Install Docker (For Redis)
+
+```bash
+# Install Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+# Add ubuntu user to docker group
+sudo usermod -aG docker ubuntu
+
+# Install Docker Compose
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+
+# Verify installation
+docker --version
+docker-compose --version
+
+# Start Docker daemon
+sudo systemctl start docker
+sudo systemctl enable docker
+```
+
+---
+
+## Step 4c: Run Redis in Docker
+
+```bash
+# Pull Redis image
+docker pull redis:7-alpine
+
+# Create a directory for Redis data
+mkdir -p /home/ubuntu/redis-data
+
+# Run Redis container
+docker run -d \
+  --name carmella-redis \
+  -p 6379:6379 \
+  -v /home/ubuntu/redis-data:/data \
+  redis:7-alpine redis-server --appendonly yes
+
+# Verify Redis is running
+docker ps | grep carmella-redis
+
+# Test Redis connection
+redis-cli ping
+# Should return: PONG
 ```
 
 ---
@@ -85,6 +169,9 @@ nano .env
 ```env
 PORT=5000
 NODE_ENV=production
+
+# Redis Connection
+REDIS_URL=redis://localhost:6379
 
 # Database (Supabase)
 SUPABASE_URL=your_supabase_url
@@ -226,11 +313,41 @@ sudo tail -f /var/log/nginx/access.log
 pm2 restart carmella-backend
 
 # Update code from GitHub
-cd /home/ec2-user/CARMELLA/backend
+cd /home/ubuntu/CARMELLA/backend
 git pull origin master
 npm install
 npm run build
 pm2 restart carmella-backend
+```
+
+---
+
+## Step 10b: Docker & Redis Management
+
+```bash
+# View Redis container logs
+docker logs -f carmella-redis
+
+# Stop Redis container
+docker stop carmella-redis
+
+# Start Redis container
+docker start carmella-redis
+
+# Restart Redis container
+docker restart carmella-redis
+
+# Remove Redis container (destructive)
+docker rm carmella-redis
+
+# Check Redis connection
+redis-cli ping
+
+# View Redis memory stats
+redis-cli info memory
+
+# View all docker containers
+docker ps -a
 ```
 
 ---
@@ -255,9 +372,16 @@ pm2 status
 curl http://localhost:5000/api/health
 ```
 
+### Check if Redis is running
+```bash
+docker ps | grep carmella-redis
+redis-cli ping  # Should return PONG
+```
+
 ### Check port availability
 ```bash
-sudo netstat -tlnp | grep 5000
+sudo netstat -tlnp | grep 5000  # Node.js backend
+sudo netstat -tlnp | grep 6379  # Redis
 ```
 
 ### View system resources
@@ -269,8 +393,26 @@ top     # CPU usage
 
 ### Restart everything
 ```bash
-pm2 restart all
+# Restart Redis
+docker restart carmella-redis
+
+# Restart backend
+pm2 restart carmella-backend
+
+# Restart Nginx
 sudo systemctl restart nginx
+```
+
+### Clean up Docker (if needed)
+```bash
+# Remove all stopped containers
+docker container prune -f
+
+# Remove dangling images
+docker image prune -f
+
+# Clean up Redis data (WARNING: destructive)
+sudo rm -rf /home/ubuntu/redis-data/*
 ```
 
 ---
@@ -288,15 +430,68 @@ Once deployed:
 - **EC2 t3.micro**: ~$3-5/month (free tier eligible for 12 months)
 - **Data transfer**: Varies (~$0.02 per GB out)
 - **Elastic IP** (if static): $0/month if attached
+- **Docker**: Free (open source)
+- **Redis container**: Free (included in Docker)
 - **Total**: ~$5-10/month + data costs
 
 ---
 
-## Next Steps
-1. Get your EC2 instance public IP
-2. Update security group rules with your actual IP
-3. Configure domain with Route 53 or external DNS
-4. Set up CloudWatch monitoring
-5. Create RDS backup strategy
-6. Enable AWS Backup service
+## Quick Start (All Steps Combined)
+
+Run these commands in sequence:
+
+```bash
+# 1. Update system
+sudo apt update && sudo apt upgrade -y
+
+# 2. Install Git
+sudo apt install git -y
+
+# 3. Install Node & NVM
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+source ~/.bashrc
+nvm install 18
+nvm use 18
+
+# 4. Clone & install backend
+cd /home/ubuntu
+git clone https://YOUR_TOKEN@github.com/not-dev10/CARMELLA.git
+cd CARMELLA/backend
+npm install
+npm install -g pm2
+
+# 5. Install Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker ubuntu
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+
+# 6. Start Docker
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# 7. Run Redis
+docker pull redis:7-alpine
+mkdir -p /home/ubuntu/redis-data
+docker run -d --name carmella-redis -p 6379:6379 -v /home/ubuntu/redis-data:/data redis:7-alpine redis-server --appendonly yes
+
+# 8. Create .env file and paste credentials
+nano .env
+
+# 9. Build backend
+npm run build
+
+# 10. Start with PM2
+pm2 start "npm start" --name "carmella-backend"
+pm2 startup
+pm2 save
+
+# 11. Install Nginx
+sudo apt install nginx -y
+sudo systemctl start nginx
+sudo systemctl enable nginx
+
+# ✅ Done! Your backend is running on port 5000
+```
 
