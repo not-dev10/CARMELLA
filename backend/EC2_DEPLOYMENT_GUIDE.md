@@ -417,12 +417,56 @@ sudo rm -rf /home/ubuntu/redis-data/*
 
 ---
 
-## Production URLs
+## Deployment Status
 
-Once deployed:
-- **Backend API**: `http://your-instance-public-ip:5000/api`
-- **Backend API (via Nginx)**: `http://your-instance-public-ip/api`
-- **Health Check**: `http://your-instance-public-ip:5000/api/health`
+### ✅ DEPLOYMENT COMPLETE
+
+All services running and verified:
+- **PM2 Backend**: Online and running
+- **Nginx Reverse Proxy**: Active (80 → 5000)
+- **Redis Container**: Running (port 6379)
+- **Supabase**: Connected
+- **AWS S3**: Connected (eu-north-1)
+
+### Production URLs
+
+Your API is now accessible at:
+- **Direct**: `http://<your-instance-public-ip>:5000/api`
+- **Via Nginx (Port 80)**: `http://<your-instance-public-ip>/api`
+- **Example endpoint**: `http://<your-instance-public-ip>/api/products`
+
+### Important EC2 Public IP
+Get your EC2 public IP from the AWS Console, then replace `<your-instance-public-ip>` in the URLs above.
+
+---
+
+## Deployment Verification Commands
+
+Verify your deployment is running:
+
+```bash
+# Check backend status
+pm2 status
+
+# Check backend logs
+pm2 logs carmella-backend
+
+# Check Nginx status
+sudo systemctl status nginx
+
+# Check Redis status
+docker ps | grep carmella-redis
+
+# Test direct connection to backend (port 5000)
+curl http://localhost:5000/api/products
+
+# Test through Nginx (port 80)
+curl http://localhost/api/products
+
+# View all system resources
+free -h
+df -h
+```
 
 ---
 
