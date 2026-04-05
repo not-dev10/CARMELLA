@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react"
 import { useParams } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
-import { SlidersHorizontal, Grid3x3, List, Heart, Lock, Package, ArrowLeft, X, ChevronDown } from "lucide-react"
+import { SlidersHorizontal, Grid3x3, List, Heart, Lock, Package, ArrowLeft, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import Image from "@/components/ui/image-shim"
@@ -85,7 +85,7 @@ export default function Category() {
                     
                     // Calculate max price for price range
                     if (categoryProducts.length > 0) {
-                        const maxPrice = Math.max(...categoryProducts.map(p => p.base_price || p.sale_price || 0))
+                        const maxPrice = Math.max(...categoryProducts.map((p: Product) => p.base_price || p.sale_price || 0))
                         setFilters(prev => ({
                             ...prev,
                             priceRange: [0, Math.ceil(maxPrice * 1.1)]
