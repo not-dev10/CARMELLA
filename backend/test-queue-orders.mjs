@@ -3,7 +3,7 @@
 import http from 'http';
 import https from 'https';
 
-const BASE_URL = 'http://localhost:5000';
+const BASE_URL = 'http://localhost:5000/api';
 
 // Color codes for console output
 const colors = {

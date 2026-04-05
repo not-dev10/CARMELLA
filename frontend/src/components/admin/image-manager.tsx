@@ -4,9 +4,8 @@ import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence, Reorder } from "framer-motion"
 import { Upload, X, GripVertical, Image as ImageIcon, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { API_BASE_URL } from "@/lib/api"
 import { supabase } from "@/lib/supabase"
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api"
 
 interface ImageManagerProps {
   images: string[]

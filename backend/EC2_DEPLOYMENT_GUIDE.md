@@ -198,8 +198,8 @@ GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 
 # Frontend URL
-FRONTEND_URL=http://your-frontend-domain-or-ip:3000
-CORS_ORIGIN=http://your-frontend-domain-or-ip:3000
+FRONTEND_URL=https://carmella-mu.vercel.app
+CORS_ORIGIN=https://carmella-mu.vercel.app
 ```
 
 ---

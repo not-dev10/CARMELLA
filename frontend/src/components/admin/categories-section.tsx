@@ -3,10 +3,8 @@ import { Grid3x3, Plus, Edit2, Trash2, X, Save, RefreshCw, Upload, Loader2 } fro
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect, useRef } from "react"
-import { categoriesAPI } from "@/lib/api"
+import { categoriesAPI, API_BASE_URL } from "@/lib/api"
 import { supabase } from "@/lib/supabase"
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api"
 
 interface Category {
   id: string

@@ -4,8 +4,7 @@ import { Button } from '@/components/ui/button'
 import { FadeIn } from '@/components/animations/fade-in'
 import Link from '@/components/ui/link-shim'
 import { supabase } from '@/lib/supabase'
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api"
+import { apiRequest } from '@/lib/api'
 
 export default function Signup() {
   const { signInWithGoogle, loading: authLoading } = useAuth()
@@ -27,7 +26,7 @@ export default function Signup() {
       console.log("[SIGNUP_PAGE] Calling backend signup endpoint...")
       
       // Call backend signup endpoint instead of Supabase directly
-      const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

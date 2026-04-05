@@ -3,7 +3,7 @@
 # Queue System End-to-End Test Script
 # This script will: 1) Create a test user, 2) Login, 3) Add to cart, 4) Create order
 
-$BaseUrl = "http://localhost:5000"
+$BaseUrl = "http://localhost:5000/api"
 $timestamp = Get-Date -Format "HHmmss"
 $testEmail = "test.queue.$timestamp@example.com"
 $testPassword = "QueueTest@123456"

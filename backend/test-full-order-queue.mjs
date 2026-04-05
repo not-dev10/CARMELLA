@@ -3,7 +3,7 @@
 import http from 'http';
 import crypto from 'crypto';
 
-const BASE_URL = 'http://localhost:5000';
+const BASE_URL = 'http://localhost:5000/api';
 
 // Color codes
 const colors = {
