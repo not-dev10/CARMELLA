@@ -1,5 +1,5 @@
-import { orderQueue, emailQueue } from '../config/queues';
-import { supabase } from '../config/supabase';
+import { orderQueue, emailQueue } from '../config/queues.js';
+import { supabase } from '../config/supabase.js';
 
 interface OrderJobData {
   userId: string;

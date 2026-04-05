@@ -1,5 +1,5 @@
-import { emailQueue } from '../config/queues';
-import { supabase } from '../config/supabase';
+import { emailQueue } from '../config/queues.js';
+import { supabase } from '../config/supabase.js';
 import { createTransport } from 'nodemailer';
 
 const transporter = createTransport({

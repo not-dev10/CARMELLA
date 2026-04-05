@@ -1,5 +1,5 @@
-import { inventoryQueue } from '../config/queues';
-import { supabase } from '../config/supabase';
+import { inventoryQueue } from '../config/queues.js';
+import { supabase } from '../config/supabase.js';
 
 interface InventoryJobData {
   operation: 'update' | 'batch_update' | 'sync';
