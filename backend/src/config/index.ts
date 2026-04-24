@@ -39,10 +39,26 @@ export const config = {
   
   // CORS
   cors: {
-    origin: process.env.CORS_ORIGIN 
-      ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
-      : ["http://localhost:5173"],
+    origin: function(origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+      const allowedOrigins = process.env.CORS_ORIGIN 
+        ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+        : ["http://localhost:5173"];
+      
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      // Check if origin is in allowed list
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn(`[CORS] Blocked request from origin: ${origin}`);
+        callback(null, false);
+      }
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    maxAge: 86400, // 24 hours
   },
   
   // JWT
