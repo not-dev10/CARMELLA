@@ -7,7 +7,9 @@ import rateLimit from 'express-rate-limit';
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100,
-  message: 'Too many requests from this IP, please try again later.',
+  handler: (req, res) => {
+    res.status(429).json({ error: 'Too many requests from this IP, please try again later.' });
+  },
   standardHeaders: true, // Return rate limit info in headers
   legacyHeaders: false, // Disable X-RateLimit-* headers
 });
@@ -19,7 +21,9 @@ export const apiLimiter = rateLimit({
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
-  message: 'Too many authentication attempts, please try again later.',
+  handler: (req, res) => {
+    res.status(429).json({ error: 'Too many authentication attempts, please try again later.' });
+  },
   skipSuccessfulRequests: true, // Don't count successful requests
 });
 
@@ -30,15 +34,19 @@ export const authLimiter = rateLimit({
 export const adminLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
-  message: 'Too many admin requests, please try again later.',
+  handler: (req, res) => {
+    res.status(429).json({ error: 'Too many admin requests, please try again later.' });
+  },
 });
 
 /**
  * Upload rate limiter
- * 10 uploads per hour per IP
+ * 50 uploads per hour per IP (generous for testing)
  */
 export const uploadLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10,
-  message: 'Too many upload requests, please try again later.',
+  max: 50, // Increased from 10 for easier testing
+  handler: (req, res) => {
+    res.status(429).json({ error: 'Too many upload requests, please try again later.' });
+  },
 });

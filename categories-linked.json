@@ -1,0 +1,80 @@
+[
+    {
+        "created":  true,
+        "name":  "BABY CARE",
+        "id":  "fc29f6e3-01f2-436c-8b95-1ab6cf1871c2",
+        "imageUrl":  "https://carmella-bucket.s3.eu-north-1.amazonaws.com/carmella/category/1777470736100-3775370db14d99f7.png"
+    },
+    {
+        "created":  true,
+        "name":  "BEVERAGES",
+        "id":  "afe3d6e9-aa34-41dd-b8ed-78f9257a7d98",
+        "imageUrl":  "https://carmella-bucket.s3.eu-north-1.amazonaws.com/carmella/category/1777470739368-027904db81ce431c.png"
+    },
+    {
+        "created":  true,
+        "name":  "DAIRY AND EGGS",
+        "id":  "05d47173-0915-4481-8cba-d986ab98e1d3",
+        "imageUrl":  "https://carmella-bucket.s3.eu-north-1.amazonaws.com/carmella/category/1777470741040-a306a2474ce1c1c1.png"
+    },
+    {
+        "created":  true,
+        "name":  "FRESH PROODUCE",
+        "id":  "64863f17-4435-4ac8-aa2e-0f709ed478ed",
+        "imageUrl":  "https://carmella-bucket.s3.eu-north-1.amazonaws.com/carmella/category/1777470742559-7187c54de0397f2d.png"
+    },
+    {
+        "created":  true,
+        "name":  "FROZEN FOOD",
+        "id":  "7fecc7ac-b8a4-41df-97c6-e95fbf9edf2c",
+        "imageUrl":  "https://carmella-bucket.s3.eu-north-1.amazonaws.com/carmella/category/1777470744273-0ce36fa43fe822aa.png"
+    },
+    {
+        "created":  true,
+        "name":  "HEALTH AND PHARMACY",
+        "id":  "19db7a30-c1fd-4878-b0b3-627e70e496d5",
+        "imageUrl":  "https://carmella-bucket.s3.eu-north-1.amazonaws.com/carmella/category/1777470746004-95f3a69f2f7d645b.png"
+    },
+    {
+        "created":  true,
+        "name":  "HOME AND GARDEN",
+        "id":  "01b105c9-db31-49f3-b783-4b182bc09edf",
+        "imageUrl":  "https://carmella-bucket.s3.eu-north-1.amazonaws.com/carmella/category/1777470747588-1753f6ae773095ed.png"
+    },
+    {
+        "created":  true,
+        "name":  "HOUSEHOLD ESSENTIALS",
+        "id":  "e957002d-cd98-41cb-9c26-e043ea388566",
+        "imageUrl":  "https://carmella-bucket.s3.eu-north-1.amazonaws.com/carmella/category/1777470749199-c50ed93cfed07b15.png"
+    },
+    {
+        "created":  true,
+        "name":  "MEAT AND SEAFOOD",
+        "id":  "2f10e7aa-1e44-4afb-bd0e-211fee3e97bf",
+        "imageUrl":  "https://carmella-bucket.s3.eu-north-1.amazonaws.com/carmella/category/1777470750734-7f2f0fbdd7f6f93b.png"
+    },
+    {
+        "created":  true,
+        "name":  "PARTY SUPPLIES",
+        "id":  "54e68f9e-dd42-43ae-acc7-064f974dc922",
+        "imageUrl":  "https://carmella-bucket.s3.eu-north-1.amazonaws.com/carmella/category/1777470752491-937b3e9420036bd4.png"
+    },
+    {
+        "created":  true,
+        "name":  "PERSONAL CARE AND BEAUTY",
+        "id":  "6910047e-2d97-49c9-8a84-c12bbfa22527",
+        "imageUrl":  "https://carmella-bucket.s3.eu-north-1.amazonaws.com/carmella/category/1777470754032-284b5a627589e825.png"
+    },
+    {
+        "created":  true,
+        "name":  "PET CARE",
+        "id":  "50aa1cba-cc9f-4759-868e-5a7ad22573f0",
+        "imageUrl":  "https://carmella-bucket.s3.eu-north-1.amazonaws.com/carmella/category/1777470755570-3c361b18cb9c6554.png"
+    },
+    {
+        "created":  true,
+        "name":  "STATIONARY AND OFFICE",
+        "id":  "99f5ac52-754f-4c45-b37e-d6c0cd353a07",
+        "imageUrl":  "https://carmella-bucket.s3.eu-north-1.amazonaws.com/carmella/category/1777470757149-99b8cc2895975c61.png"
+    }
+]

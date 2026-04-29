@@ -65,9 +65,17 @@ const apiRequest = async (
     console.log("[API] Response status:", response.status, "for", endpoint, `(${latency}ms)`);
 
     if (!response.ok) {
-      const error = await response.json();
+      let error: any;
+      try {
+        error = await response.json();
+      } catch {
+        // Response is not JSON (e.g., HTML error page)
+        const text = await response.text();
+        console.error("[API] Non-JSON error response:", text.substring(0, 200));
+        error = { error: `API Error ${response.status}: ${text.substring(0, 100)}` };
+      }
       console.error("[API] Error response:", error, `(${latency}ms)`);
-      throw new Error(error.error || "API request failed");
+      throw new Error(error.error || error.message || "API request failed");
     }
 
     const data = await response.json();

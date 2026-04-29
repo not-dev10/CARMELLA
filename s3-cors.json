@@ -5,9 +5,12 @@
       "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
       "AllowedOrigins": [
         "http://localhost:5173",
-        "https://carmella-mu.vercel.app"
+        "http://localhost:3000",
+        "https://carmella-mu.vercel.app",
+        "https://carmellawholesale.uk",
+        "https://www.carmellawholesale.uk"
       ],
-      "ExposeHeaders": ["ETag", "x-amz-version-id"],
+      "ExposeHeaders": ["ETag", "x-amz-version-id", "x-amz-checksum-crc32"],
       "MaxAgeSeconds": 3000
     }
   ]

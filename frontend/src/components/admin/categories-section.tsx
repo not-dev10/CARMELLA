@@ -79,9 +79,16 @@ export function CategoriesSection() {
       })
 
       if (!signedUrlResponse.ok) {
-        const errorData = await signedUrlResponse.json()
-        console.error("[S3] Failed to get signed URL:", errorData)
-        throw new Error(errorData.error || `Failed to get upload URL (${signedUrlResponse.status})`)
+        let errorMessage = `Failed to get upload URL (${signedUrlResponse.status})`;
+        try {
+          const errorData = await signedUrlResponse.json()
+          errorMessage = errorData.error || errorMessage
+        } catch {
+          const errorText = await signedUrlResponse.text()
+          errorMessage = errorText || errorMessage
+        }
+        console.error("[S3] Failed to get signed URL:", errorMessage)
+        throw new Error(errorMessage)
       }
 
       const { signedUrl, publicUrl } = await signedUrlResponse.json()
