@@ -64,35 +64,39 @@ export const updateSection = async (req: Request, res: Response) => {
   }
 
   try {
+    console.log(`[HOMEPAGE] Updating section: ${section} by user: ${userId}`);
+
     // Check if section exists
-    const { data: existing } = await supabase
+    const { data: existing, error: checkError } = await supabase
       .from("admin_content")
       .select("id")
       .eq("section_name", section)
       .single();
 
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error(`[HOMEPAGE] Error checking existing section:`, checkError);
+      return res.status(500).json({ error: "Failed to check section" });
+    }
+
     let result;
     if (existing) {
-      // Update existing
+      // Update existing - only update content field to avoid RLS issues
+      console.log(`[HOMEPAGE] Updating existing section: ${section}`);
       result = await supabase
         .from("admin_content")
-        .update({
-          content,
-          updated_by: userId,
-          updated_at: new Date().toISOString(),
-        })
+        .update({ content })
         .eq("section_name", section)
         .select()
         .single();
     } else {
-      // Create new
+      // Create new section
+      console.log(`[HOMEPAGE] Creating new section: ${section}`);
       result = await supabase
         .from("admin_content")
         .insert([
           {
             section_name: section,
             content,
-            updated_by: userId,
           },
         ])
         .select()
@@ -100,11 +104,17 @@ export const updateSection = async (req: Request, res: Response) => {
     }
 
     if (result.error) {
-      return res.status(500).json({ error: "Failed to update section" });
+      console.error(`[HOMEPAGE] Failed to update section ${section}:`, result.error);
+      return res.status(500).json({ 
+        error: "Failed to update section",
+        details: result.error.message 
+      });
     }
 
+    console.log(`[HOMEPAGE] Section ${section} updated successfully`);
     res.json({ success: true, content: result.data });
   } catch (error) {
+    console.error(`[HOMEPAGE] Unexpected error updating section:`, error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
