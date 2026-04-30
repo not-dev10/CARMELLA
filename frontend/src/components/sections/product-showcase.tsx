@@ -6,7 +6,7 @@ import { Lock, Heart, ShoppingCart, TrendingUp, Star, Plus } from "lucide-react"
 import Link from "@/components/ui/link-shim"
 import { motion, AnimatePresence } from "framer-motion"
 import { useState, useEffect } from "react"
-import { homepageAPI } from "@/lib/api"
+import { homepageAPI, API_BASE_URL } from "@/lib/api"
 import { OptimizedImage } from "@/components/ui/optimized-image"
 import { AddToCartModal } from "@/components/product/add-to-cart-modal"
 import { cn } from "@/lib/utils"
@@ -229,7 +229,7 @@ export function ProductShowcase() {
     })
 
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchProducts = async () => {
             try {
                 // Fetch products
                 const data = await homepageAPI.getFeaturedProducts()

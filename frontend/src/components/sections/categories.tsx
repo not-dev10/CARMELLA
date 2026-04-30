@@ -5,7 +5,7 @@ import { FadeIn } from "@/components/animations/fade-in"
 import Link from "@/components/ui/link-shim"
 import { ArrowRight, ShoppingBag } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
-import { homepageAPI } from "@/lib/api"
+import { homepageAPI, API_BASE_URL } from "@/lib/api"
 import { OptimizedImage } from "@/components/ui/optimized-image"
 
 interface Category {
@@ -115,7 +115,7 @@ export function CategoriesSection() {
 
                 // Fetch section content
                 try {
-                  const response = await fetch(`${homepageAPI.API_BASE_URL}/homepage/content/categories`)
+                  const response = await fetch(`${API_BASE_URL}/homepage/content/categories`)
                   if (response.ok) {
                     const data = await response.json()
                     if (data.content) {
