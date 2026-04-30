@@ -115,29 +115,6 @@ const SECTIONS: Section[] = [
     ],
   },
 ]
-      { name: "author", label: "Author Name", type: "text", required: true },
-    ],
-  },
-  {
-    id: "newsletter",
-    name: "Newsletter Section",
-    type: "newsletter",
-    fields: [
-      { name: "title", label: "Section Title", type: "text", required: true },
-      { name: "description", label: "Description", type: "textarea", rows: 2, required: true },
-      { name: "placeholder", label: "Email Placeholder", type: "text", required: false },
-    ],
-  },
-  {
-    id: "testimonials",
-    name: "Testimonials Section",
-    type: "testimonials",
-    fields: [
-      { name: "title", label: "Section Title", type: "text", required: true },
-      { name: "subtitle", label: "Subtitle", type: "textarea", rows: 2, required: false },
-    ],
-  },
-]
 
 export function PageEditor() {
   const [activeSectionId, setActiveSectionId] = useState("hero")
