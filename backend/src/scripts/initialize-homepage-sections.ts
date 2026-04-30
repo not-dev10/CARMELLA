@@ -1,9 +1,24 @@
-import { supabase } from "../config/supabase.js";
+import { createClient } from "@supabase/supabase-js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 /**
  * Initialize homepage sections in admin_content table
+ * Uses service role key to bypass RLS policies
  * Run this script once to seed default homepage sections
  */
+
+// Use service role key (bypasses RLS)
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error("❌ Missing SUPABASE_URL or SUPABASE_SERVICE_KEY environment variables");
+  process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const defaultSections = [
   {
@@ -56,7 +71,7 @@ async function initializeHomepageSections() {
         continue;
       }
 
-      // Insert new section
+      // Insert new section using service role (bypasses RLS)
       const { error } = await supabase.from("admin_content").insert([section]);
 
       if (error) {
