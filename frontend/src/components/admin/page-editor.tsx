@@ -19,11 +19,12 @@ interface Section {
 interface Field {
   name: string
   label: string
-  type: "text" | "textarea" | "image" | "select"
+  type: "text" | "textarea" | "image" | "image-array" | "select"
   required?: boolean
   rows?: number
   imageType?: "desktop" | "mobile"
   options?: string[]
+  maxItems?: number
 }
 
 interface SectionData {
@@ -38,8 +39,7 @@ const SECTIONS: Section[] = [
     fields: [
       { name: "title", label: "Hero Title", type: "text", required: true },
       { name: "subtitle", label: "Hero Subtitle", type: "textarea", rows: 2, required: true },
-      { name: "desktopImage", label: "Desktop Image", type: "image", imageType: "desktop", required: true },
-      { name: "mobileImage", label: "Mobile Image", type: "image", imageType: "mobile", required: true },
+      { name: "images", label: "Hero Images", type: "image-array", required: true, maxItems: 8 },
     ],
   },
   {
@@ -117,8 +117,7 @@ export function PageEditor() {
       hero: {
         title: "Handcrafted Ceramics for Modern Living",
         subtitle: "Discover our curated collection of artisan ceramics",
-        desktopImage: "",
-        mobileImage: "",
+        images: [],
       },
       quote: {
         quote: "Every piece tells a story of craftsmanship and tradition.",
@@ -215,6 +214,54 @@ export function PageEditor() {
     if (fileInputRefs.current[fieldName]) {
       fileInputRefs.current[fieldName]!.value = ""
     }
+  }
+
+  const handleImageArrayUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: string, index: number, imageKey: "desktopImage" | "mobileImage") => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith("image/")) {
+      setMessage({ type: "error", text: "Please select an image file" })
+      return
+    }
+
+    const MAX_SIZE = 10 * 1024 * 1024
+    if (file.size > MAX_SIZE) {
+      setMessage({ type: "error", text: "File too large. Maximum size is 10MB" })
+      return
+    }
+
+    const uploadKey = `${fieldName}-${index}-${imageKey}`
+    setUploading(uploadKey)
+    const url = await uploadToS3(file, uploadKey)
+    setUploading(null)
+
+    if (url) {
+      const currentData = sectionsData.get(activeSectionId) || {}
+      const images = currentData[fieldName] || []
+      images[index] = { ...images[index], [imageKey]: url }
+      setSectionsData(new Map(sectionsData).set(activeSectionId, { ...currentData, [fieldName]: images }))
+      setMessage({ type: "success", text: "Image uploaded successfully!" })
+    }
+
+    // Reset input
+    if (fileInputRefs.current[uploadKey]) {
+      fileInputRefs.current[uploadKey]!.value = ""
+    }
+  }
+
+  const handleAddImageSet = (fieldName: string) => {
+    const currentData = sectionsData.get(activeSectionId) || {}
+    const images = currentData[fieldName] || []
+    images.push({ desktopImage: "", mobileImage: "" })
+    setSectionsData(new Map(sectionsData).set(activeSectionId, { ...currentData, [fieldName]: images }))
+  }
+
+  const handleRemoveImageSet = (fieldName: string, index: number) => {
+    const currentData = sectionsData.get(activeSectionId) || {}
+    const images = currentData[fieldName] || []
+    images.splice(index, 1)
+    setSectionsData(new Map(sectionsData).set(activeSectionId, { ...currentData, [fieldName]: images }))
   }
 
   const handleFieldChange = (fieldName: string, value: any) => {
@@ -355,6 +402,119 @@ export function PageEditor() {
                             placeholder={`Enter ${field.label.toLowerCase()}`}
                             rows={field.rows || 3}
                           />
+                        )}
+
+                        {/* Image Array Upload */}
+                        {field.type === "image-array" && (
+                          <div className="space-y-4">
+                            {/* Image Grid */}
+                            <div className="grid grid-cols-2 gap-4">
+                              {(currentData[field.name] || []).map((imageSet: any, index: number) => (
+                                <div key={index} className="space-y-2">
+                                  <div className="text-xs font-semibold text-gray-600 dark:text-gray-400">Image {index + 1}</div>
+                                  
+                                  {/* Desktop Image */}
+                                  <div
+                                    onClick={() => fileInputRefs.current[`${field.name}-${index}-desktop`]?.click()}
+                                    className={cn(
+                                      "border-2 border-dashed rounded-lg p-3 text-center transition-colors cursor-pointer",
+                                      uploading === `${field.name}-${index}-desktop` ? "opacity-50 cursor-wait" : "",
+                                      "border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-950/50 hover:border-gray-400"
+                                    )}
+                                  >
+                                    <input
+                                      ref={(el) => {
+                                        if (el) fileInputRefs.current[`${field.name}-${index}-desktop`] = el
+                                      }}
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={(e) => handleImageArrayUpload(e, field.name, index, "desktopImage")}
+                                      disabled={uploading === `${field.name}-${index}-desktop`}
+                                      className="hidden"
+                                    />
+                                    
+                                    {imageSet.desktopImage ? (
+                                      <div className="space-y-2">
+                                        <div className="relative w-full rounded bg-gray-100 dark:bg-gray-900" style={{ aspectRatio: "16/9" }}>
+                                          <img
+                                            src={imageSet.desktopImage}
+                                            alt="Desktop"
+                                            className="w-full h-full object-cover"
+                                          />
+                                        </div>
+                                        <p className="text-xs font-medium">Desktop</p>
+                                      </div>
+                                    ) : (
+                                      <div className="py-4">
+                                        <p className="text-xs font-medium">Desktop (16:9)</p>
+                                        <p className="text-xs text-gray-500 mt-1">Click to upload</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Mobile Image */}
+                                  <div
+                                    onClick={() => fileInputRefs.current[`${field.name}-${index}-mobile`]?.click()}
+                                    className={cn(
+                                      "border-2 border-dashed rounded-lg p-3 text-center transition-colors cursor-pointer",
+                                      uploading === `${field.name}-${index}-mobile` ? "opacity-50 cursor-wait" : "",
+                                      "border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-950/50 hover:border-gray-400"
+                                    )}
+                                  >
+                                    <input
+                                      ref={(el) => {
+                                        if (el) fileInputRefs.current[`${field.name}-${index}-mobile`] = el
+                                      }}
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={(e) => handleImageArrayUpload(e, field.name, index, "mobileImage")}
+                                      disabled={uploading === `${field.name}-${index}-mobile`}
+                                      className="hidden"
+                                    />
+                                    
+                                    {imageSet.mobileImage ? (
+                                      <div className="space-y-2">
+                                        <div className="relative w-full rounded bg-gray-100 dark:bg-gray-900" style={{ aspectRatio: "3/4" }}>
+                                          <img
+                                            src={imageSet.mobileImage}
+                                            alt="Mobile"
+                                            className="w-full h-full object-cover"
+                                          />
+                                        </div>
+                                        <p className="text-xs font-medium">Mobile</p>
+                                      </div>
+                                    ) : (
+                                      <div className="py-4">
+                                        <p className="text-xs font-medium">Mobile (3:4)</p>
+                                        <p className="text-xs text-gray-500 mt-1">Click to upload</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Remove Button */}
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="w-full text-red-600 hover:text-red-700"
+                                    onClick={() => handleRemoveImageSet(field.name, index)}
+                                  >
+                                    Remove Image {index + 1}
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                            
+                            {/* Add Image Button */}
+                            {(!currentData[field.name] || currentData[field.name].length < (field.maxItems || 8)) && (
+                              <Button
+                                variant="outline"
+                                className="w-full"
+                                onClick={() => handleAddImageSet(field.name)}
+                              >
+                                + Add Image (Max {field.maxItems || 8})
+                              </Button>
+                            )}
+                          </div>
                         )}
 
                         {/* Image Upload */}

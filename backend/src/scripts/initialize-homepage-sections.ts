@@ -26,8 +26,7 @@ const defaultSections = [
     content: {
       title: "Handcrafted Ceramics for Modern Living",
       subtitle: "Discover our curated collection of artisan ceramics",
-      desktopImage: "",
-      mobileImage: "",
+      images: [],
     },
   },
   {
