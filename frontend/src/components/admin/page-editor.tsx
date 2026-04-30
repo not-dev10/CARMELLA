@@ -159,7 +159,10 @@ export function PageEditor() {
       })
 
       if (!signedUrlResponse.ok) {
-        throw new Error("Failed to get upload URL")
+        const errorData = await signedUrlResponse.json().catch(() => ({}))
+        const errorMsg = errorData.error || `Failed to get upload URL (${signedUrlResponse.status})`
+        console.error(`[S3] Upload URL error:`, errorData)
+        throw new Error(errorMsg)
       }
 
       const { signedUrl, publicUrl } = await signedUrlResponse.json()

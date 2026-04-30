@@ -4,7 +4,7 @@ import { generateS3Key, getS3UploadUrl, getS3PublicUrl } from "../utils/s3.js";
 /**
  * Get presigned S3 upload URL
  * POST /api/upload/get-signed-url
- * Body: { filename: string, fileType: "product" | "category" }
+ * Body: { filename: string, fileType: "product" | "category" | "hero" | "quote" | "newsletter" | "testimonials" }
  */
 export async function getSignedUploadUrl(req: Request, res: Response) {
   try {
@@ -14,8 +14,9 @@ export async function getSignedUploadUrl(req: Request, res: Response) {
       return res.status(400).json({ error: "Missing filename or fileType" });
     }
 
-    if (fileType !== "product" && fileType !== "category") {
-      return res.status(400).json({ error: "Invalid fileType. Must be 'product' or 'category'" });
+    const validFileTypes = ["product", "category", "hero", "quote", "newsletter", "testimonials"];
+    if (!validFileTypes.includes(fileType)) {
+      return res.status(400).json({ error: `Invalid fileType. Must be one of: ${validFileTypes.join(", ")}` });
     }
 
     // Generate S3 key and get signed URL
