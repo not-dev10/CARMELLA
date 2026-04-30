@@ -44,23 +44,23 @@ export function GivingBack() {
         fetchContent()
     }, [])
     return (
-        <section className="flex flex-col md:flex-row min-h-[600px]">
-            <div className="w-full md:w-1/2 bg-gradient-to-br from-secondary via-accent to-primary text-secondary-foreground p-16 md:p-24 flex flex-col justify-center">
+        <section className="flex flex-col md:flex-row min-h-screen md:min-h-[600px]">
+            <div className="w-full md:w-1/2 bg-gradient-to-br from-secondary via-accent to-primary text-secondary-foreground p-6 sm:p-8 md:p-16 lg:p-24 flex flex-col justify-center">
                 <FadeIn>
-                    <span className="text-xs font-bold tracking-widest uppercase opacity-80 mb-4 block">{content.label}</span>
-                    <h2 className="font-serif text-4xl md:text-5xl mb-8 font-medium tracking-tight">{content.title}</h2>
-                    <p className="text-lg opacity-95 leading-relaxed mb-12 max-w-md">
+                    <span className="text-xs font-bold tracking-widest uppercase opacity-80 mb-3 sm:mb-4 block">{content.label}</span>
+                    <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl mb-4 sm:mb-6 md:mb-8 font-medium tracking-tight">{content.title}</h2>
+                    <p className="text-sm sm:text-base lg:text-lg opacity-95 leading-relaxed mb-6 sm:mb-8 md:mb-12 max-w-md">
                         {content.description}
                     </p>
                     <Button 
                         variant="outline" 
-                        className="border-secondary-foreground text-secondary-foreground hover:bg-gradient-to-r hover:from-secondary-foreground hover:to-secondary-foreground/80 hover:text-secondary self-start rounded-full px-8 h-12 font-medium transition-all duration-300 hover:shadow-lg"
+                        className="border-secondary-foreground text-secondary-foreground hover:bg-gradient-to-r hover:from-secondary-foreground hover:to-secondary-foreground/80 hover:text-secondary self-start rounded-full px-6 sm:px-8 h-11 sm:h-12 font-medium text-sm sm:text-base transition-all duration-300 hover:shadow-lg"
                     >
                         {content.buttonText}
                     </Button>
                 </FadeIn>
             </div>
-            <div className="w-full md:w-1/2 bg-muted relative h-[600px] md:h-auto overflow-hidden group">
+            <div className="w-full md:w-1/2 bg-muted relative h-64 sm:h-80 md:h-auto md:min-h-[600px] overflow-hidden group">
                 {/* Overlay gradient */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent z-10 pointer-events-none" />
                 

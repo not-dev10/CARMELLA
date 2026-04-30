@@ -110,7 +110,7 @@ function ReviewCard({ review, index }: { review: any; index: number }) {
     return (
         <div
             className={cn(
-                "relative p-8 rounded-xl transition-all duration-500 group overflow-hidden",
+                "relative p-4 sm:p-6 md:p-8 rounded-lg sm:rounded-xl transition-all duration-500 group overflow-hidden",
                 isDark
                     ? "bg-gradient-to-br from-slate-900/80 to-slate-800/60 hover:shadow-[0_0_20px_rgba(139,115,85,0.15)]"
                     : "bg-white hover:shadow-lg",
@@ -122,18 +122,18 @@ function ReviewCard({ review, index }: { review: any; index: number }) {
         >
             {/* Top accent line with glow */}
             <div className={cn(
-                "absolute top-0 left-0 right-0 h-1 gradient-primary opacity-60 group-hover:opacity-100 transition-all duration-300 rounded-t-xl",
+                "absolute top-0 left-0 right-0 h-1 gradient-primary opacity-60 group-hover:opacity-100 transition-all duration-300 rounded-t-lg sm:rounded-t-xl",
                 isDark && "group-hover:shadow-[0_0_12px_rgba(139,115,85,0.6)]"
             )} />
 
             {/* Border glow effect for dark mode */}
             {isDark && (
-                <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none shadow-[inset_0_0_20px_rgba(139,115,85,0.1)]" />
+                <div className="absolute inset-0 rounded-lg sm:rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none shadow-[inset_0_0_20px_rgba(139,115,85,0.1)]" />
             )}
 
-            {/* Company Logo */}
-            <div className="flex items-center gap-3 mb-5">
-                <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-border">
+            {/* Company Logo - Responsive size */}
+            <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-5">
+                <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 border-border flex-shrink-0">
                     <Image
                         src={review.companyLogo}
                         alt={review.name}
@@ -141,16 +141,16 @@ function ReviewCard({ review, index }: { review: any; index: number }) {
                         className="object-cover"
                     />
                 </div>
-                <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                        <p className={cn("font-serif text-base font-semibold", isDark ? "text-white" : "text-gray-900")}>
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className={cn("font-serif text-xs sm:text-sm md:text-base font-semibold truncate", isDark ? "text-white" : "text-gray-900")}>
                             {review.name}
                         </p>
                         {review.verified && (
-                            <BadgeCheck className="w-4 h-4 text-primary fill-current" />
+                            <BadgeCheck className="w-3 h-3 sm:w-4 sm:h-4 text-primary fill-current flex-shrink-0" />
                         )}
                     </div>
-                    <p className={cn("text-sm mt-0.5 font-light", isDark ? "text-gray-400" : "text-gray-600")}>
+                    <p className={cn("text-xs sm:text-sm font-light", isDark ? "text-gray-400" : "text-gray-600")}>
                         {review.role}
                     </p>
                 </div>
@@ -241,7 +241,7 @@ export function Testimonials() {
 
     return (
         <section className={cn(
-            "relative py-32 overflow-hidden transition-colors duration-500",
+            "relative py-12 sm:py-20 md:py-32 px-3 sm:px-6 overflow-hidden transition-colors duration-500",
             isDark
                 ? "bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950"
                 : "bg-gradient-to-b from-white via-white to-yellow-50/30"
@@ -270,56 +270,56 @@ export function Testimonials() {
                 }} />
             </div>
 
-            <div className="container mx-auto px-6 relative z-10">
+            <div className="container mx-auto px-3 sm:px-6 max-w-7xl relative z-10">
                 {/* Header */}
-                <div className="text-center max-w-3xl mx-auto mb-24">
+                <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16 md:mb-24">
                     <span className={cn(
-                        "mb-4 block text-sm font-bold tracking-[0.2em] uppercase opacity-70",
+                        "mb-3 sm:mb-4 block text-xs sm:text-sm font-bold tracking-[0.2em] uppercase opacity-70",
                         isDark ? "text-gray-400" : "text-gray-600"
                     )}>
                         Customer Stories
                     </span>
                     <h2 className={cn(
-                        "font-serif text-5xl md:text-6xl lg:text-7xl mb-6 font-medium tracking-tight",
+                        "font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl mb-4 sm:mb-6 font-medium tracking-tight",
                         isDark ? "text-white" : "text-gray-900"
                     )}>
                         Loved by Our Users
                     </h2>
 
                     {/* Rating Aggregate */}
-                    <div className="flex items-center justify-center gap-3 mb-6">
+                    <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-6">
                         <div className="flex gap-1">
                             {[...Array(5)].map((_, i) => (
                                 <Star
                                     key={i}
                                     className={cn(
-                                        "w-6 h-6 fill-current",
+                                        "w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 fill-current",
                                         i < 4 ? "text-secondary" : "text-secondary/50"
                                     )}
                                 />
                             ))}
                         </div>
                         <span className={cn(
-                            "text-2xl font-bold",
+                            "text-lg sm:text-xl md:text-2xl font-bold",
                             isDark ? "text-white" : "text-gray-900"
                         )}>
                             4.9/5
                         </span>
                     </div>
                     <p className={cn(
-                        "text-sm font-medium mb-8",
+                        "text-xs sm:text-sm font-medium mb-6 sm:mb-8",
                         isDark ? "text-gray-400" : "text-gray-600"
                     )}>
                         Based on 500+ verified reviews from B2B partners
                     </p>
 
-                    <div className="flex flex-col items-center gap-4">
+                    <div className="flex flex-col items-center gap-3 sm:gap-4">
                         <div className={cn(
-                            "h-1.5 w-24 gradient-primary rounded-full blur-sm",
+                            "h-1 sm:h-1.5 w-20 sm:w-24 gradient-primary rounded-full blur-sm",
                             isDark ? "shadow-[0_0_12px_rgba(139,115,85,0.4)]" : "shadow-[0_0_12px_rgba(139,115,85,0.5)]"
                         )} />
                         <p className={cn(
-                            "text-lg md:text-xl font-light leading-relaxed",
+                            "text-sm sm:text-lg md:text-xl font-light leading-relaxed",
                             isDark ? "text-gray-300" : "text-gray-600"
                         )}>
                             Real feedback from real customers
@@ -327,10 +327,15 @@ export function Testimonials() {
                     </div>
                 </div>
 
-                {/* Reviews Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Reviews Grid - Responsive columns */}
+                <div className="hidden md:grid grid-cols-2 gap-8">
                     <ReviewColumn reviews={column1} direction="up" />
                     <ReviewColumn reviews={column2} direction="down" />
+                </div>
+
+                {/* Mobile - Single column scroll */}
+                <div className="md:hidden">
+                    <ReviewColumn reviews={reviews} direction="up" />
                 </div>
             </div>
 

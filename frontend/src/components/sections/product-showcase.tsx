@@ -272,14 +272,14 @@ export function ProductShowcase() {
 
     if (loading) {
         return (
-            <section className="py-16 px-6 bg-white dark:bg-gray-950">
+            <section className="py-8 sm:py-12 md:py-16 px-3 sm:px-6 bg-white dark:bg-gray-950">
                 <div className="container mx-auto max-w-7xl">
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-3 md:gap-4 lg:gap-6">
                         {[...Array(10)].map((_, i) => (
                             <div key={i} className="animate-pulse">
-                                <div className="aspect-square bg-gray-200 dark:bg-gray-800 rounded-2xl mb-3" />
-                                <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded mb-2" />
-                                <div className="h-6 bg-gray-200 dark:bg-gray-800 rounded w-2/3" />
+                                <div className="aspect-square bg-gray-200 dark:bg-gray-800 rounded-lg sm:rounded-xl mb-2 sm:mb-3" />
+                                <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded mb-1 sm:mb-2" />
+                                <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-2/3" />
                             </div>
                         ))}
                     </div>
@@ -289,60 +289,51 @@ export function ProductShowcase() {
     }
 
     return (
-        <section className="py-16 px-6 bg-white dark:bg-gray-950">
+        <section className="py-8 sm:py-12 md:py-16 px-3 sm:px-6 bg-white dark:bg-gray-950">
             <div className="container mx-auto max-w-7xl">
                 {/* Section Header */}
-                <div className="flex justify-between items-end mb-12">
+                <div className="flex flex-col gap-4 mb-8 sm:mb-10 md:mb-12">
                     <FadeIn>
                         <motion.div
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             transition={{ type: "spring", stiffness: 200 }}
-                            className="inline-block mb-3"
+                            className="inline-block w-fit"
                         >
-                            <span className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 dark:bg-primary/20 text-primary rounded-full text-sm font-semibold">
-                                <TrendingUp className="w-4 h-4" />
+                            <span className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-primary/10 dark:bg-primary/20 text-primary rounded-full text-xs sm:text-sm font-semibold">
+                                <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
                                 {sectionContent.label}
                             </span>
                         </motion.div>
-                        <h2 className="font-serif text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
+                        <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mt-2 sm:mt-3">
                             {sectionContent.title}
                         </h2>
-                        <p className="text-gray-600 dark:text-gray-400 mt-2">
+                        <p className="text-xs sm:text-sm md:text-base text-gray-600 dark:text-gray-400 mt-2 sm:mt-3 max-w-2xl">
                             {sectionContent.description}
                         </p>
                     </FadeIn>
-                    <FadeIn delay={0.2} direction="left">
-                        <Link href="/catalog" className="hidden md:block">
-                            <Button variant="outline" className="gap-2">
+                    <FadeIn delay={0.2}>
+                        <Link href="/catalog" className="w-fit">
+                            <Button variant="outline" className="gap-2 text-xs sm:text-sm">
                                 {sectionContent.buttonText}
-                                <Plus className="w-4 h-4" />
+                                <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                             </Button>
                         </Link>
                     </FadeIn>
                 </div>
 
-                {/* Products Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+                {/* Products Grid - 4 columns on mobile */}
+                <div className="flex flex-wrap justify-center gap-2 sm:gap-3 md:gap-4 lg:gap-6">
                     {products.slice(0, 10).map((product, index) => (
-                        <ProductCard
-                            key={product.id}
-                            product={product}
-                            index={index}
-                            onToggleWishlist={toggleWishlist}
-                            isWishlisted={wishlist.includes(product.id)}
-                        />
+                        <div key={product.id} className="w-1/4">
+                            <ProductCard
+                                product={product}
+                                index={index}
+                                onToggleWishlist={toggleWishlist}
+                                isWishlisted={wishlist.includes(product.id)}
+                            />
+                        </div>
                     ))}
-                </div>
-
-                {/* Mobile View All Button */}
-                <div className="mt-8 text-center md:hidden">
-                    <Link href="/catalog">
-                        <Button className="w-full max-w-sm gap-2">
-                            View All Products
-                            <Plus className="w-4 h-4" />
-                        </Button>
-                    </Link>
                 </div>
             </div>
         </section>

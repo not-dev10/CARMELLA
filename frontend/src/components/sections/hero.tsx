@@ -114,7 +114,7 @@ export function HeroSection() {
 
     return (
         <section
-            className="relative h-[85vh] min-h-[550px] w-full overflow-hidden flex items-center justify-center bg-black"
+            className="relative h-screen min-h-[550px] sm:min-h-[650px] md:min-h-[85vh] w-full overflow-hidden flex items-center justify-center bg-black"
         >
             {/* Hero Image Carousel */}
             <div className="absolute inset-0 z-0 select-none">
@@ -152,40 +152,43 @@ export function HeroSection() {
                 </AnimatePresence>
             </div>
 
-            <div className="container relative z-10 px-6 text-center text-white">
+            <div className="container relative z-10 px-4 sm:px-6 text-center text-white">
                 <FadeIn>
-                    <span className="mb-6 block text-sm font-bold tracking-[0.2em] uppercase opacity-90">
+                    <span className="mb-4 sm:mb-6 block text-xs sm:text-sm font-bold tracking-[0.2em] uppercase opacity-90">
                         Est. 2024
                     </span>
-                    <h1 className="font-serif text-5xl md:text-7xl lg:text-8xl font-medium tracking-tight mb-8 drop-shadow-2xl">
+                    <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-medium tracking-tight mb-4 sm:mb-6 md:mb-8 drop-shadow-2xl px-2">
                         {heroContent.title}
                     </h1>
-                    <p className="mx-auto max-w-lg text-lg md:text-xl opacity-90 mb-10 font-light leading-relaxed drop-shadow-md">
+                    <p className="mx-auto max-w-lg text-sm sm:text-base md:text-lg lg:text-xl opacity-90 mb-6 sm:mb-8 md:mb-10 font-light leading-relaxed drop-shadow-md px-2">
                         {heroContent.subtitle}
                     </p>
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <Button size="lg" className="btn-gradient min-w-[160px] h-14 text-base rounded-full border-0 shadow-lg hover:shadow-xl transition-all">
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+                        <Button size="lg" className="btn-gradient min-w-[140px] sm:min-w-[160px] h-11 sm:h-14 text-xs sm:text-base rounded-full border-0 shadow-lg hover:shadow-xl transition-all">
                             Shop Wholesale
                         </Button>
-                        <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-black min-w-[160px] h-14 text-base rounded-full bg-transparent backdrop-blur-sm">
+                        <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-black min-w-[140px] sm:min-w-[160px] h-11 sm:h-14 text-xs sm:text-base rounded-full bg-transparent backdrop-blur-sm">
                             View Lookbook
                         </Button>
                     </div>
 
-                    {/* Trust Badges */}
-                    <div className="mt-10 flex flex-wrap items-center justify-center gap-6 md:gap-8">
+                    {/* Trust Badges - Responsive */}
+                    <div className="mt-6 sm:mt-8 md:mt-10 flex flex-wrap items-center justify-center gap-3 sm:gap-4 md:gap-6 lg:gap-8">
                         {TRUST_BADGES.map((badge, idx) => (
                             <motion.div
                                 key={idx}
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.5 + idx * 0.1 }}
-                                className="flex items-center gap-3 backdrop-blur-md bg-white/10 px-4 py-2 rounded-full border border-white/20"
+                                className="flex items-center gap-2 sm:gap-3 backdrop-blur-md bg-white/10 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-white/20"
                             >
-                                <badge.icon className="w-5 h-5 text-secondary" />
-                                <div className="text-left">
-                                    <p className="text-sm font-semibold leading-none">{badge.text}</p>
+                                <badge.icon className="w-4 h-4 sm:w-5 sm:h-5 text-secondary flex-shrink-0" />
+                                <div className="text-left hidden sm:block">
+                                    <p className="text-xs sm:text-sm font-semibold leading-none">{badge.text}</p>
                                     <p className="text-xs opacity-70 mt-0.5">{badge.subtext}</p>
+                                </div>
+                                <div className="text-left sm:hidden">
+                                    <p className="text-xs font-semibold leading-none">{badge.text.split(',')[0]}</p>
                                 </div>
                             </motion.div>
                         ))}
@@ -201,10 +204,10 @@ export function HeroSection() {
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={goToPrevious}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-white/10 hover:bg-white/20 backdrop-blur-md p-3 rounded-full transition-colors"
+                        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 bg-white/10 hover:bg-white/20 backdrop-blur-md p-2 sm:p-3 rounded-full transition-colors"
                         aria-label="Previous image"
                     >
-                        <ChevronLeft className="w-6 h-6 text-white" />
+                        <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                     </motion.button>
 
                     {/* Next Button */}
@@ -212,24 +215,24 @@ export function HeroSection() {
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={goToNext}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-white/10 hover:bg-white/20 backdrop-blur-md p-3 rounded-full transition-colors"
+                        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 bg-white/10 hover:bg-white/20 backdrop-blur-md p-2 sm:p-3 rounded-full transition-colors"
                         aria-label="Next image"
                     >
-                        <ChevronRight className="w-6 h-6 text-white" />
+                        <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                     </motion.button>
 
                     {/* Image Indicators */}
-                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2 bg-white/10 backdrop-blur-md px-4 py-3 rounded-full">
+                    <div className="absolute bottom-4 sm:bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-1.5 sm:gap-2 bg-white/10 backdrop-blur-md px-3 sm:px-4 py-2 sm:py-3 rounded-full">
                         {heroContent.images.map((_, index) => (
                             <motion.button
                                 key={index}
                                 onClick={() => goToImage(index)}
                                 whileHover={{ scale: 1.2 }}
                                 whileTap={{ scale: 0.9 }}
-                                className={`h-2 rounded-full transition-all ${
+                                className={`rounded-full transition-all ${
                                     index === currentImageIndex
-                                        ? "bg-white w-8"
-                                        : "bg-white/40 w-2 hover:bg-white/70"
+                                        ? "bg-white w-6 sm:w-8 h-2"
+                                        : "bg-white/40 w-1.5 sm:w-2 h-2 hover:bg-white/70"
                                 }`}
                                 aria-label={`Go to image ${index + 1}`}
                             />
@@ -239,7 +242,7 @@ export function HeroSection() {
             )}
 
             {/* Image Source Indicator (for debugging) */}
-            <div className="absolute top-4 right-4 z-20 text-xs text-white/60 pointer-events-none">
+            <div className="absolute top-3 sm:top-4 right-3 sm:right-4 z-20 text-xs text-white/60 pointer-events-none">
                 {isMobile ? "📱 Mobile View" : "🖥️ Desktop View"} - Image {currentImageIndex + 1}/{heroContent.images.length}
             </div>
 
