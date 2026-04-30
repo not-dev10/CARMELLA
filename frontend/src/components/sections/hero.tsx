@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { FadeIn } from "@/components/animations/fade-in"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import Image from "@/components/ui/image-shim"
 import { Award, Users, ShieldCheck } from "lucide-react"
@@ -32,7 +32,6 @@ export function HeroSection() {
     const [heroContent, setHeroContent] = useState<HeroContent>(DEFAULT_HERO)
     const [loading, setLoading] = useState(true)
     const [isMobile, setIsMobile] = useState(false)
-    const [isPaused, setIsPaused] = useState(false)
 
     // Fetch hero section from backend
     useEffect(() => {
@@ -78,8 +77,6 @@ export function HeroSection() {
     return (
         <section
             className="relative h-[85vh] min-h-[550px] w-full overflow-hidden flex items-center justify-center bg-black"
-            onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => setIsPaused(false)}
         >
             {/* Hero Image Background with Ken Burns Effect */}
             <div className="absolute inset-0 z-0 select-none">

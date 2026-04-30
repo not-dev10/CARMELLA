@@ -4,8 +4,8 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   BarChart3, ShoppingCart, TrendingUp, Users, Package, AlertCircle,
-  Search, Edit2, Settings, LogOut, Bell, Clock, CheckCircle, XCircle,
-  Mail, Save, X, Grid3x3, Activity
+  Search, Settings, LogOut, Bell, Clock, CheckCircle, XCircle,
+  Mail, Grid3x3, Activity
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -23,8 +23,7 @@ import { OrdersSection } from "@/components/admin/orders-section"
 import { PerformanceSection } from "@/components/admin/performance-section"
 import { PageEditor } from "@/components/admin/page-editor"
 import { useAuth } from "@/contexts/AuthContext"
-import { adminAPI, API_BASE_URL } from "@/lib/api"
-import { supabase } from "@/lib/supabase"
+import { adminAPI } from "@/lib/api"
 
 // Mock Data - Recent orders shown on dashboard
 const RECENT_ORDERS = [
@@ -34,18 +33,10 @@ const RECENT_ORDERS = [
   { id: "ORD-20250123-00002", client: "Minimalist Home", status: "Shipped", date: "Jan 22, 2024", total: "$12,400.00" }
 ]
 
-const HOMEPAGE_SECTIONS = [
-  { id: "hero", name: "Hero Section", title: "Handcrafted Ceramics for Modern Living", subtitle: "Discover our curated collection of artisan ceramics", image: "https://images.unsplash.com/photo-1578500494198-246f612d3b3d?w=400&h=300&fit=crop" },
-  { id: "quote", name: "Brand Quote", quote: "Every piece tells a story of craftsmanship and tradition.", author: "Carmella Artisans" },
-  { id: "newsletter", name: "Newsletter Section", title: "Stay Updated", description: "Get exclusive offers and new collection announcements" },
-  { id: "testimonials", name: "Testimonials", title: "What Our Customers Say", count: 8 }
-]
-
 export default function Admin() {
   const { signOut } = useAuth()
   const [activeTab, setActiveTab] = useState("dashboard")
   const [searchQuery, setSearchQuery] = useState("")
-  const [editingSection, setEditingSection] = useState<string | null>(null)
   const [b2bRequests, setB2bRequests] = useState<any[]>([])
   const [loadingB2B, setLoadingB2B] = useState(false)
   const [processingRequest, setProcessingRequest] = useState<string | null>(null)

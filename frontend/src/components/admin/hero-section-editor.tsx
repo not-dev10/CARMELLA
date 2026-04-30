@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Upload, X, Loader2, Monitor, Smartphone, Save, Image as ImageIcon } from "lucide-react"
+import { Upload, Loader2, Save } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
