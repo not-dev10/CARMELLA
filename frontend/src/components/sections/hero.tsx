@@ -14,14 +14,36 @@ interface HeroImage {
 }
 
 interface HeroContent {
+  badge: string
   title: string
   subtitle: string
+  cta1Text: string
+  cta1Link?: string
+  cta2Text: string
+  cta2Link?: string
+  badge1Text: string
+  badge1Subtext: string
+  badge2Text: string
+  badge2Subtext: string
+  badge3Text: string
+  badge3Subtext: string
   images: HeroImage[]
 }
 
 const DEFAULT_HERO: HeroContent = {
+  badge: "EST. 2024",
   title: "Artistry in Every Detail",
   subtitle: "Handcrafted ceramics and home essentials for the modern retailer. Elevate your inventory with our curated B2B collections.",
+  cta1Text: "Shop Wholesale",
+  cta1Link: "/shop",
+  cta2Text: "View Lookbook",
+  cta2Link: "/lookbook",
+  badge1Text: "500+ Retailers",
+  badge1Subtext: "Worldwide",
+  badge2Text: "Premium Quality",
+  badge2Subtext: "Handcrafted",
+  badge3Text: "B2B Certified",
+  badge3Subtext: "Trusted Partner",
   images: [
     {
       desktopImage: "https://picsum.photos/seed/ceramic-vase-collection/1920/1080",
@@ -30,10 +52,10 @@ const DEFAULT_HERO: HeroContent = {
   ],
 }
 
-const TRUST_BADGES = [
-    { icon: Users, text: "500+ Retailers", subtext: "Worldwide" },
-    { icon: Award, text: "Premium Quality", subtext: "Handcrafted" },
-    { icon: ShieldCheck, text: "B2B Certified", subtext: "Trusted Partner" }
+const TRUST_BADGE_ICONS = [
+  { icon: Users },
+  { icon: Award },
+  { icon: ShieldCheck },
 ]
 
 export function HeroSection() {
@@ -53,8 +75,19 @@ export function HeroSection() {
                     // The content field contains the hero data
                     if (data.content) {
                         setHeroContent({
+                            badge: data.content.badge || DEFAULT_HERO.badge,
                             title: data.content.title || DEFAULT_HERO.title,
                             subtitle: data.content.subtitle || DEFAULT_HERO.subtitle,
+                            cta1Text: data.content.cta1Text || DEFAULT_HERO.cta1Text,
+                            cta1Link: data.content.cta1Link || DEFAULT_HERO.cta1Link,
+                            cta2Text: data.content.cta2Text || DEFAULT_HERO.cta2Text,
+                            cta2Link: data.content.cta2Link || DEFAULT_HERO.cta2Link,
+                            badge1Text: data.content.badge1Text || DEFAULT_HERO.badge1Text,
+                            badge1Subtext: data.content.badge1Subtext || DEFAULT_HERO.badge1Subtext,
+                            badge2Text: data.content.badge2Text || DEFAULT_HERO.badge2Text,
+                            badge2Subtext: data.content.badge2Subtext || DEFAULT_HERO.badge2Subtext,
+                            badge3Text: data.content.badge3Text || DEFAULT_HERO.badge3Text,
+                            badge3Subtext: data.content.badge3Subtext || DEFAULT_HERO.badge3Subtext,
                             images: (data.content.images && data.content.images.length > 0) 
                               ? data.content.images 
                               : DEFAULT_HERO.images,
@@ -96,6 +129,13 @@ export function HeroSection() {
 
     const currentImage = heroContent.images[currentImageIndex]
     const heroImage = isMobile ? currentImage.mobileImage : currentImage.desktopImage
+
+    // Trust badges configuration from hero content
+    const TRUST_BADGES = [
+        { icon: TRUST_BADGE_ICONS[0].icon, text: heroContent.badge1Text, subtext: heroContent.badge1Subtext },
+        { icon: TRUST_BADGE_ICONS[1].icon, text: heroContent.badge2Text, subtext: heroContent.badge2Subtext },
+        { icon: TRUST_BADGE_ICONS[2].icon, text: heroContent.badge3Text, subtext: heroContent.badge3Subtext },
+    ]
 
     const goToPrevious = () => {
         setAutoplay(false)
@@ -155,7 +195,7 @@ export function HeroSection() {
             <div className="container relative z-10 px-4 sm:px-6 text-center text-white">
                 <FadeIn>
                     <span className="mb-4 sm:mb-6 block text-xs sm:text-sm font-bold tracking-[0.2em] uppercase opacity-90">
-                        Est. 2024
+                        {heroContent.badge}
                     </span>
                     <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-medium tracking-tight mb-4 sm:mb-6 md:mb-8 drop-shadow-2xl px-2">
                         {heroContent.title}
@@ -165,10 +205,10 @@ export function HeroSection() {
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
                         <Button size="lg" className="btn-gradient min-w-[140px] sm:min-w-[160px] h-11 sm:h-14 text-xs sm:text-base rounded-full border-0 shadow-lg hover:shadow-xl transition-all">
-                            Shop Wholesale
+                            {heroContent.cta1Text}
                         </Button>
                         <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-black min-w-[140px] sm:min-w-[160px] h-11 sm:h-14 text-xs sm:text-base rounded-full bg-transparent backdrop-blur-sm">
-                            View Lookbook
+                            {heroContent.cta2Text}
                         </Button>
                     </div>
 
@@ -248,4 +288,5 @@ export function HeroSection() {
 
         </section>
     )
+
 }
