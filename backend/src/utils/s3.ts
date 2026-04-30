@@ -16,7 +16,10 @@ const s3Client = new S3Client({
  * Generate a unique key for S3 object based on file type
  * Example output: carmella/products/abc123-uuid.jpg
  */
-export function generateS3Key(fileType: "product" | "category", filename: string): string {
+export function generateS3Key(
+  fileType: "product" | "category" | "hero" | "quote" | "newsletter" | "testimonials",
+  filename: string
+): string {
   const timestamp = Date.now();
   const randomStr = crypto.randomBytes(8).toString("hex");
   const ext = filename.split(".").pop() || "jpg";
