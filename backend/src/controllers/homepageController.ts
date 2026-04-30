@@ -66,32 +66,39 @@ export const updateSection = async (req: Request, res: Response) => {
   try {
     console.log(`[HOMEPAGE] Updating section: ${section} by user: ${userId}`);
 
-    // Check if section exists
+    // Check if section exists first
     const { data: existing, error: checkError } = await supabase
       .from("admin_content")
-      .select("id")
-      .eq("section_name", section)
-      .single();
+      .select("id, content")
+      .eq("section_name", section);
 
-    if (checkError && checkError.code !== 'PGRST116') {
+    if (checkError) {
       console.error(`[HOMEPAGE] Error checking existing section:`, checkError);
       return res.status(500).json({ error: "Failed to check section" });
     }
 
-    let result;
-    if (existing) {
-      // Update existing - only update content field to avoid RLS issues
+    let response;
+    if (existing && existing.length > 0) {
+      // Update existing section
       console.log(`[HOMEPAGE] Updating existing section: ${section}`);
-      result = await supabase
+      const { error: updateError } = await supabase
         .from("admin_content")
         .update({ content })
-        .eq("section_name", section)
-        .select()
-        .single();
+        .eq("section_name", section);
+
+      if (updateError) {
+        console.error(`[HOMEPAGE] Failed to update section ${section}:`, updateError);
+        return res.status(500).json({ 
+          error: "Failed to update section",
+          details: updateError.message 
+        });
+      }
+
+      response = { success: true, content, section_name: section };
     } else {
       // Create new section
       console.log(`[HOMEPAGE] Creating new section: ${section}`);
-      result = await supabase
+      const { data: insertedData, error: insertError } = await supabase
         .from("admin_content")
         .insert([
           {
@@ -101,18 +108,20 @@ export const updateSection = async (req: Request, res: Response) => {
         ])
         .select()
         .single();
-    }
 
-    if (result.error) {
-      console.error(`[HOMEPAGE] Failed to update section ${section}:`, result.error);
-      return res.status(500).json({ 
-        error: "Failed to update section",
-        details: result.error.message 
-      });
+      if (insertError) {
+        console.error(`[HOMEPAGE] Failed to insert section ${section}:`, insertError);
+        return res.status(500).json({ 
+          error: "Failed to create section",
+          details: insertError.message 
+        });
+      }
+
+      response = { success: true, content: insertedData };
     }
 
     console.log(`[HOMEPAGE] Section ${section} updated successfully`);
-    res.json({ success: true, content: result.data });
+    res.json(response);
   } catch (error) {
     console.error(`[HOMEPAGE] Unexpected error updating section:`, error);
     res.status(500).json({ error: "Internal server error" });
