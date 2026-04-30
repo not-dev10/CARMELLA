@@ -100,13 +100,34 @@ function CategoryCard({ category, index }: { category: Category; index: number }
 export function CategoriesSection() {
     const [categories, setCategories] = useState<Category[]>([])
     const [loading, setLoading] = useState(true)
+    const [sectionContent, setSectionContent] = useState({
+        title: "Browse Our Collections",
+        description: "Discover quality products across all categories"
+    })
     const hasFetched = useRef(false)
 
     useEffect(() => {
-        const fetchCategories = async () => {
+        const fetchData = async () => {
             try {
-                const data = await homepageAPI.getCategories()
-                setCategories(data.categories || [])
+                // Fetch categories
+                const categoriesData = await homepageAPI.getCategories()
+                setCategories(categoriesData.categories || [])
+
+                // Fetch section content
+                try {
+                  const response = await fetch(`${homepageAPI.API_BASE_URL}/homepage/content/categories`)
+                  if (response.ok) {
+                    const data = await response.json()
+                    if (data.content) {
+                      setSectionContent({
+                        title: data.content.title || sectionContent.title,
+                        description: data.content.description || sectionContent.description
+                      })
+                    }
+                  }
+                } catch (error) {
+                  console.error("Failed to fetch categories section content:", error)
+                }
             } catch (error) {
                 console.error("Failed to fetch categories:", error)
             } finally {
@@ -116,7 +137,7 @@ export function CategoriesSection() {
 
         if (!hasFetched.current) {
             hasFetched.current = true
-            fetchCategories()
+            fetchData()
         }
     }, [])
 
@@ -161,10 +182,10 @@ export function CategoriesSection() {
                             </span>
                         </motion.div>
                         <h2 className="font-serif text-3xl md:text-4xl font-bold mb-3 text-gray-900 dark:text-white">
-                            Browse Our Collections
+                            {sectionContent.title}
                         </h2>
                         <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                            Discover quality products across all categories
+                            {sectionContent.description}
                         </p>
                     </div>
                 </FadeIn>

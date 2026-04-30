@@ -221,12 +221,37 @@ export function ProductShowcase() {
     const [products, setProducts] = useState<Product[]>([])
     const [loading, setLoading] = useState(true)
     const [wishlist, setWishlist] = useState<string[]>([])
+    const [sectionContent, setSectionContent] = useState({
+        label: "Featured Products",
+        title: "Trending Now",
+        description: "Discover our most popular items",
+        buttonText: "View All",
+    })
 
     useEffect(() => {
-        const fetchProducts = async () => {
+        const fetchData = async () => {
             try {
+                // Fetch products
                 const data = await homepageAPI.getFeaturedProducts()
                 setProducts(data.products || [])
+
+                // Fetch section content
+                try {
+                  const response = await fetch(`${API_BASE_URL}/homepage/content/products`)
+                  if (response.ok) {
+                    const data = await response.json()
+                    if (data.content) {
+                      setSectionContent({
+                        label: data.content.label || sectionContent.label,
+                        title: data.content.title || sectionContent.title,
+                        description: data.content.description || sectionContent.description,
+                        buttonText: data.content.buttonText || sectionContent.buttonText,
+                      })
+                    }
+                  }
+                } catch (error) {
+                  console.error("Failed to fetch products section content:", error)
+                }
             } catch (error) {
                 console.error("Failed to fetch featured products:", error)
             } finally {
@@ -277,20 +302,20 @@ export function ProductShowcase() {
                         >
                             <span className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 dark:bg-primary/20 text-primary rounded-full text-sm font-semibold">
                                 <TrendingUp className="w-4 h-4" />
-                                Featured Products
+                                {sectionContent.label}
                             </span>
                         </motion.div>
                         <h2 className="font-serif text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
-                            Trending Now
+                            {sectionContent.title}
                         </h2>
                         <p className="text-gray-600 dark:text-gray-400 mt-2">
-                            Discover our most popular items
+                            {sectionContent.description}
                         </p>
                     </FadeIn>
                     <FadeIn delay={0.2} direction="left">
                         <Link href="/catalog" className="hidden md:block">
                             <Button variant="outline" className="gap-2">
-                                View All
+                                {sectionContent.buttonText}
                                 <Plus className="w-4 h-4" />
                             </Button>
                         </Link>

@@ -30,6 +30,42 @@ const defaultSections = [
     },
   },
   {
+    section_name: "categories",
+    content: {
+      title: "Browse Our Collections",
+      description: "Shop by Category",
+    },
+  },
+  {
+    section_name: "collection",
+    content: {
+      leftLabel: "New Arrivals",
+      leftTitle: "Autumn Ceramics",
+      leftButtonText: "Shop Collection",
+      rightLabel: "Curated",
+      rightTitle: "Sustainable Living",
+      rightButtonText: "Discover More",
+    },
+  },
+  {
+    section_name: "products",
+    content: {
+      label: "Featured Products",
+      title: "Trending Now",
+      description: "Discover our most popular items",
+      buttonText: "View All",
+    },
+  },
+  {
+    section_name: "givingback",
+    content: {
+      label: "Community Impact",
+      title: "Giving Back to the Community",
+      description: "An additional 10% of proceeds from our best-selling Poetry Mug go to charities that support local artisans and fair trade practices.",
+      buttonText: "Our Giving Program",
+    },
+  },
+  {
     section_name: "quote",
     content: {
       quote: "Every piece tells a story of craftsmanship and tradition.",

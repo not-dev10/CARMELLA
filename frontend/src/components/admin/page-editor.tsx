@@ -43,11 +43,78 @@ const SECTIONS: Section[] = [
     ],
   },
   {
+    id: "categories",
+    name: "Categories Section",
+    type: "quote",
+    fields: [
+      { name: "title", label: "Section Title", type: "text", required: true },
+      { name: "description", label: "Section Description", type: "textarea", rows: 2, required: true },
+    ],
+  },
+  {
+    id: "collection",
+    name: "Collection Split Section",
+    type: "quote",
+    fields: [
+      { name: "leftLabel", label: "Left Panel Label", type: "text", required: true },
+      { name: "leftTitle", label: "Left Panel Title", type: "text", required: true },
+      { name: "leftButtonText", label: "Left Panel Button", type: "text", required: true },
+      { name: "rightLabel", label: "Right Panel Label", type: "text", required: true },
+      { name: "rightTitle", label: "Right Panel Title", type: "text", required: true },
+      { name: "rightButtonText", label: "Right Panel Button", type: "text", required: true },
+    ],
+  },
+  {
+    id: "products",
+    name: "Product Showcase Section",
+    type: "quote",
+    fields: [
+      { name: "label", label: "Section Label", type: "text", required: true },
+      { name: "title", label: "Section Title", type: "text", required: true },
+      { name: "description", label: "Section Description", type: "textarea", rows: 2, required: true },
+      { name: "buttonText", label: "View All Button Text", type: "text", required: true },
+    ],
+  },
+  {
+    id: "givingback",
+    name: "Giving Back Section",
+    type: "quote",
+    fields: [
+      { name: "label", label: "Section Label", type: "text", required: true },
+      { name: "title", label: "Section Title", type: "text", required: true },
+      { name: "description", label: "Section Description", type: "textarea", rows: 3, required: true },
+      { name: "buttonText", label: "Button Text", type: "text", required: true },
+    ],
+  },
+  {
     id: "quote",
     name: "Brand Quote Section",
     type: "quote",
     fields: [
       { name: "quote", label: "Quote Text", type: "textarea", rows: 3, required: true },
+      { name: "author", label: "Author Name", type: "text", required: true },
+    ],
+  },
+  {
+    id: "newsletter",
+    name: "Newsletter Section",
+    type: "quote",
+    fields: [
+      { name: "title", label: "Newsletter Title", type: "text", required: true },
+      { name: "description", label: "Newsletter Description", type: "textarea", rows: 2, required: true },
+      { name: "placeholder", label: "Email Input Placeholder", type: "text", required: true },
+    ],
+  },
+  {
+    id: "testimonials",
+    name: "Testimonials Section",
+    type: "testimonials",
+    fields: [
+      { name: "title", label: "Section Title", type: "text", required: true },
+      { name: "subtitle", label: "Section Subtitle", type: "textarea", rows: 2, required: true },
+    ],
+  },
+]
       { name: "author", label: "Author Name", type: "text", required: true },
     ],
   },
@@ -118,6 +185,30 @@ export function PageEditor() {
         title: "Handcrafted Ceramics for Modern Living",
         subtitle: "Discover our curated collection of artisan ceramics",
         images: [],
+      },
+      categories: {
+        title: "Browse Our Collections",
+        description: "Shop by Category",
+      },
+      collection: {
+        leftLabel: "New Arrivals",
+        leftTitle: "Autumn Ceramics",
+        leftButtonText: "Shop Collection",
+        rightLabel: "Curated",
+        rightTitle: "Sustainable Living",
+        rightButtonText: "Discover More",
+      },
+      products: {
+        label: "Featured Products",
+        title: "Trending Now",
+        description: "Discover our most popular items",
+        buttonText: "View All",
+      },
+      givingback: {
+        label: "Community Impact",
+        title: "Giving Back to the Community",
+        description: "An additional 10% of proceeds from our best-selling Poetry Mug go to charities that support local artisans and fair trade practices.",
+        buttonText: "Our Giving Program",
       },
       quote: {
         quote: "Every piece tells a story of craftsmanship and tradition.",
