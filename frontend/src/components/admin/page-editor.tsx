@@ -1,0 +1,480 @@
+"use client"
+
+import { useState, useEffect, useRef } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Save, X, Loader2, Monitor, Smartphone, Upload, ChevronDown } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
+import { API_BASE_URL } from "@/lib/api"
+import { supabase } from "@/lib/supabase"
+
+interface Section {
+  id: string
+  name: string
+  type: "hero" | "quote" | "newsletter" | "testimonials"
+  fields: Field[]
+}
+
+interface Field {
+  name: string
+  label: string
+  type: "text" | "textarea" | "image" | "select"
+  required?: boolean
+  rows?: number
+  imageType?: "desktop" | "mobile"
+  options?: string[]
+}
+
+interface SectionData {
+  [key: string]: any
+}
+
+const SECTIONS: Section[] = [
+  {
+    id: "hero",
+    name: "Hero Section",
+    type: "hero",
+    fields: [
+      { name: "title", label: "Hero Title", type: "text", required: true },
+      { name: "subtitle", label: "Hero Subtitle", type: "textarea", rows: 2, required: true },
+      { name: "desktopImage", label: "Desktop Image", type: "image", imageType: "desktop", required: true },
+      { name: "mobileImage", label: "Mobile Image", type: "image", imageType: "mobile", required: true },
+    ],
+  },
+  {
+    id: "quote",
+    name: "Brand Quote Section",
+    type: "quote",
+    fields: [
+      { name: "quote", label: "Quote Text", type: "textarea", rows: 3, required: true },
+      { name: "author", label: "Author Name", type: "text", required: true },
+    ],
+  },
+  {
+    id: "newsletter",
+    name: "Newsletter Section",
+    type: "newsletter",
+    fields: [
+      { name: "title", label: "Section Title", type: "text", required: true },
+      { name: "description", label: "Description", type: "textarea", rows: 2, required: true },
+      { name: "placeholder", label: "Email Placeholder", type: "text", required: false },
+    ],
+  },
+  {
+    id: "testimonials",
+    name: "Testimonials Section",
+    type: "testimonials",
+    fields: [
+      { name: "title", label: "Section Title", type: "text", required: true },
+      { name: "subtitle", label: "Subtitle", type: "textarea", rows: 2, required: false },
+    ],
+  },
+]
+
+export function PageEditor() {
+  const [activeSectionId, setActiveSectionId] = useState("hero")
+  const [sectionsData, setSectionsData] = useState<Map<string, SectionData>>(new Map())
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState<string | null>(null)
+  const [uploading, setUploading] = useState<string | null>(null)
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({})
+
+  // Fetch all section data on mount
+  useEffect(() => {
+    fetchAllSections()
+  }, [])
+
+  const fetchAllSections = async () => {
+    try {
+      setLoading(true)
+      const newData = new Map<string, SectionData>()
+
+      for (const section of SECTIONS) {
+        try {
+          const response = await fetch(`${API_BASE_URL}/homepage/content/${section.id}`)
+          if (response.ok) {
+            const content = await response.json()
+            newData.set(section.id, content.content || getDefaultData(section.id))
+          } else {
+            newData.set(section.id, getDefaultData(section.id))
+          }
+        } catch (error) {
+          console.error(`Failed to fetch ${section.id}:`, error)
+          newData.set(section.id, getDefaultData(section.id))
+        }
+      }
+
+      setSectionsData(newData)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getDefaultData = (sectionId: string): SectionData => {
+    const defaults: { [key: string]: SectionData } = {
+      hero: {
+        title: "Handcrafted Ceramics for Modern Living",
+        subtitle: "Discover our curated collection of artisan ceramics",
+        desktopImage: "",
+        mobileImage: "",
+      },
+      quote: {
+        quote: "Every piece tells a story of craftsmanship and tradition.",
+        author: "Carmella Artisans",
+      },
+      newsletter: {
+        title: "Stay Updated",
+        description: "Get exclusive offers and new collection announcements",
+        placeholder: "Enter your email",
+      },
+      testimonials: {
+        title: "What Our Customers Say",
+        subtitle: "Real feedback from our valued clients",
+      },
+    }
+    return defaults[sectionId] || {}
+  }
+
+  const uploadToS3 = async (file: File, fieldName: string): Promise<string | null> => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      if (!token) {
+        throw new Error("Not authenticated - please log in first")
+      }
+
+      const signedUrlResponse = await fetch(`${API_BASE_URL}/upload/get-signed-url`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          filename: `${activeSectionId}-${fieldName}-${Date.now()}.${file.name.split('.').pop()}`,
+          fileType: activeSectionId,
+        }),
+      })
+
+      if (!signedUrlResponse.ok) {
+        throw new Error("Failed to get upload URL")
+      }
+
+      const { signedUrl, publicUrl } = await signedUrlResponse.json()
+
+      const uploadResponse = await fetch(signedUrl, {
+        method: "PUT",
+        body: file,
+        headers: {
+          "Content-Type": file.type || "image/jpeg",
+        },
+      })
+
+      if (!uploadResponse.ok) {
+        throw new Error("Upload failed")
+      }
+
+      return publicUrl
+    } catch (error: any) {
+      setMessage({ type: "error", text: `Upload failed: ${error.message}` })
+      return null
+    }
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: string) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith("image/")) {
+      setMessage({ type: "error", text: "Please select an image file" })
+      return
+    }
+
+    const MAX_SIZE = 10 * 1024 * 1024
+    if (file.size > MAX_SIZE) {
+      setMessage({ type: "error", text: "File too large. Maximum size is 10MB" })
+      return
+    }
+
+    setUploading(fieldName)
+    const url = await uploadToS3(file, fieldName)
+    setUploading(null)
+
+    if (url) {
+      const currentData = sectionsData.get(activeSectionId) || {}
+      setSectionsData(new Map(sectionsData).set(activeSectionId, { ...currentData, [fieldName]: url }))
+      setMessage({ type: "success", text: "Image uploaded successfully!" })
+    }
+
+    // Reset input
+    if (fileInputRefs.current[fieldName]) {
+      fileInputRefs.current[fieldName]!.value = ""
+    }
+  }
+
+  const handleFieldChange = (fieldName: string, value: any) => {
+    const currentData = sectionsData.get(activeSectionId) || {}
+    setSectionsData(new Map(sectionsData).set(activeSectionId, { ...currentData, [fieldName]: value }))
+  }
+
+  const handleSaveSection = async () => {
+    try {
+      const activeSection = SECTIONS.find(s => s.id === activeSectionId)
+      if (!activeSection) return
+
+      // Validate required fields
+      const currentData = sectionsData.get(activeSectionId) || {}
+      for (const field of activeSection.fields) {
+        if (field.required && !currentData[field.name]) {
+          setMessage({ type: "error", text: `${field.label} is required` })
+          return
+        }
+      }
+
+      setSaving(activeSectionId)
+
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+
+      if (!token) {
+        throw new Error("Not authenticated - please log in first")
+      }
+
+      const response = await fetch(`${API_BASE_URL}/homepage/content/${activeSectionId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({ content: currentData }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Failed to save section")
+      }
+
+      setMessage({ type: "success", text: `${activeSection.name} saved successfully!` })
+    } catch (error: any) {
+      setMessage({ type: "error", text: error.message || "Failed to save section" })
+    } finally {
+      setSaving(null)
+    }
+  }
+
+  const activeSection = SECTIONS.find(s => s.id === activeSectionId)
+  const currentData = sectionsData.get(activeSectionId) || {}
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="admin-heading">Complete Page Editor</h2>
+        <p className="text-muted-foreground">Edit all homepage sections in one place. Changes are saved individually.</p>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p className="mt-4 text-muted-foreground">Loading page content...</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Sidebar - Section Navigation */}
+          <div className="lg:col-span-1">
+            <div className="admin-card p-0 overflow-hidden sticky top-8">
+              <div className="p-4 bg-muted dark:bg-gray-800 border-b border-border dark:border-gray-700">
+                <h3 className="font-semibold text-foreground text-sm">Sections</h3>
+              </div>
+              <div className="divide-y divide-border dark:divide-gray-700">
+                {SECTIONS.map((section) => (
+                  <button
+                    key={section.id}
+                    onClick={() => setActiveSectionId(section.id)}
+                    className={cn(
+                      "w-full px-4 py-3 text-left text-sm font-medium transition-colors",
+                      activeSectionId === section.id
+                        ? "bg-primary/10 dark:bg-primary/20 text-primary border-l-2 border-primary"
+                        : "text-muted-foreground hover:bg-muted dark:hover:bg-gray-800 border-l-2 border-transparent"
+                    )}
+                  >
+                    {section.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content - Section Editor */}
+          <div className="lg:col-span-3">
+            <AnimatePresence mode="wait">
+              {activeSection && (
+                <motion.div
+                  key={activeSectionId}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="admin-card p-6 space-y-6"
+                >
+                  {/* Section Header */}
+                  <div>
+                    <h3 className="font-serif text-2xl text-foreground mb-2">{activeSection.name}</h3>
+                    <p className="text-sm text-muted-foreground">Edit the fields below to update this section on your homepage.</p>
+                  </div>
+
+                  {/* Form Fields */}
+                  <div className="space-y-6">
+                    {activeSection.fields.map((field) => (
+                      <div key={field.name} className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <label className="admin-label">{field.label}</label>
+                          {field.required && <Badge variant="outline" className="text-xs">Required</Badge>}
+                        </div>
+
+                        {/* Text Input */}
+                        {field.type === "text" && (
+                          <input
+                            type="text"
+                            value={currentData[field.name] || ""}
+                            onChange={(e) => handleFieldChange(field.name, e.target.value)}
+                            className="admin-input"
+                            placeholder={`Enter ${field.label.toLowerCase()}`}
+                          />
+                        )}
+
+                        {/* Textarea */}
+                        {field.type === "textarea" && (
+                          <textarea
+                            value={currentData[field.name] || ""}
+                            onChange={(e) => handleFieldChange(field.name, e.target.value)}
+                            className="admin-input"
+                            placeholder={`Enter ${field.label.toLowerCase()}`}
+                            rows={field.rows || 3}
+                          />
+                        )}
+
+                        {/* Image Upload */}
+                        {field.type === "image" && (
+                          <div
+                            onClick={() => fileInputRefs.current[field.name]?.click()}
+                            className={cn(
+                              "border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer",
+                              uploading === field.name ? "opacity-50 cursor-wait" : "",
+                              "border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-950/50 hover:border-gray-400"
+                            )}
+                          >
+                            <input
+                              ref={(el) => {
+                                if (el) fileInputRefs.current[field.name] = el
+                              }}
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleImageUpload(e, field.name)}
+                              disabled={uploading === field.name}
+                              className="hidden"
+                            />
+
+                            {currentData[field.name] ? (
+                              <div className="space-y-3">
+                                <div className="relative w-full rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900" style={{ aspectRatio: field.imageType === "mobile" ? "3/4" : "16/9" }}>
+                                  <img
+                                    src={currentData[field.name]}
+                                    alt={field.label}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                <div className="flex gap-2 justify-center">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      fileInputRefs.current[field.name]?.click()
+                                    }}
+                                  >
+                                    Change
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="text-red-600 hover:text-red-700"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleFieldChange(field.name, "")
+                                    }}
+                                  >
+                                    Remove
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center gap-2 py-8">
+                                {uploading === field.name ? (
+                                  <>
+                                    <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+                                    <p className="text-sm text-muted-foreground">Uploading...</p>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Upload className="w-8 h-8 text-gray-400" />
+                                    <p className="text-sm font-medium">Drag image here or click to upload</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {field.imageType === "mobile" ? "Recommended: 540x720px" : "Recommended: 1920x1080px"}
+                                    </p>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Message */}
+                  <AnimatePresence>
+                    {message && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className={cn(
+                          "p-4 rounded-lg text-sm font-medium",
+                          message.type === "success"
+                            ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                            : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                        )}
+                      >
+                        {message.text}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Save Button */}
+                  <Button
+                    onClick={handleSaveSection}
+                    disabled={saving !== null || uploading !== null}
+                    className="btn-gradient w-full"
+                  >
+                    {saving === activeSectionId ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        Save {activeSection.name}
+                      </>
+                    )}
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
