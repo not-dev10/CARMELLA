@@ -382,6 +382,8 @@ export function PageEditor() {
         throw new Error("Not authenticated - please log in first")
       }
 
+      console.log(`[PAGE EDITOR] Saving section: ${activeSectionId}`, currentData)
+
       const response = await fetch(`${API_BASE_URL}/homepage/content/${activeSectionId}`, {
         method: "PUT",
         headers: {
@@ -393,11 +395,22 @@ export function PageEditor() {
 
       if (!response.ok) {
         const error = await response.json()
+        console.error(`[PAGE EDITOR] Failed to save section:`, error)
         throw new Error(error.error || "Failed to save section")
       }
 
-      setMessage({ type: "success", text: `${activeSection.name} saved successfully!` })
+      const saveResponse = await response.json()
+      console.log(`[PAGE EDITOR] Section saved successfully:`, saveResponse)
+
+      setMessage({ type: "success", text: `${activeSection.name} saved successfully! Changes will appear on the homepage in a few seconds.` })
+      
+      // Refresh the section data after a short delay to reflect changes
+      setTimeout(() => {
+        console.log(`[PAGE EDITOR] Refreshing section data after save`)
+        fetchAllSections()
+      }, 1000)
     } catch (error: any) {
+      console.error(`[PAGE EDITOR] Error:`, error)
       setMessage({ type: "error", text: error.message || "Failed to save section" })
     } finally {
       setSaving(null)
@@ -409,9 +422,28 @@ export function PageEditor() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="admin-heading">Complete Page Editor</h2>
-        <p className="text-muted-foreground">Edit all homepage sections in one place. Changes are saved individually.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="admin-heading">Complete Page Editor</h2>
+          <p className="text-muted-foreground">Edit all homepage sections in one place. Changes are saved individually.</p>
+        </div>
+        <Button
+          onClick={fetchAllSections}
+          disabled={loading}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Refreshing...
+            </>
+          ) : (
+            <>
+              ↻ Refresh Data
+            </>
+          )}
+        </Button>
       </div>
 
       {loading ? (

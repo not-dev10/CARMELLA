@@ -69,33 +69,45 @@ export function HeroSection() {
     useEffect(() => {
         const fetchHeroContent = async () => {
             try {
+                console.log(`[HERO] Fetching hero content from ${API_BASE_URL}/homepage/content/hero`)
                 const response = await fetch(`${API_BASE_URL}/homepage/content/hero`)
-                if (response.ok) {
-                    const data = await response.json()
-                    // The content field contains the hero data
-                    if (data.content) {
-                        setHeroContent({
-                            badge: data.content.badge || DEFAULT_HERO.badge,
-                            title: data.content.title || DEFAULT_HERO.title,
-                            subtitle: data.content.subtitle || DEFAULT_HERO.subtitle,
-                            cta1Text: data.content.cta1Text || DEFAULT_HERO.cta1Text,
-                            cta1Link: data.content.cta1Link || DEFAULT_HERO.cta1Link,
-                            cta2Text: data.content.cta2Text || DEFAULT_HERO.cta2Text,
-                            cta2Link: data.content.cta2Link || DEFAULT_HERO.cta2Link,
-                            badge1Text: data.content.badge1Text || DEFAULT_HERO.badge1Text,
-                            badge1Subtext: data.content.badge1Subtext || DEFAULT_HERO.badge1Subtext,
-                            badge2Text: data.content.badge2Text || DEFAULT_HERO.badge2Text,
-                            badge2Subtext: data.content.badge2Subtext || DEFAULT_HERO.badge2Subtext,
-                            badge3Text: data.content.badge3Text || DEFAULT_HERO.badge3Text,
-                            badge3Subtext: data.content.badge3Subtext || DEFAULT_HERO.badge3Subtext,
-                            images: (data.content.images && data.content.images.length > 0) 
-                              ? data.content.images 
-                              : DEFAULT_HERO.images,
-                        })
+                
+                if (!response.ok) {
+                    console.error(`[HERO] Failed to fetch - Status: ${response.status}`)
+                    setLoading(false)
+                    return
+                }
+                
+                const data = await response.json()
+                console.log(`[HERO] Fetched data:`, data)
+                
+                // The content field contains the hero data
+                if (data.content) {
+                    const newHeroContent = {
+                        badge: data.content.badge || DEFAULT_HERO.badge,
+                        title: data.content.title || DEFAULT_HERO.title,
+                        subtitle: data.content.subtitle || DEFAULT_HERO.subtitle,
+                        cta1Text: data.content.cta1Text || DEFAULT_HERO.cta1Text,
+                        cta1Link: data.content.cta1Link || DEFAULT_HERO.cta1Link,
+                        cta2Text: data.content.cta2Text || DEFAULT_HERO.cta2Text,
+                        cta2Link: data.content.cta2Link || DEFAULT_HERO.cta2Link,
+                        badge1Text: data.content.badge1Text || DEFAULT_HERO.badge1Text,
+                        badge1Subtext: data.content.badge1Subtext || DEFAULT_HERO.badge1Subtext,
+                        badge2Text: data.content.badge2Text || DEFAULT_HERO.badge2Text,
+                        badge2Subtext: data.content.badge2Subtext || DEFAULT_HERO.badge2Subtext,
+                        badge3Text: data.content.badge3Text || DEFAULT_HERO.badge3Text,
+                        badge3Subtext: data.content.badge3Subtext || DEFAULT_HERO.badge3Subtext,
+                        images: (data.content.images && data.content.images.length > 0) 
+                          ? data.content.images 
+                          : DEFAULT_HERO.images,
                     }
+                    console.log(`[HERO] Setting new hero content:`, newHeroContent)
+                    setHeroContent(newHeroContent)
+                } else {
+                    console.log(`[HERO] No content found in response, using defaults`)
                 }
             } catch (error) {
-                console.error("Failed to fetch hero content:", error)
+                console.error("[HERO] Failed to fetch hero content:", error)
                 // Use default content on error
             } finally {
                 setLoading(false)
@@ -103,6 +115,14 @@ export function HeroSection() {
         }
 
         fetchHeroContent()
+        
+        // Set up interval to refetch hero content every 30 seconds
+        const interval = setInterval(() => {
+            console.log(`[HERO] Auto-refreshing hero content`)
+            fetchHeroContent()
+        }, 30000)
+        
+        return () => clearInterval(interval)
     }, [])
 
     // Handle responsive image switching

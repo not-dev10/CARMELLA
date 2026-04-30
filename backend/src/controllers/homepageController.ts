@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { supabase } from "../config/supabase.js";
 import { getSupabaseClient } from "../utils/supabaseClient.js";
+import { clearCache } from "../middleware/cache.js";
 
 /**
  * Homepage Controller
@@ -47,7 +48,7 @@ export const getSection = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Section not found" });
     }
 
-    res.json(content.content);
+    res.json({ content: content.content });
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
   }
@@ -94,6 +95,10 @@ export const updateSection = async (req: Request, res: Response) => {
         });
       }
 
+      // Clear cache for this section
+      clearCache(`/homepage/content/${section}`);
+      console.log(`[HOMEPAGE] Cache cleared for section: ${section}`);
+
       response = { success: true, content, section_name: section };
     } else {
       // Create new section
@@ -116,6 +121,10 @@ export const updateSection = async (req: Request, res: Response) => {
           details: insertError.message 
         });
       }
+
+      // Clear cache for this section
+      clearCache(`/homepage/content/${section}`);
+      console.log(`[HOMEPAGE] Cache cleared for new section: ${section}`);
 
       response = { success: true, content: insertedData };
     }
