@@ -100,17 +100,10 @@ export const updateSection = async (req: Request, res: Response) => {
         });
       }
 
-      // Clear cache for this section - try multiple cache key patterns
-      const cachePatterns = [
-        `/homepage/content/${section}`,
-        `/api/homepage/content/${section}`,
-        `api/homepage/content/${section}`
-      ];
-      
-      cachePatterns.forEach(pattern => {
-        clearCache(pattern);
-        console.log(`[HOMEPAGE] Cache cleared for pattern: ${pattern}`);
-      });
+      // Clear cache for this section - use correct path as seen by router
+      // Note: req.path in the router is just /content/section (without /api/homepage prefix)
+      clearCache(`/content/${section}`);
+      console.log(`[HOMEPAGE] Cache cleared for: /content/${section}`);
 
       response = { success: true, content, section_name: section };
     } else {
@@ -136,16 +129,8 @@ export const updateSection = async (req: Request, res: Response) => {
       }
 
       // Clear cache for new section
-      const cachePatterns = [
-        `/homepage/content/${section}`,
-        `/api/homepage/content/${section}`,
-        `api/homepage/content/${section}`
-      ];
-      
-      cachePatterns.forEach(pattern => {
-        clearCache(pattern);
-        console.log(`[HOMEPAGE] Cache cleared for pattern: ${pattern}`);
-      });
+      clearCache(`/content/${section}`);
+      console.log(`[HOMEPAGE] Cache cleared for: /content/${section}`);
 
       response = { success: true, content: insertedData };
     }
