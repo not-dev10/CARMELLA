@@ -19,8 +19,9 @@ export function cacheMiddleware(ttl: number = 300) {
       return next();
     }
 
-    // Generate cache key from URL and query params
-    const key = `${req.path}:${JSON.stringify(req.query)}:${req.headers.authorization || 'guest'}`;
+    // Generate cache key from URL only (don't include auth header for public content)
+    // This allows cache to be shared across users and properly cleared
+    const key = `${req.path}:${JSON.stringify(req.query)}`;
 
     // Check if cached
     const cachedResponse = cache.get(key);
@@ -54,10 +55,23 @@ export function clearCache(pattern?: string) {
   }
 
   const keys = cache.keys();
-  const matchingKeys = keys.filter(key => key.includes(pattern));
+  // Match pattern anywhere in the key, not just as a substring
+  const matchingKeys = keys.filter(key => {
+    // Match the pattern - handle both with and without leading slashes
+    const normalizedPattern = pattern.replace(/^\/+/, '').replace(/\/+$/, '');
+    const normalizedKey = key.replace(/^\/+/, '').split(':')[0]; // Get just the path part
+    return normalizedKey.includes(normalizedPattern) || key.includes(pattern);
+  });
   
-  matchingKeys.forEach(key => cache.del(key));
-  console.log(`[CACHE] Cleared ${matchingKeys.length} keys matching: ${pattern}`);
+  matchingKeys.forEach(key => {
+    cache.del(key);
+    console.log(`[CACHE] DELETED: ${key}`);
+  });
+  
+  console.log(`[CACHE] Cleared ${matchingKeys.length} keys matching pattern: "${pattern}"`);
+  if (matchingKeys.length === 0) {
+    console.warn(`[CACHE] ⚠️ WARNING: No cache keys matched pattern "${pattern}". Cached keys: ${keys.slice(0, 5).join(', ')}`);
+  }
 }
 
 /**

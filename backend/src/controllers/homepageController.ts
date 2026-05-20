@@ -100,9 +100,17 @@ export const updateSection = async (req: Request, res: Response) => {
         });
       }
 
-      // Clear cache for this section
-      clearCache(`/homepage/content/${section}`);
-      console.log(`[HOMEPAGE] Cache cleared for section: ${section}`);
+      // Clear cache for this section - try multiple cache key patterns
+      const cachePatterns = [
+        `/homepage/content/${section}`,
+        `/api/homepage/content/${section}`,
+        `api/homepage/content/${section}`
+      ];
+      
+      cachePatterns.forEach(pattern => {
+        clearCache(pattern);
+        console.log(`[HOMEPAGE] Cache cleared for pattern: ${pattern}`);
+      });
 
       response = { success: true, content, section_name: section };
     } else {
@@ -127,9 +135,17 @@ export const updateSection = async (req: Request, res: Response) => {
         });
       }
 
-      // Clear cache for this section
-      clearCache(`/homepage/content/${section}`);
-      console.log(`[HOMEPAGE] Cache cleared for new section: ${section}`);
+      // Clear cache for new section
+      const cachePatterns = [
+        `/homepage/content/${section}`,
+        `/api/homepage/content/${section}`,
+        `api/homepage/content/${section}`
+      ];
+      
+      cachePatterns.forEach(pattern => {
+        clearCache(pattern);
+        console.log(`[HOMEPAGE] Cache cleared for pattern: ${pattern}`);
+      });
 
       response = { success: true, content: insertedData };
     }
