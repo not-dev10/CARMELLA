@@ -32,8 +32,8 @@ interface HeroContent {
 
 const DEFAULT_HERO: HeroContent = {
   badge: "EST. 2024",
-  title: "Artistry in Every Detail",
-  subtitle: "Handcrafted ceramics and home essentials for the modern retailer. Elevate your inventory with our curated B2B collections.",
+  title: "Premium Indian Products",
+  subtitle: "Authentic flavors and quality essentials for every home. Discover our curated B2B collections of premium Indian products.",
   cta1Text: "Shop Wholesale",
   cta1Link: "/shop",
   cta2Text: "View Lookbook",
@@ -41,13 +41,13 @@ const DEFAULT_HERO: HeroContent = {
   badge1Text: "500+ Retailers",
   badge1Subtext: "Worldwide",
   badge2Text: "Premium Quality",
-  badge2Subtext: "Handcrafted",
-  badge3Text: "B2B Certified",
-  badge3Subtext: "Trusted Partner",
+  badge2Subtext: "Authentic",
+  badge3Text: "B2B Ready",
+  badge3Subtext: "Fast Delivery",
   images: [
     {
-      desktopImage: "https://picsum.photos/seed/ceramic-vase-collection/1920/1080",
-      mobileImage: "https://picsum.photos/seed/ceramic-vase-collection/540/720",
+      desktopImage: "https://carmella-bucket.s3.amazonaws.com/hero/desktop/hero-products.jpeg",
+      mobileImage: "https://carmella-bucket.s3.amazonaws.com/hero/mobile/hero-products.jpeg",
     }
   ],
 }
