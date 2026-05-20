@@ -74,19 +74,27 @@ export function PageEditor() {
 
       for (const section of SECTIONS) {
         try {
-          const response = await fetch(`${API_BASE_URL}/homepage/content/${section.id}`)
+          const apiUrl = `${API_BASE_URL}/homepage/content/${section.id}`
+          console.log("[PAGE_EDITOR] Fetching section:", section.id, "from:", apiUrl)
+          
+          const response = await fetch(apiUrl)
+          console.log("[PAGE_EDITOR] Fetch response status:", section.id, response.status)
+          
           if (response.ok) {
             const content = await response.json()
+            console.log("[PAGE_EDITOR] Fetched content for", section.id, ":", content)
             newData.set(section.id, content.content || {})
           } else {
+            console.warn("[PAGE_EDITOR] Failed to fetch", section.id, "- using empty object")
             newData.set(section.id, {})
           }
         } catch (error) {
-          console.error(`Failed to fetch ${section.id}:`, error)
+          console.error(`[PAGE_EDITOR] Failed to fetch ${section.id}:`, error)
           newData.set(section.id, {})
         }
       }
 
+      console.log("[PAGE_EDITOR] All sections loaded:", Object.fromEntries(newData))
       setSectionsData(newData)
     } finally {
       setLoading(false)
@@ -106,14 +114,21 @@ export function PageEditor() {
       setSaving(activeSectionId)
       const currentData = sectionsData.get(activeSectionId) || {}
 
+      console.log("[PAGE_EDITOR] Saving section:", activeSectionId, "Data:", currentData)
+
       const { data: { session } } = await supabase.auth.getSession()
       const token = session?.access_token
 
+      console.log("[PAGE_EDITOR] Auth token:", token ? "✓ Present" : "✗ Missing")
+
       if (!token) {
-        throw new Error("Not authenticated")
+        throw new Error("Not authenticated - please login first")
       }
 
-      const response = await fetch(`${API_BASE_URL}/homepage/content/${activeSectionId}`, {
+      const apiUrl = `${API_BASE_URL}/homepage/content/${activeSectionId}`
+      console.log("[PAGE_EDITOR] Making PUT request to:", apiUrl)
+
+      const response = await fetch(apiUrl, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -122,15 +137,33 @@ export function PageEditor() {
         body: JSON.stringify({ content: currentData }),
       })
 
+      console.log("[PAGE_EDITOR] Response status:", response.status, response.statusText)
+
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Failed to save")
+        const errorData = await response.json().catch(() => ({}))
+        console.error("[PAGE_EDITOR] API error response:", errorData)
+        throw new Error(errorData.error || `Server error: ${response.status}`)
       }
 
-      setMessage({ type: "success", text: "Saved successfully!" })
-      setTimeout(() => fetchAllSections(), 1000)
+      const saveResponse = await response.json()
+      console.log("[PAGE_EDITOR] Save successful:", saveResponse)
+
+      setMessage({ type: "success", text: "Saved successfully! ✓" })
+      
+      // Clear message after 3 seconds
+      setTimeout(() => setMessage(null), 3000)
+      
+      // Refresh data after a short delay
+      setTimeout(() => {
+        console.log("[PAGE_EDITOR] Refreshing sections after save")
+        fetchAllSections()
+      }, 1000)
     } catch (error: any) {
-      setMessage({ type: "error", text: error.message || "Failed to save" })
+      console.error("[PAGE_EDITOR] Save error:", error)
+      setMessage({ type: "error", text: `Error: ${error.message || "Failed to save"}` })
+      
+      // Clear error message after 5 seconds
+      setTimeout(() => setMessage(null), 5000)
     } finally {
       setSaving(null)
     }

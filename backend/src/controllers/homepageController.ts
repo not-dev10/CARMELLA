@@ -60,12 +60,17 @@ export const updateSection = async (req: Request, res: Response) => {
   const { section } = req.params;
   const { content } = req.body;
 
+  console.log(`[HOMEPAGE_UPDATE] Request received - section: ${section}, userId: ${userId}`);
+  console.log(`[HOMEPAGE_UPDATE] Content type: ${typeof content}, Content keys: ${content ? Object.keys(content).join(', ') : 'null'}`);
+
   if (!content) {
+    console.warn(`[HOMEPAGE_UPDATE] No content provided`);
     return res.status(400).json({ error: "Content is required" });
   }
 
   try {
     console.log(`[HOMEPAGE] Updating section: ${section} by user: ${userId}`);
+    console.log(`[HOMEPAGE] Content to save:`, JSON.stringify(content).substring(0, 200) + "...");
 
     // Check if section exists first
     const { data: existing, error: checkError } = await supabase
@@ -130,6 +135,7 @@ export const updateSection = async (req: Request, res: Response) => {
     }
 
     console.log(`[HOMEPAGE] Section ${section} updated successfully`);
+    console.log(`[HOMEPAGE_UPDATE] Success response - section: ${section}, response data:`, JSON.stringify(response).substring(0, 200) + "...");
     res.json(response);
   } catch (error) {
     console.error(`[HOMEPAGE] Unexpected error updating section:`, error);
