@@ -81,12 +81,8 @@ export function PageEditor() {
           console.log("[PAGE_EDITOR] Fetching section:", section.id, "from:", apiUrl)
           
           const response = await fetch(apiUrl, {
-            // Disable caching for admin endpoints
-            headers: {
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache',
-              'Expires': '0'
-            }
+            // Disable browser caching for admin endpoints
+            cache: 'no-store'
           })
           console.log("[PAGE_EDITOR] Fetch response status:", section.id, response.status)
           
