@@ -21,7 +21,7 @@ import { SettingsSection } from "@/components/admin/settings-section"
 import { ProductsSection } from "@/components/admin/products-section"
 import { OrdersSection } from "@/components/admin/orders-section"
 import { PerformanceSection } from "@/components/admin/performance-section"
-import { PageEditor } from "@/components/admin/page-editor"
+import { PageEditor } from "@/components/admin/page-editor-simple"
 import { useAuth } from "@/contexts/AuthContext"
 import { adminAPI } from "@/lib/api"
 
