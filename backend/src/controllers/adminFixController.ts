@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { supabase } from "../config/supabase.js";
+import { supabase, supabaseAdmin } from "../config/supabase.js";
 import { clearCache } from "../middleware/cache.js";
 
 /**
@@ -56,8 +56,8 @@ export const fixDataStructures = async (req: Request, res: Response) => {
     for (const [sectionName, correctContent] of Object.entries(correctStructures)) {
       console.log(`[ADMIN_FIX] Checking section: ${sectionName}`);
 
-      // Get current content
-      const { data: existing, error: fetchError } = await supabase
+      // Get current content - use admin client
+      const { data: existing, error: fetchError } = await supabaseAdmin
         .from("admin_content")
         .select("id, content")
         .eq("section_name", sectionName)
@@ -65,7 +65,7 @@ export const fixDataStructures = async (req: Request, res: Response) => {
 
       if (fetchError) {
         console.log(`[ADMIN_FIX] Section ${sectionName} doesn't exist, creating...`);
-        const { error: insertError } = await supabase
+        const { error: insertError } = await supabaseAdmin
           .from("admin_content")
           .insert([{ section_name: sectionName, content: correctContent }]);
 
@@ -87,8 +87,8 @@ export const fixDataStructures = async (req: Request, res: Response) => {
           console.log(`[ADMIN_FIX] Current:`, JSON.stringify(currentContent).substring(0, 100));
           console.log(`[ADMIN_FIX] Expected:`, JSON.stringify(correctContent).substring(0, 100));
 
-          // Replace with correct structure
-          const { error: updateError } = await supabase
+          // Replace with correct structure - use admin client
+          const { error: updateError } = await supabaseAdmin
             .from("admin_content")
             .update({ content: correctContent })
             .eq("section_name", sectionName);

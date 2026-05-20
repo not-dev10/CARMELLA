@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { supabase } from "../config/supabase.js";
+import { supabase, supabaseAdmin } from "../config/supabase.js";
 import { getSupabaseClient } from "../utils/supabaseClient.js";
 import { clearCache } from "../middleware/cache.js";
 
@@ -76,8 +76,8 @@ export const updateSection = async (req: Request, res: Response) => {
     console.log(`[HOMEPAGE] Updating section: ${section} by user: ${userId}`);
     console.log(`[HOMEPAGE] Content to save:`, JSON.stringify(content).substring(0, 200) + "...");
 
-    // Check if section exists first
-    const { data: existing, error: checkError } = await supabase
+    // Check if section exists first - use admin for reliability
+    const { data: existing, error: checkError } = await supabaseAdmin
       .from("admin_content")
       .select("id, content")
       .eq("section_name", section);
@@ -95,10 +95,11 @@ export const updateSection = async (req: Request, res: Response) => {
       const mergedContent = { ...existingContent, ...content };
       console.log(`[HOMEPAGE] Merged content:`, JSON.stringify(mergedContent).substring(0, 200) + "...");
       
-      const { error: updateError } = await supabase
+      const { error: updateError, count } = await supabaseAdmin
         .from("admin_content")
         .update({ content: mergedContent })
-        .eq("section_name", section);
+        .eq("section_name", section)
+        .select(); // Use select to verify update actually happened
 
       if (updateError) {
         console.error(`[HOMEPAGE] Failed to update section ${section}:`, updateError);
@@ -108,6 +109,8 @@ export const updateSection = async (req: Request, res: Response) => {
         });
       }
 
+      console.log(`[HOMEPAGE] Update successful. Rows affected: ${count || 'unknown'}`);
+
       // Clear cache for this section - use correct path as seen by router
       // Note: req.path in the router is just /content/section (without /api/homepage prefix)
       clearCache(`/content/${section}`);
@@ -115,9 +118,9 @@ export const updateSection = async (req: Request, res: Response) => {
 
       response = { success: true, content: mergedContent, section_name: section };
     } else {
-      // Create new section
+      // Create new section - use admin for reliability
       console.log(`[HOMEPAGE] Creating new section: ${section}`);
-      const { data: insertedData, error: insertError } = await supabase
+      const { data: insertedData, error: insertError } = await supabaseAdmin
         .from("admin_content")
         .insert([
           {
@@ -140,7 +143,7 @@ export const updateSection = async (req: Request, res: Response) => {
       clearCache(`/content/${section}`);
       console.log(`[HOMEPAGE] Cache cleared for: /content/${section}`);
 
-      response = { success: true, content: insertedData };
+      response = { success: true, content: insertedData.content, section_name: section };
     }
 
     console.log(`[HOMEPAGE] Section ${section} updated successfully`);
