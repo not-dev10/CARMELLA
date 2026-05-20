@@ -10,6 +10,7 @@ import {
   updateOrderStatus,
   deleteOrder,
 } from "../controllers/adminController.js";
+import { fixDataStructures } from "../controllers/adminFixController.js";
 import { authMiddleware, adminMiddleware } from "../middleware/index.js";
 
 const router = Router();
@@ -30,5 +31,8 @@ router.delete("/orders/:orderId", deleteOrder);
 router.get("/b2b-requests", getB2BRequests);
 router.put("/b2b-requests/:userId/approve", approveB2BRequest);
 router.put("/b2b-requests/:userId/reject", rejectB2BRequest);
+
+// Data structure fix endpoint
+router.post("/fix-data-structures", fixDataStructures);
 
 export default router;
