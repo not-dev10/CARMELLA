@@ -85,11 +85,15 @@ export const updateSection = async (req: Request, res: Response) => {
 
     let response;
     if (existing && existing.length > 0) {
-      // Update existing section
+      // Update existing section - merge new content with existing to preserve fields
       console.log(`[HOMEPAGE] Updating existing section: ${section}`);
+      const existingContent = existing[0].content || {};
+      const mergedContent = { ...existingContent, ...content };
+      console.log(`[HOMEPAGE] Merged content:`, JSON.stringify(mergedContent).substring(0, 200) + "...");
+      
       const { error: updateError } = await supabase
         .from("admin_content")
-        .update({ content })
+        .update({ content: mergedContent })
         .eq("section_name", section);
 
       if (updateError) {
@@ -105,7 +109,7 @@ export const updateSection = async (req: Request, res: Response) => {
       clearCache(`/content/${section}`);
       console.log(`[HOMEPAGE] Cache cleared for: /content/${section}`);
 
-      response = { success: true, content, section_name: section };
+      response = { success: true, content: mergedContent, section_name: section };
     } else {
       // Create new section
       console.log(`[HOMEPAGE] Creating new section: ${section}`);
