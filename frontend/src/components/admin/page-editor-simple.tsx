@@ -62,10 +62,12 @@ export function PageEditor() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  const [cacheVersion, setCacheVersion] = useState(Date.now()) // Force fresh fetches
 
   useEffect(() => {
+    // Fetch on component mount and whenever cache version changes
     fetchAllSections()
-  }, [])
+  }, [cacheVersion])
 
   const fetchAllSections = async () => {
     try {
@@ -74,10 +76,18 @@ export function PageEditor() {
 
       for (const section of SECTIONS) {
         try {
-          const apiUrl = `${API_BASE_URL}/homepage/content/${section.id}`
+          // Add cache-busting parameter to force fresh data
+          const apiUrl = `${API_BASE_URL}/homepage/content/${section.id}?v=${cacheVersion}`
           console.log("[PAGE_EDITOR] Fetching section:", section.id, "from:", apiUrl)
           
-          const response = await fetch(apiUrl)
+          const response = await fetch(apiUrl, {
+            // Disable caching for admin endpoints
+            headers: {
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0'
+            }
+          })
           console.log("[PAGE_EDITOR] Fetch response status:", section.id, response.status)
           
           if (response.ok) {
@@ -153,11 +163,11 @@ export function PageEditor() {
       // Clear message after 3 seconds
       setTimeout(() => setMessage(null), 3000)
       
-      // Refresh data after a short delay
+      // Force refresh with new cache version (busts browser cache)
       setTimeout(() => {
-        console.log("[PAGE_EDITOR] Refreshing sections after save")
-        fetchAllSections()
-      }, 1000)
+        console.log("[PAGE_EDITOR] Refreshing with cache bust")
+        setCacheVersion(Date.now()) // This triggers fetchAllSections via useEffect
+      }, 500)
     } catch (error: any) {
       console.error("[PAGE_EDITOR] Save error:", error)
       setMessage({ type: "error", text: `Error: ${error.message || "Failed to save"}` })

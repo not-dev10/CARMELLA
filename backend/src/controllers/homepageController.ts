@@ -48,6 +48,10 @@ export const getSection = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "Section not found" });
     }
 
+    // Set cache headers - allow caching but validate freshness
+    res.set('Cache-Control', 'public, max-age=300, must-revalidate');
+    res.set('ETag', JSON.stringify(content.content).length.toString());
+    
     res.json({ content: content.content });
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
