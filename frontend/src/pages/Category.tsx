@@ -205,49 +205,62 @@ export default function Category() {
                 <div className="flex flex-col lg:flex-row gap-8">
                     {/* Sidebar Filters */}
                     <aside className={cn(
-                        "lg:w-64 flex-shrink-0",
+                        "lg:w-72 flex-shrink-0",
                         showFilters ? "block" : "hidden lg:block"
                     )}>
-                        <div className="sticky top-24 bg-card border border-border rounded-lg p-6 space-y-6">
+                        <div className="sticky top-24 bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm">
                             {/* Header */}
                             <div className="flex items-center justify-between lg:block">
-                                <h3 className="text-lg font-semibold flex items-center gap-2">
-                                    <SlidersHorizontal className="w-5 h-5" />
-                                    Filters
-                                </h3>
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-gradient-to-br from-purple-500/20 to-blue-500/20 rounded-lg">
+                                        <SlidersHorizontal className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Filters</h3>
+                                </div>
                                 <button
                                     onClick={() => setShowFilters(false)}
-                                    className="lg:hidden p-2 hover:bg-muted rounded-lg"
+                                    className="lg:hidden p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg transition-colors"
                                 >
                                     <X className="w-5 h-5" />
                                 </button>
                             </div>
 
                             {/* Price Filter */}
-                            <div className="space-y-3">
-                                <label className="font-semibold text-sm block">Price Range</label>
-                                <div className="space-y-2">
+                            <div className="space-y-4 pb-6 border-b border-gray-200 dark:border-gray-800">
+                                <div className="flex items-center gap-2">
+                                    <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                                        <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M8.16 5a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0zM7 8.75A.75.75 0 1 1 8.5 8 .75.75 0 0 1 7 8.75zM7 12.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0zM16 5a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0zM15 8.75a.75.75 0 1 1 1.5 0 .75.75 0 0 1-1.5 0zM15 12.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0z" />
+                                        </svg>
+                                    </div>
+                                    <label className="font-bold text-sm text-gray-900 dark:text-white">Price Range</label>
+                                </div>
+                                <div className="space-y-3">
                                     <div className="flex gap-2">
-                                        <input
-                                            type="number"
-                                            placeholder="Min"
-                                            value={filters.priceRange[0]}
-                                            onChange={(e) => setFilters({
-                                                ...filters,
-                                                priceRange: [Math.max(0, Number(e.target.value)), filters.priceRange[1]]
-                                            })}
-                                            className="flex-1 px-3 py-2 border border-border rounded-lg text-sm bg-background"
-                                        />
-                                        <input
-                                            type="number"
-                                            placeholder="Max"
-                                            value={filters.priceRange[1]}
-                                            onChange={(e) => setFilters({
-                                                ...filters,
-                                                priceRange: [filters.priceRange[0], Math.max(filters.priceRange[0], Number(e.target.value))]
-                                            })}
-                                            className="flex-1 px-3 py-2 border border-border rounded-lg text-sm bg-background"
-                                        />
+                                        <div className="flex-1">
+                                            <input
+                                                type="number"
+                                                placeholder="Min"
+                                                value={filters.priceRange[0]}
+                                                onChange={(e) => setFilters({
+                                                    ...filters,
+                                                    priceRange: [Math.max(0, Number(e.target.value)), filters.priceRange[1]]
+                                                })}
+                                                className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                            />
+                                        </div>
+                                        <div className="flex-1">
+                                            <input
+                                                type="number"
+                                                placeholder="Max"
+                                                value={filters.priceRange[1]}
+                                                onChange={(e) => setFilters({
+                                                    ...filters,
+                                                    priceRange: [filters.priceRange[0], Math.max(filters.priceRange[0], Number(e.target.value))]
+                                                })}
+                                                className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-700 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                            />
+                                        </div>
                                     </div>
                                     <input
                                         type="range"
@@ -258,84 +271,119 @@ export default function Category() {
                                             ...filters,
                                             priceRange: [filters.priceRange[0], Number(e.target.value)]
                                         })}
-                                        className="w-full cursor-pointer"
+                                        className="w-full h-2 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 rounded-lg appearance-none cursor-pointer accent-blue-500"
                                     />
-                                    <p className="text-xs text-muted-foreground">
-                                        ${filters.priceRange[0]} - ${filters.priceRange[1]}
-                                    </p>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Price Range</span>
+                                        <span className="text-sm font-bold bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full">
+                                            ${filters.priceRange[0]} - ${filters.priceRange[1]}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Stock Status */}
-                            <div className="space-y-3 border-t border-border pt-6">
-                                <label className="font-semibold text-sm block">Stock Status</label>
+                            <div className="space-y-4 pb-6 border-b border-gray-200 dark:border-gray-800">
+                                <div className="flex items-center gap-2">
+                                    <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                                        <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.052-.143Z" clipRule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <label className="font-bold text-sm text-gray-900 dark:text-white">Stock Status</label>
+                                </div>
                                 <div className="space-y-2">
-                                    <label className="flex items-center gap-2 cursor-pointer hover:bg-muted p-2 rounded-lg transition-colors">
+                                    <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all group">
                                         <input
                                             type="checkbox"
                                             checked={filters.inStock === null}
                                             onChange={() => setFilters({ ...filters, inStock: null })}
-                                            className="w-4 h-4 cursor-pointer"
+                                            className="w-5 h-5 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                         />
-                                        <span className="text-sm">All Items</span>
+                                        <div className="flex-1">
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">All Items</span>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">See all products</p>
+                                        </div>
                                     </label>
-                                    <label className="flex items-center gap-2 cursor-pointer hover:bg-muted p-2 rounded-lg transition-colors">
+                                    <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all group">
                                         <input
                                             type="checkbox"
                                             checked={filters.inStock === true}
                                             onChange={() => setFilters({ ...filters, inStock: true })}
-                                            className="w-4 h-4 cursor-pointer"
+                                            className="w-5 h-5 cursor-pointer rounded border-gray-300 text-green-600 focus:ring-green-500"
                                         />
-                                        <span className="text-sm">In Stock Only</span>
+                                        <div className="flex-1">
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">In Stock Only</span>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">Ready to ship</p>
+                                        </div>
                                     </label>
-                                    <label className="flex items-center gap-2 cursor-pointer hover:bg-muted p-2 rounded-lg transition-colors">
+                                    <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all group">
                                         <input
                                             type="checkbox"
                                             checked={filters.inStock === false}
                                             onChange={() => setFilters({ ...filters, inStock: false })}
-                                            className="w-4 h-4 cursor-pointer"
+                                            className="w-5 h-5 cursor-pointer rounded border-gray-300 text-red-600 focus:ring-red-500"
                                         />
-                                        <span className="text-sm">Out of Stock</span>
+                                        <div className="flex-1">
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">Out of Stock</span>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">Coming soon</p>
+                                        </div>
                                     </label>
                                 </div>
                             </div>
 
                             {/* Featured Filter */}
-                            <div className="space-y-3 border-t border-border pt-6">
-                                <label className="font-semibold text-sm block">Featured</label>
+                            <div className="space-y-4 pb-6 border-b border-gray-200 dark:border-gray-800">
+                                <div className="flex items-center gap-2">
+                                    <div className="p-1.5 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                                        <svg className="w-4 h-4 text-amber-600 dark:text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M9.894 3.894a.75.75 0 1 0-1.788-1.788 .75.75 0 0 0 1.788 1.788zM7.754 2.694a2.25 2.25 0 1 1 3.192 3.192 2.25 2.25 0 0 1-3.192-3.192zM11.896 9.735l-1.591-1.591A.75.75 0 1 0 9.504 9.527l1.591 1.591a.75.75 0 1 0 1.061-1.061l-.26-.322zM9.504 9.527L7.913 7.936a.75.75 0 0 0-1.061 1.061l1.591 1.591a.75.75 0 1 0 1.061-1.061z" />
+                                        </svg>
+                                    </div>
+                                    <label className="font-bold text-sm text-gray-900 dark:text-white">Featured</label>
+                                </div>
                                 <div className="space-y-2">
-                                    <label className="flex items-center gap-2 cursor-pointer hover:bg-muted p-2 rounded-lg transition-colors">
+                                    <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all group">
                                         <input
                                             type="checkbox"
                                             checked={filters.featured === null}
                                             onChange={() => setFilters({ ...filters, featured: null })}
-                                            className="w-4 h-4 cursor-pointer"
+                                            className="w-5 h-5 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                         />
-                                        <span className="text-sm">All Products</span>
+                                        <div className="flex-1">
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white">All Products</span>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">Browse entire catalog</p>
+                                        </div>
                                     </label>
-                                    <label className="flex items-center gap-2 cursor-pointer hover:bg-muted p-2 rounded-lg transition-colors">
+                                    <label className="flex items-center gap-3 cursor-pointer p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-all group bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
                                         <input
                                             type="checkbox"
                                             checked={filters.featured === true}
                                             onChange={() => setFilters({ ...filters, featured: true })}
-                                            className="w-4 h-4 cursor-pointer"
+                                            className="w-5 h-5 cursor-pointer rounded border-amber-300 text-amber-600 focus:ring-amber-500"
                                         />
-                                        <span className="text-sm">Featured Only</span>
+                                        <div className="flex-1">
+                                            <span className="text-sm font-bold text-amber-900 dark:text-amber-200 group-hover:text-amber-900 dark:group-hover:text-amber-100">✨ Featured Only</span>
+                                            <p className="text-xs text-amber-700 dark:text-amber-400">Handpicked selections</p>
+                                        </div>
                                     </label>
                                 </div>
                             </div>
 
-                            {/* Reset Filters */}
+                            {/* Reset Filters Button */}
                             <Button
                                 variant="outline"
-                                className="w-full"
+                                className="w-full h-11 rounded-xl font-semibold text-sm bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all text-gray-900 dark:text-white"
                                 onClick={() => setFilters({
                                     priceRange: [0, 10000],
                                     inStock: null,
                                     featured: null
                                 })}
                             >
-                                Reset Filters
+                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Clear All Filters
                             </Button>
                         </div>
                     </aside>

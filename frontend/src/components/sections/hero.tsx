@@ -207,7 +207,7 @@ export function HeroSection() {
                                 priority={true}
                             />
                         </motion.div>
-                        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/60" />
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/15 to-black/30" />
                     </motion.div>
                 </AnimatePresence>
             </div>
