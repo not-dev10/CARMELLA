@@ -5,7 +5,6 @@ import { CollectionSplit } from "@/components/sections/collection-split"
 import { ProductShowcase } from "@/components/sections/product-showcase"
 import { GivingBack } from "@/components/sections/giving-back"
 import { Testimonials } from "@/components/sections/testimonials"
-import { Newsletter } from "@/components/sections/newsletter"
 
 export default function Home() {
     return (
@@ -17,7 +16,6 @@ export default function Home() {
             <ProductShowcase />
             <GivingBack />
             <Testimonials />
-            <Newsletter />
         </div>
     )
 }

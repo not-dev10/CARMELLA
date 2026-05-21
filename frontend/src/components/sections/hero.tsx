@@ -217,18 +217,12 @@ export function HeroSection() {
                     <span className="mb-4 sm:mb-6 block text-xs sm:text-sm font-bold tracking-[0.2em] uppercase opacity-90">
                         {heroContent.badge}
                     </span>
-                    <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-medium tracking-tight mb-4 sm:mb-6 md:mb-8 drop-shadow-2xl px-2">
+                    <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-medium tracking-tight mb-8 sm:mb-10 md:mb-12 drop-shadow-2xl px-2">
                         Get the best FMCG deals with Carmella—reliable supply, better margins, and faster delivery.
                     </h1>
-                    <p className="mx-auto max-w-lg text-sm sm:text-base md:text-lg lg:text-xl opacity-90 mb-6 sm:mb-8 md:mb-10 font-light leading-relaxed drop-shadow-md px-2">
-                        {heroContent.subtitle}
-                    </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
                         <Button size="lg" className="btn-gradient min-w-[140px] sm:min-w-[160px] h-11 sm:h-14 text-xs sm:text-base rounded-full border-0 shadow-lg hover:shadow-xl transition-all">
                             {heroContent.cta1Text}
-                        </Button>
-                        <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-black min-w-[140px] sm:min-w-[160px] h-11 sm:h-14 text-xs sm:text-base rounded-full bg-transparent backdrop-blur-sm">
-                            {heroContent.cta2Text}
                         </Button>
                     </div>
 
