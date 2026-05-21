@@ -47,7 +47,7 @@ const DEFAULT_HERO: HeroContent = {
   images: [
     {
       desktopImage: "https://carmella-bucket.s3.amazonaws.com/hero/desktop/hero-products.jpeg",
-      mobileImage: "https://carmella-bucket.s3.amazonaws.com/hero/mobile/hero-products.jpeg",
+      mobileImage: "/hero-mobile.png",
     }
   ],
 }
