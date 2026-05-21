@@ -1,7 +1,6 @@
 import { FadeIn } from "@/components/animations/fade-in"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
-import { API_BASE_URL } from "@/lib/api"
 import { motion } from "framer-motion"
 
 interface CollectionImage {
@@ -10,15 +9,6 @@ interface CollectionImage {
   title: string
   category: string
   id: number
-}
-
-interface CollectionContent {
-  leftLabel: string
-  leftTitle: string
-  leftButtonText: string
-  rightLabel: string
-  rightTitle: string
-  rightButtonText: string
 }
 
 const COLLECTION_IMAGES: CollectionImage[] = [
@@ -52,17 +42,7 @@ const COLLECTION_IMAGES: CollectionImage[] = [
   },
 ]
 
-const DEFAULT_CONTENT: CollectionContent = {
-  leftLabel: "New Arrivals",
-  leftTitle: "Autumn Ceramics",
-  leftButtonText: "Shop Collection",
-  rightLabel: "Curated",
-  rightTitle: "Sustainable Living",
-  rightButtonText: "Discover More",
-}
-
 export function CollectionSplit() {
-    const [content, setContent] = useState<CollectionContent>(DEFAULT_CONTENT)
     const [currentImages, setCurrentImages] = useState<CollectionImage[]>([])
     const [isTransitioning, setIsTransitioning] = useState(false)
 
@@ -81,32 +61,6 @@ export function CollectionSplit() {
     // Initialize with random images
     useEffect(() => {
         setCurrentImages(getRandomImagePair())
-    }, [])
-
-    // Fetch content from API
-    useEffect(() => {
-        const fetchContent = async () => {
-            try {
-                const response = await fetch(`${API_BASE_URL}/homepage/content/collection`)
-                if (response.ok) {
-                    const data = await response.json()
-                    if (data.content) {
-                        setContent({
-                            leftLabel: data.content.leftLabel || DEFAULT_CONTENT.leftLabel,
-                            leftTitle: data.content.leftTitle || DEFAULT_CONTENT.leftTitle,
-                            leftButtonText: data.content.leftButtonText || DEFAULT_CONTENT.leftButtonText,
-                            rightLabel: data.content.rightLabel || DEFAULT_CONTENT.rightLabel,
-                            rightTitle: data.content.rightTitle || DEFAULT_CONTENT.rightTitle,
-                            rightButtonText: data.content.rightButtonText || DEFAULT_CONTENT.rightButtonText,
-                        })
-                    }
-                }
-            } catch (error) {
-                console.error("Failed to fetch collection section content:", error)
-            }
-        }
-
-        fetchContent()
     }, [])
 
     // Rotate images every 6 seconds
