@@ -191,10 +191,10 @@ export function PageEditor() {
       },
       collection: {
         leftLabel: "New Arrivals",
-        leftTitle: "Autumn Ceramics",
+        leftTitle: "Spices & Seasonings",
         leftButtonText: "Shop Collection",
         rightLabel: "Curated",
-        rightTitle: "Sustainable Living",
+        rightTitle: "Grains & Cereals",
         rightButtonText: "Discover More",
       },
       products: {

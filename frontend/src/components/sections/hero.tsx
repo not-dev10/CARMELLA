@@ -32,7 +32,7 @@ interface HeroContent {
 
 const DEFAULT_HERO: HeroContent = {
   badge: "EST. 2024",
-  title: "Premium Indian Products",
+  title: "Get the best FMCG deals with Carmella—reliable supply, better margins, and faster delivery.",
   subtitle: "Authentic flavors and quality essentials for every home. Discover our curated B2B collections of premium Indian products.",
   cta1Text: "Shop Wholesale",
   cta1Link: "/shop",
@@ -85,7 +85,7 @@ export function HeroSection() {
                 if (data.content) {
                     const newHeroContent = {
                         badge: data.content.badge || DEFAULT_HERO.badge,
-                        title: data.content.title || DEFAULT_HERO.title,
+                        title: DEFAULT_HERO.title,
                         subtitle: data.content.subtitle || DEFAULT_HERO.subtitle,
                         cta1Text: data.content.cta1Text || DEFAULT_HERO.cta1Text,
                         cta1Link: data.content.cta1Link || DEFAULT_HERO.cta1Link,
@@ -218,7 +218,7 @@ export function HeroSection() {
                         {heroContent.badge}
                     </span>
                     <h1 className="font-serif text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-medium tracking-tight mb-4 sm:mb-6 md:mb-8 drop-shadow-2xl px-2">
-                        {heroContent.title}
+                        Get the best FMCG deals with Carmella—reliable supply, better margins, and faster delivery.
                     </h1>
                     <p className="mx-auto max-w-lg text-sm sm:text-base md:text-lg lg:text-xl opacity-90 mb-6 sm:mb-8 md:mb-10 font-light leading-relaxed drop-shadow-md px-2">
                         {heroContent.subtitle}

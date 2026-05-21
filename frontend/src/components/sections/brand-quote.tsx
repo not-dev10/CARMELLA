@@ -9,8 +9,8 @@ export function BrandQuote() {
             <div className="container mx-auto max-w-4xl text-center relative z-10">
                 <FadeIn direction="up">
                     <blockquote className="font-serif text-4xl md:text-6xl lg:text-7xl leading-tight text-gradient mb-12 font-medium tracking-tight">
-                        "We believe that every object in your home should tell a story.
-                        Our mission is to bring intention and beauty back into everyday rituals."
+                        "We believe wholesale is more than supply — it's partnership.
+                        Our mission is to power your business with reliable products and seamless service."
                     </blockquote>
                 </FadeIn>
 

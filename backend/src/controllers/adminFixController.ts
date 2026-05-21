@@ -15,7 +15,7 @@ export const fixDataStructures = async (req: Request, res: Response) => {
     const correctStructures: { [key: string]: any } = {
       hero: {
         badge: "EST. 2024",
-        title: "Premium Indian Products",
+        title: "Get the best FMCG deals with Carmella—reliable supply, better margins, and faster delivery.",
         subtitle: "Authentic flavors and quality essentials for every home. Discover our curated B2B collections of premium Indian products.",
         cta1Text: "Shop Wholesale",
         cta1Link: "/shop",

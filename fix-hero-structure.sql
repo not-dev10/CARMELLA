@@ -2,7 +2,7 @@
 UPDATE admin_content 
 SET content = jsonb_build_object(
   'badge', 'EST. 2024',
-  'title', 'Premium Indian Products',
+  'title', 'Get the best FMCG deals with Carmella—reliable supply, better margins, and faster delivery.',
   'subtitle', 'Authentic flavors and quality essentials for every home. Discover our curated B2B collections of premium Indian products.',
   'cta1Text', 'Shop Wholesale',
   'cta1Link', '/shop',
