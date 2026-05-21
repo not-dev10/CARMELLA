@@ -16,14 +16,14 @@ const COLLECTION_IMAGES: CollectionImage[] = [
     id: 1,
     url: "https://carmella-bucket.s3.amazonaws.com/collection/1-spices.jpeg",
     label: "Premium",
-    title: "Spices & Seasonings",
+    title: "Party Decor",
     category: "spices",
   },
   {
     id: 2,
     url: "https://carmella-bucket.s3.amazonaws.com/collection/2-grains.jpeg",
     label: "Bulk Ready",
-    title: "Grains & Cereals",
+    title: "Skincare and Cosmetics",
     category: "grains",
   },
   {
@@ -77,56 +77,60 @@ export function CollectionSplit() {
         return () => clearInterval(interval)
     }, [currentImages])
     return (
-        <section className="flex flex-col md:flex-row">
+        <section className="flex flex-col md:flex-row gap-0">
             {/* Panel 1 */}
             {currentImages.length > 0 && (
                 <motion.div 
-                    className="w-full md:w-1/2 section-gradient-accent p-6 sm:p-8 md:p-16 lg:p-24 flex flex-col justify-center items-center text-center group overflow-hidden relative min-h-[400px]"
+                    className="w-full md:w-1/2 p-6 sm:p-8 md:p-16 lg:p-24 flex flex-col justify-center items-center text-center group overflow-hidden relative min-h-[500px]"
                     style={{
-                        backgroundImage: `linear-gradient(135deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.6)), url(${currentImages[0]?.url})`,
+                        backgroundImage: `linear-gradient(135deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.35)), url(${currentImages[0]?.url})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                     }}
-                    animate={{ opacity: isTransitioning ? 0.5 : 1 }}
+                    animate={{ opacity: isTransitioning ? 0.7 : 1 }}
                     transition={{ duration: 0.5 }}
                 >
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
                     <FadeIn>
-                        <span className="text-xs font-bold tracking-widest uppercase text-white mb-3 sm:mb-4 block">{currentImages[0]?.label}</span>
-                        <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl mb-4 sm:mb-6 md:mb-8 font-medium tracking-tight text-white">{currentImages[0]?.title}</h2>
-                        <Button 
-                            variant="outline" 
-                            className="rounded-full bg-white/10 border-white/30 hover:bg-white hover:text-black transition-all duration-300 hover:shadow-lg font-medium text-sm md:text-base text-white"
-                        >
-                            Shop Now
-                        </Button>
+                        <div className="relative z-10">
+                            <span className="text-xs font-bold tracking-widest uppercase text-amber-100 mb-3 sm:mb-4 block drop-shadow-lg">{currentImages[0]?.label}</span>
+                            <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl mb-6 sm:mb-8 md:mb-10 font-bold tracking-tight text-white drop-shadow-lg">{currentImages[0]?.title}</h2>
+                            <Button 
+                                variant="outline" 
+                                className="rounded-full bg-white/15 border-white/60 hover:bg-white hover:text-black transition-all duration-300 hover:shadow-xl font-semibold text-sm md:text-base text-white backdrop-blur-sm"
+                            >
+                                Shop Now
+                            </Button>
+                        </div>
                     </FadeIn>
-                    <div className="absolute inset-0 border-[1px] border-white/10 m-2 sm:m-3 md:m-4 pointer-events-none" />
                 </motion.div>
             )}
 
             {/* Panel 2 */}
             {currentImages.length > 1 && (
                 <motion.div 
-                    className="w-full md:w-1/2 p-6 sm:p-8 md:p-16 lg:p-24 flex flex-col justify-center items-center text-center relative overflow-hidden group min-h-[400px]"
+                    className="w-full md:w-1/2 p-6 sm:p-8 md:p-16 lg:p-24 flex flex-col justify-center items-center text-center relative overflow-hidden group min-h-[500px]"
                     style={{
-                        backgroundImage: `linear-gradient(135deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.6)), url(${currentImages[1]?.url})`,
+                        backgroundImage: `linear-gradient(135deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.35)), url(${currentImages[1]?.url})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                     }}
-                    animate={{ opacity: isTransitioning ? 0.5 : 1 }}
+                    animate={{ opacity: isTransitioning ? 0.7 : 1 }}
                     transition={{ duration: 0.5 }}
                 >
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
                     <FadeIn delay={0.2}>
-                        <span className="text-xs font-bold tracking-widest uppercase text-white mb-3 sm:mb-4 block">{currentImages[1]?.label}</span>
-                        <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl mb-4 sm:mb-6 md:mb-8 font-medium tracking-tight text-white">{currentImages[1]?.title}</h2>
-                        <Button 
-                            variant="secondary" 
-                            className="rounded-full bg-white/20 border-white/30 hover:bg-white hover:text-black transition-all duration-300 hover:shadow-lg font-medium text-sm md:text-base text-white"
-                        >
-                            Discover More
-                        </Button>
+                        <div className="relative z-10">
+                            <span className="text-xs font-bold tracking-widest uppercase text-rose-100 mb-3 sm:mb-4 block drop-shadow-lg">{currentImages[1]?.label}</span>
+                            <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl mb-6 sm:mb-8 md:mb-10 font-bold tracking-tight text-white drop-shadow-lg">{currentImages[1]?.title}</h2>
+                            <Button 
+                                variant="secondary" 
+                                className="rounded-full bg-white/15 border-white/60 hover:bg-white hover:text-black transition-all duration-300 hover:shadow-xl font-semibold text-sm md:text-base text-white backdrop-blur-sm"
+                            >
+                                Discover More
+                            </Button>
+                        </div>
                     </FadeIn>
-                    <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/noise-lines.png')] pointer-events-none mix-blend-overlay"></div>
                 </motion.div>
             )}
         </section>

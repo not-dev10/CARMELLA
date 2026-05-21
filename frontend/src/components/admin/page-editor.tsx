@@ -191,10 +191,10 @@ export function PageEditor() {
       },
       collection: {
         leftLabel: "New Arrivals",
-        leftTitle: "Spices & Seasonings",
+        leftTitle: "Party Decor",
         leftButtonText: "Shop Collection",
         rightLabel: "Curated",
-        rightTitle: "Grains & Cereals",
+        rightTitle: "Skincare and Cosmetics",
         rightButtonText: "Discover More",
       },
       products: {
