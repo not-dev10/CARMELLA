@@ -188,10 +188,10 @@ export function HeroSection() {
                         className="absolute inset-0 w-full h-full"
                     >
                         <motion.div
-                            animate={{
+                            animate={isMobile ? {} : {
                                 scale: [1, 1.05],
                             }}
-                            transition={{
+                            transition={isMobile ? {} : {
                                 duration: 10,
                                 ease: "linear",
                                 repeat: Infinity,
@@ -203,7 +203,7 @@ export function HeroSection() {
                                 src={heroImage}
                                 alt={heroContent.title}
                                 fill
-                                className="object-cover"
+                                className={isMobile ? "object-contain" : "object-cover"}
                                 priority={true}
                             />
                         </motion.div>
